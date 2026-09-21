@@ -31,6 +31,14 @@
 *.mdb.meta
 sysinfo.txt
 
+# Blender generated / recovery
+*.blend1
+*.blend2
+*.blend3
+*.blend@
+*.autosave
+__pycache__/
+
 # OS
 .DS_Store
 Thumbs.db
