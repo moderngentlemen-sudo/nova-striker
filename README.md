@@ -12,14 +12,24 @@ The inherited root file:
 
 remains the rollback/reference implementation for movement, combat, enemies, bosses, co-op behavior, progression, and presentation.
 
-## Unity direction
+## Engine and art direction
 
-The Unity branch separates gameplay logic from presentation:
+Nova Striker now uses a split production pipeline:
 
+- **Unity:** gameplay runtime, physics, input, animation state machines, camera, VFX, lighting, UI, audio, co-op, progression, mobile/App Store packaging, and final scene assembly.
+- **Blender:** character, enemy, Guardian, weapon, environment, prop, and mechanical modeling; rigging; UVs; baking; and source animation work where 3D animation is the better fit.
 - **Gameplay:** movement, aiming, charge tiers, dash/Velocity Break, Powerslide, wall movement, melee, parry, weapons, enemies, Guardians, co-op, Style, Mastery, checkpoints, and progression.
-- **Graphics/runtime:** Unity 2D rendering, animation, particles/VFX, lighting, camera, UI, audio, and mobile/App Store packaging.
 - **Data:** ScriptableObjects for weapons, Guardians, enemy archetypes, tuning values, and progression.
 
-The first milestone is a greybox gameplay room with Nova's complete movement and combat feel before final art is introduced.
+The art pipeline intentionally keeps Blender source files separate from Unity-ready exported assets. Do not rely on Unity importing `.blend` files directly; export stable interchange files into the Unity project instead.
 
-See `Docs/gameplay-migration.md` for the migration sequence.
+## First milestone
+
+The first milestone remains a greybox gameplay room with Nova's complete movement and combat feel before production art is introduced. Blender production can develop in parallel, but gameplay tuning should not wait on final models.
+
+## Documentation
+
+- `Docs/gameplay-migration.md` — gameplay migration sequence
+- `Docs/blender-unity-art-pipeline.md` — Blender → Unity modeling, rigging, export, and naming conventions
+- `Blender/README.md` — Blender source workspace conventions
+- `UnityProject/Assets/Art/README.md` — Unity-facing art organization
