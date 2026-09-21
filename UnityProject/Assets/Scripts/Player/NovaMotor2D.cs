@@ -39,7 +39,9 @@ namespace NovaStriker.Player
         [SerializeField] private float velocityBreakDuration = 0.31f;
 
         [Header("Powerslide")]
-        [SerializeField] private float slideSpeed = 11.8f;
+        [SerializeField] private float quickSlideSpeed = 11.8f;
+        [SerializeField] private float burstSlideSpeed = 14.7f;
+        [SerializeField] private float velocitySlideSpeed = 18.2f;
         [SerializeField] private float slideDuration = 0.55f;
 
         [Header("Probes")]
@@ -60,9 +62,11 @@ namespace NovaStriker.Player
         private float wallLockout;
         private float dashCharge;
         private float dashTimer;
+        private ChargeTier activeDashTier = ChargeTier.Quick;
         private Vector2 dashDirection = Vector2.right;
 
         private float slideTimer;
+        private ChargeTier activeSlideTier = ChargeTier.Quick;
         private Vector2 standingColliderSize;
         private Vector2 standingColliderOffset;
 
@@ -72,6 +76,8 @@ namespace NovaStriker.Player
         public bool IsDashing => dashTimer > 0f;
         public bool IsSliding => slideTimer > 0f;
         public float DashCharge => dashCharge;
+        public ChargeTier ActiveDashTier => activeDashTier;
+        public ChargeTier ActiveSlideTier => activeSlideTier;
 
         private void Reset()
         {
@@ -251,6 +257,7 @@ namespace NovaStriker.Player
                 : new Vector2(facing, 0f);
 
             dashDirection = direction;
+            activeDashTier = tier;
 
             if (!grounded)
                 remainingAirDashes--;
@@ -267,27 +274,20 @@ namespace NovaStriker.Player
         {
             dashTimer = Mathf.Max(0f, dashTimer - dt);
 
-            ChargeTier tier = ChargeTierRules.FromDashCharge(
-                dashTimer >= velocityBreakDuration - 0.001f
-                    ? ChargeTierRules.VelocityBreakThreshold
-                    : dashTimer >= burstDashDuration - 0.001f
-                        ? ChargeTierRules.BurstThreshold
-                        : 0f
-            );
+            float speed = activeDashTier switch
+            {
+                ChargeTier.Quick => quickDashSpeed,
+                ChargeTier.Burst => burstDashSpeed,
+                _ => velocityBreakSpeed
+            };
 
-            float speed =
-                dashTimer > burstDashDuration
-                    ? velocityBreakSpeed
-                    : dashTimer > quickDashDuration
-                        ? burstDashSpeed
-                        : quickDashSpeed;
-
-            // Preserve the original dash direction for the full burst.
+            // Preserve the original dash direction and tier for the full burst.
             body.linearVelocity = dashDirection * speed;
         }
 
         private void BeginSlide(ChargeTier tier)
         {
+            activeSlideTier = tier;
             slideTimer = slideDuration + ((int)tier - 1) * 0.12f;
             dashDirection = new Vector2(facing, 0f);
 
@@ -303,8 +303,16 @@ namespace NovaStriker.Player
         private void UpdateSlide(float dt)
         {
             slideTimer = Mathf.Max(0f, slideTimer - dt);
+
+            float speed = activeSlideTier switch
+            {
+                ChargeTier.Quick => quickSlideSpeed,
+                ChargeTier.Burst => burstSlideSpeed,
+                _ => velocitySlideSpeed
+            };
+
             body.linearVelocity = new Vector2(
-                dashDirection.x * slideSpeed,
+                dashDirection.x * speed,
                 body.linearVelocity.y
             );
 
