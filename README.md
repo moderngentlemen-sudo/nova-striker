@@ -33,3 +33,5 @@ The first milestone remains a greybox gameplay room with Nova's complete movemen
 - `Docs/blender-unity-art-pipeline.md` — Blender → Unity modeling, rigging, export, and naming conventions
 - `Blender/README.md` — Blender source workspace conventions
 - `UnityProject/Assets/Art/README.md` — Unity-facing art organization
+- `Docs/asset-production-manifest.md` — human-readable asset pipeline and current status
+- `Production/asset-manifest.json` — machine-readable production source of truth
