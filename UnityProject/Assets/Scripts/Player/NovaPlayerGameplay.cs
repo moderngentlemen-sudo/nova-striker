@@ -5,13 +5,18 @@ namespace NovaStriker.Player
 {
     /// <summary>
     /// Single input entry point for one local player.
-    /// Platform-specific input adapters feed this component; it fans the same
-    /// per-player snapshot into movement and combat.
+    /// Platform-specific adapters submit frame input here. This component
+    /// latches button edges until the next physics step and fans the resulting
+    /// snapshot into movement and combat before their FixedUpdate methods run.
     /// </summary>
+    [DefaultExecutionOrder(-200)]
     public sealed class NovaPlayerGameplay : MonoBehaviour
     {
         [SerializeField] private NovaMotor2D motor;
         [SerializeField] private NovaCombatController combat;
+
+        private PlayerInputState latest;
+        private bool hasInput;
 
         private void Reset()
         {
@@ -28,18 +33,70 @@ namespace NovaStriker.Player
                 combat = GetComponent<NovaCombatController>();
         }
 
+        /// <summary>
+        /// Submit the latest frame input. Edge fields are OR-latched so a
+        /// short press is not lost when rendering is faster than physics.
+        /// </summary>
         public void SetInput(PlayerInputState state)
         {
+            latest.Move = state.Move;
+            latest.Aim = state.Aim;
+
+            latest.JumpHeld = state.JumpHeld;
+            latest.FireHeld = state.FireHeld;
+            latest.DashHeld = state.DashHeld;
+
+            latest.JumpPressed |= state.JumpPressed;
+            latest.FireReleased |= state.FireReleased;
+            latest.DashReleased |= state.DashReleased;
+            latest.MeleePressed |= state.MeleePressed;
+            latest.ParryPressed |= state.ParryPressed;
+            latest.AbilityPressed |= state.AbilityPressed;
+            latest.WeaponCyclePressed |= state.WeaponCyclePressed;
+            latest.GuardianCyclePressed |= state.GuardianCyclePressed;
+            latest.SyncPressed |= state.SyncPressed;
+
+            hasInput = true;
+        }
+
+        private void FixedUpdate()
+        {
+            PlayerInputState step = hasInput
+                ? latest
+                : PlayerInputState.Neutral;
+
             if (motor)
-                motor.SetInput(state);
+                motor.SetInput(step);
 
             if (combat)
-                combat.SetInput(state);
+                combat.SetInput(step);
+
+            ClearTransientEdges();
         }
 
         public void ClearInput()
         {
-            SetInput(PlayerInputState.Neutral);
+            latest = PlayerInputState.Neutral;
+            hasInput = false;
+
+            if (motor)
+                motor.SetInput(latest);
+
+            if (combat)
+                combat.SetInput(latest);
+        }
+
+        private void ClearTransientEdges()
+        {
+            latest.JumpPressed = false;
+            latest.FireReleased = false;
+            latest.DashReleased = false;
+            latest.MeleePressed = false;
+            latest.ParryPressed = false;
+            latest.AbilityPressed = false;
+            latest.WeaponCyclePressed = false;
+            latest.GuardianCyclePressed = false;
+            latest.SyncPressed = false;
         }
     }
 }
