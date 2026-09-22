@@ -54,6 +54,7 @@ The scene contains:
 - Nova Player 1
 - floor and containment walls
 - three one-way platforms
+- three cyan Echo traversal GrapplePoints
 - a light damage dummy
 - a heavy damage dummy
 - a hostile projectile emitter
@@ -107,10 +108,12 @@ Run these before tuning values:
 10. Stand within 1.15 units of a dummy without moving toward it and press Counter: it should select **DodgeCounter**.
 11. Hold movement toward a dummy inside 1.35 units and press Counter: it should select **Throw**.
 12. In the Nova player's `NovaCombatController`, temporarily change **Character** from Nova to Echo.
-13. With Echo selected and an enemy at distance, press Counter: it should select **Grapple** and pull the target toward Echo.
-14. Repeat close DodgeCounter and advancing Throw with Echo; the gameplay category is shared but presentation events carry Echo-specific IDs.
-15. Test all three grounded melee hits, two aerial hits, and downward dive melee.
-16. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
+13. With Echo selected and an enemy at distance, aim toward the enemy and press Counter: it should soft-lock the enemy and pull it toward Echo.
+14. Aim toward one of the cyan GrapplePoints and press Counter: Echo should soft-lock the anchor and be pulled toward it for traversal.
+15. Place an enemy and GrapplePoint at similar distance, then use right-stick/arrow aim to verify the intended candidate wins the soft-lock score.
+16. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
+17. Test all three grounded melee hits, two aerial hits, and downward dive melee.
+18. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
 ## After the first successful import
 
