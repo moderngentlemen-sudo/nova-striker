@@ -17,22 +17,6 @@ namespace NovaStriker.Debugging
         private GUIStyle header;
         private GUIStyle body;
 
-        private void Awake()
-        {
-            header = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 18,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Color.white }
-            };
-
-            body = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 13,
-                normal = { textColor = new Color(0.88f, 0.94f, 1f) }
-            };
-        }
-
         public void Configure(
             NovaMotor2D motorController,
             NovaCombatController combatController,
@@ -45,6 +29,8 @@ namespace NovaStriker.Debugging
 
         private void OnGUI()
         {
+            EnsureStyles();
+
             GUI.Box(new Rect(14, 14, 430, 212), GUIContent.none);
 
             GUI.Label(
@@ -53,16 +39,23 @@ namespace NovaStriker.Debugging
                 header
             );
 
+            float dashCharge = motor ? motor.DashCharge : 0f;
+            float fireCharge = combat ? combat.FireCharge : 0f;
+            float health = playerHealth ? playerHealth.Health : 0f;
+            string dashTier = motor
+                ? motor.ActiveDashTier.ToString()
+                : "-";
+
             string state =
-                $"Grounded: {motor?.Grounded ?? false}    " +
-                $"Crouch: {motor?.IsCrouching ?? false}    " +
-                $"Dash: {motor?.ActiveDashTier.ToString() ?? "-"}\n" +
-                $"Dash charge: {motor?.DashCharge ?? 0f:0.00}s    " +
-                $"Fire charge: {combat?.FireCharge ?? 0f:0.00}s\n" +
-                $"Parry active: {combat?.IsParryActive ?? false}    " +
-                $"Perfect: {combat?.IsPerfectParryWindow ?? false}    " +
-                $"Melee: {combat?.MeleeStep ?? 0}\n" +
-                $"Health: {(playerHealth ? playerHealth.Health : 0f):0}";
+                $"Grounded: {(motor && motor.Grounded)}    " +
+                $"Crouch: {(motor && motor.IsCrouching)}    " +
+                $"Dash tier: {dashTier}\n" +
+                $"Dash charge: {dashCharge:0.00}s    " +
+                $"Fire charge: {fireCharge:0.00}s\n" +
+                $"Parry active: {(combat && combat.IsParryActive)}    " +
+                $"Perfect: {(combat && combat.IsPerfectParryWindow)}    " +
+                $"Melee: {(combat ? combat.MeleeStep : 0)}\n" +
+                $"Health: {health:0}";
 
             GUI.Label(
                 new Rect(28, 58, 390, 82),
@@ -78,6 +71,26 @@ namespace NovaStriker.Debugging
                 "Crouch + Jump: drop through one-way platform",
                 body
             );
+        }
+
+        private void EnsureStyles()
+        {
+            if (header != null && body != null)
+                return;
+
+            header = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold
+            };
+            header.normal.textColor = Color.white;
+
+            body = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 13
+            };
+            body.normal.textColor =
+                new Color(0.88f, 0.94f, 1f);
         }
     }
 }
