@@ -1,0 +1,19 @@
+{
+  "name": "NovaStriker.Editor",
+  "rootNamespace": "NovaStriker",
+  "references": [
+    "NovaStriker.Gameplay",
+    "NovaStriker.InputSystemIntegration"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
