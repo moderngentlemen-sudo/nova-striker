@@ -64,6 +64,7 @@ namespace NovaStriker.Combat
         {
             OwnerPlayerId = ownerPlayerId;
             Faction = faction;
+            SetPhysicsLayerForFaction();
             WeaponId = weaponId;
             Behavior = behavior;
             Tier = Mathf.Clamp(tier, 0, 3);
@@ -115,6 +116,7 @@ namespace NovaStriker.Combat
             bool bonus = PerfectOpportunity && perfect;
 
             Faction = CombatFaction.Player;
+            SetPhysicsLayerForFaction();
             OwnerPlayerId = newOwnerPlayerId;
             Tier = (bonus || perfect) ? 3 : 2;
             Damage = bonus ? 48f : perfect ? 34f : 20f;
@@ -122,6 +124,20 @@ namespace NovaStriker.Combat
 
             body.linearVelocity = reverse * speed;
             return true;
+        }
+
+        private void SetPhysicsLayerForFaction()
+        {
+            string layerName = Faction == CombatFaction.Player
+                ? "PlayerProjectile"
+                : Faction == CombatFaction.Enemy
+                    ? "EnemyProjectile"
+                    : "Default";
+
+            int layer = LayerMask.NameToLayer(layerName);
+
+            if (layer >= 0)
+                gameObject.layer = layer;
         }
 
         private void OnTriggerEnter2D(Collider2D other)
