@@ -3,6 +3,7 @@ using NovaStriker.Combat;
 using NovaStriker.Core;
 using NovaStriker.Data;
 using NovaStriker.Input;
+using NovaStriker.Traversal;
 using UnityEngine;
 
 namespace NovaStriker.Player
@@ -13,6 +14,13 @@ namespace NovaStriker.Player
         Grapple = 1,
         DodgeCounter = 2,
         Throw = 3
+    }
+
+    public enum GrappleLockKind
+    {
+        None = 0,
+        Enemy = 1,
+        TraversalPoint = 2
     }
 
     /// <summary>
@@ -42,6 +50,7 @@ namespace NovaStriker.Player
         [Header("Collision")]
         [SerializeField] private LayerMask damageableMask;
         [SerializeField] private LayerMask projectileMask;
+        [SerializeField] private LayerMask grapplePointMask;
 
         [Header("Context Counter — Ranges")]
         [Tooltip("Nova projectile-deflection radius.")]
@@ -71,8 +80,17 @@ namespace NovaStriker.Player
         [SerializeField] private float throwInvulnerability = 0.12f;
 
         [Header("Context Counter — Echo Grapple")]
+        [Tooltip("Maximum enemy grapple range.")]
         [SerializeField] private float grapplePullSpeed = 10.5f;
         [SerializeField] private float grappleLift = 1.4f;
+        [Tooltip("Maximum traversal-anchor acquisition range.")]
+        [SerializeField] private float grapplePointRange = 5.75f;
+        [SerializeField] private float grappleTraversalSpeed = 13.5f;
+        [SerializeField] private float grappleTraversalDuration = 0.68f;
+        [Tooltip("Aim alignment matters more than raw distance when Echo selects a grapple lock.")]
+        [SerializeField] private float grappleAimWeight = 2.4f;
+        [SerializeField] private float grappleDistanceWeight = 0.65f;
+        [SerializeField, Range(-1f, 1f)] private float grappleMinimumAimDot = -0.20f;
 
         [Header("Melee")]
         [SerializeField] private float groundMeleeDuration = 0.20f;
@@ -83,10 +101,12 @@ namespace NovaStriker.Player
         private readonly List<Collider2D> parryHits = new(24);
         private readonly List<Collider2D> meleeHits = new(24);
         private readonly List<Collider2D> counterHits = new(24);
+        private readonly List<Collider2D> grapplePointHits = new(24);
 
         private ContactFilter2D parryFilter;
         private ContactFilter2D meleeFilter;
         private ContactFilter2D counterFilter;
+        private ContactFilter2D grapplePointFilter;
 
         private readonly HashSet<int> meleeTargets = new();
 
@@ -97,6 +117,8 @@ namespace NovaStriker.Player
         private float counterElapsed = -1f;
         private bool contextualCounterPending;
         private Damageable2D contextualCounterTarget;
+        private GrapplePoint2D contextualGrapplePoint;
+        private GrappleLockKind grappleLockKind = GrappleLockKind.None;
         private CounterMode currentCounterMode = CounterMode.Deflect;
 
         private float meleeTimer;
@@ -122,6 +144,14 @@ namespace NovaStriker.Player
             currentCounterMode == CounterMode.Deflect &&
             parryWindow.IsPerfect(counterElapsed);
         public CounterMode CurrentCounterMode => currentCounterMode;
+        public GrappleLockKind CurrentGrappleLockKind => grappleLockKind;
+        public bool HasGrappleLock => grappleLockKind != GrappleLockKind.None;
+        public Vector2 GrappleLockPosition =>
+            grappleLockKind == GrappleLockKind.Enemy && contextualCounterTarget
+                ? contextualCounterTarget.transform.position
+                : grappleLockKind == GrappleLockKind.TraversalPoint && contextualGrapplePoint
+                    ? contextualGrapplePoint.AnchorPosition
+                    : (Vector2)transform.position;
 
         public bool IsMeleeActive => meleeTimer > 0f;
         public int MeleeStep => meleeStep;
@@ -162,6 +192,12 @@ namespace NovaStriker.Player
                 useTriggers = true
             };
             counterFilter.SetLayerMask(damageableMask);
+
+            grapplePointFilter = new ContactFilter2D
+            {
+                useTriggers = true
+            };
+            grapplePointFilter.SetLayerMask(grapplePointMask);
         }
 
         public void SetInput(PlayerInputState state)
@@ -177,6 +213,9 @@ namespace NovaStriker.Player
         public void SetCharacter(StrikerCharacter value)
         {
             character = value;
+
+            if (character != StrikerCharacter.Echo)
+                ClearGrappleLock();
 
             if (!IsCountering)
                 currentCounterMode = DefaultDistanceMode();
@@ -203,6 +242,7 @@ namespace NovaStriker.Player
                     counterElapsed = -1f;
                     contextualCounterPending = false;
                     contextualCounterTarget = null;
+                    ClearGrappleLock();
                     currentCounterMode = DefaultDistanceMode();
                 }
             }
@@ -380,50 +420,81 @@ namespace NovaStriker.Player
         private void BeginContextCounter()
         {
             counterElapsed = 0f;
+            ClearGrappleLock();
 
-            float searchRadius =
+            float enemySearchRadius =
                 character == StrikerCharacter.Echo
                     ? Mathf.Max(grappleRange, throwRange)
                     : Mathf.Max(closeCounterRadius, throwRange);
 
             contextualCounterTarget =
                 FindNearestCounterTarget(
-                    searchRadius,
-                    out float distance
+                    enemySearchRadius,
+                    out float enemyDistance
                 );
 
             currentCounterMode =
                 SelectCounterMode(
                     contextualCounterTarget,
-                    distance
+                    enemyDistance
                 );
+
+            if (
+                character == StrikerCharacter.Echo &&
+                currentCounterMode == CounterMode.Grapple
+            )
+            {
+                AcquireEchoGrappleLock();
+            }
 
             contextualCounterPending =
                 currentCounterMode != CounterMode.Deflect;
 
+            Vector2 lockPosition =
+                HasGrappleLock
+                    ? GrappleLockPosition
+                    : contextualCounterTarget
+                        ? (Vector2)contextualCounterTarget.transform.position
+                        : (Vector2)transform.position;
+
             if (
-                contextualCounterTarget &&
-                motor
+                motor &&
+                (
+                    contextualCounterTarget ||
+                    HasGrappleLock
+                )
             )
             {
-                motor.FaceToward(
-                    contextualCounterTarget.transform.position.x
-                );
+                motor.FaceToward(lockPosition.x);
             }
 
             string actionId =
                 $"{character.ToString().ToLowerInvariant()}-" +
                 $"{currentCounterMode.ToString().ToLowerInvariant()}";
 
+            float lockDistance =
+                (
+                    contextualCounterTarget ||
+                    HasGrappleLock
+                )
+                    ? Vector2.Distance(
+                        transform.position,
+                        lockPosition
+                    )
+                    : 0f;
+
             GameplayEventHub.Raise(new GameplayCue(
                 GameplayCueType.CounterStarted,
                 playerId,
                 transform.position,
-                contextualCounterTarget
-                    ? DirectionTo(contextualCounterTarget.transform.position)
+                (
+                    contextualCounterTarget ||
+                    HasGrappleLock
+                )
+                    ? DirectionTo(lockPosition)
                     : AimDirection(),
                 (int)currentCounterMode,
-                contextualCounterTarget ? distance : 0f,
+                lockDistance,
                 actionId
             ));
         }
@@ -622,12 +693,14 @@ namespace NovaStriker.Player
 
         private void ExecuteEchoGrapple()
         {
-            Vector2 grappleDirection =
-                contextualCounterTarget
-                    ? DirectionTo(contextualCounterTarget.transform.position)
-                    : AimDirection();
+            if (grappleLockKind == GrappleLockKind.TraversalPoint)
+            {
+                ExecuteEchoTraversalGrapple();
+                return;
+            }
 
             if (
+                grappleLockKind != GrappleLockKind.Enemy ||
                 !contextualCounterTarget ||
                 contextualCounterTarget.IsDefeated
             )
@@ -636,7 +709,7 @@ namespace NovaStriker.Player
                     GameplayCueType.CounterGrapple,
                     playerId,
                     transform.position,
-                    grappleDirection,
+                    AimDirection(),
                     0,
                     0f,
                     "echo-grapple-whiff"
@@ -681,8 +754,220 @@ namespace NovaStriker.Player
                 targetToEcho,
                 1,
                 distance,
-                "echo-grapple"
+                "echo-grapple-enemy"
             ));
+        }
+
+        private void ExecuteEchoTraversalGrapple()
+        {
+            if (
+                !contextualGrapplePoint ||
+                !contextualGrapplePoint.Available ||
+                !motor
+            )
+            {
+                return;
+            }
+
+            Vector2 anchor =
+                contextualGrapplePoint.AnchorPosition;
+
+            float distance =
+                Vector2.Distance(
+                    transform.position,
+                    anchor
+                );
+
+            if (distance > grapplePointRange + 0.25f)
+                return;
+
+            motor.FaceToward(anchor.x);
+
+            motor.BeginGrappleTraversal(
+                anchor,
+                grappleTraversalSpeed,
+                grappleTraversalDuration,
+                contextualGrapplePoint.ArrivalDistance
+            );
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterGrappleTraversal,
+                playerId,
+                anchor,
+                DirectionTo(anchor),
+                1,
+                distance,
+                contextualGrapplePoint.GrappleId
+            ));
+        }
+
+        private void AcquireEchoGrappleLock()
+        {
+            ClearGrappleLock();
+
+            Vector2 aim =
+                input.Aim.sqrMagnitude > 0.0484f
+                    ? input.Aim.normalized
+                    : AimDirection();
+
+            float bestScore =
+                float.NegativeInfinity;
+
+            counterHits.Clear();
+
+            int enemyCount =
+                Physics2D.OverlapCircle(
+                    transform.position,
+                    grappleRange,
+                    counterFilter,
+                    counterHits
+                );
+
+            for (int i = 0; i < enemyCount; i++)
+            {
+                Damageable2D candidate =
+                    counterHits[i].GetComponentInParent<Damageable2D>();
+
+                if (
+                    !candidate ||
+                    candidate == selfDamageable ||
+                    candidate.IsDefeated ||
+                    candidate.Faction != CombatFaction.Enemy
+                )
+                {
+                    continue;
+                }
+
+                Vector2 position =
+                    candidate.transform.position;
+
+                float distance =
+                    Vector2.Distance(
+                        transform.position,
+                        position
+                    );
+
+                float score =
+                    ScoreGrappleCandidate(
+                        position,
+                        aim,
+                        distance,
+                        grappleRange
+                    ) + 0.08f;
+
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                grappleLockKind = GrappleLockKind.Enemy;
+                contextualCounterTarget = candidate;
+                contextualGrapplePoint = null;
+            }
+
+            grapplePointHits.Clear();
+
+            int pointCount =
+                Physics2D.OverlapCircle(
+                    transform.position,
+                    grapplePointRange,
+                    grapplePointFilter,
+                    grapplePointHits
+                );
+
+            for (int i = 0; i < pointCount; i++)
+            {
+                GrapplePoint2D point =
+                    grapplePointHits[i].GetComponentInParent<GrapplePoint2D>();
+
+                if (
+                    !point ||
+                    !point.Available
+                )
+                {
+                    continue;
+                }
+
+                Vector2 position =
+                    point.AnchorPosition;
+
+                float distance =
+                    Vector2.Distance(
+                        transform.position,
+                        position
+                    );
+
+                float score =
+                    ScoreGrappleCandidate(
+                        position,
+                        aim,
+                        distance,
+                        grapplePointRange
+                    );
+
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                grappleLockKind = GrappleLockKind.TraversalPoint;
+                contextualCounterTarget = null;
+                contextualGrapplePoint = point;
+            }
+
+            if (!HasGrappleLock)
+                return;
+
+            Vector2 lockPosition =
+                GrappleLockPosition;
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterGrappleLock,
+                playerId,
+                lockPosition,
+                DirectionTo(lockPosition),
+                (int)grappleLockKind,
+                Vector2.Distance(
+                    transform.position,
+                    lockPosition
+                ),
+                grappleLockKind == GrappleLockKind.Enemy
+                    ? "echo-grapple-lock-enemy"
+                    : contextualGrapplePoint.GrappleId
+            ));
+        }
+
+        private float ScoreGrappleCandidate(
+            Vector2 worldPosition,
+            Vector2 aim,
+            float distance,
+            float maxRange)
+        {
+            Vector2 direction =
+                DirectionTo(worldPosition);
+
+            float alignment =
+                Vector2.Dot(
+                    aim,
+                    direction
+                );
+
+            if (alignment < grappleMinimumAimDot)
+                return float.NegativeInfinity;
+
+            float normalizedDistance =
+                Mathf.Clamp01(
+                    distance /
+                    Mathf.Max(0.01f, maxRange)
+                );
+
+            return
+                alignment * grappleAimWeight -
+                normalizedDistance * grappleDistanceWeight;
+        }
+
+        private void ClearGrappleLock()
+        {
+            grappleLockKind = GrappleLockKind.None;
+            contextualGrapplePoint = null;
         }
 
         private void UpdateProjectileDeflect()
@@ -997,6 +1282,9 @@ namespace NovaStriker.Player
 
             Gizmos.color = new Color(0.65f, 0.4f, 1f);
             Gizmos.DrawWireSphere(transform.position, grappleRange);
+
+            Gizmos.color = new Color(0.25f, 0.95f, 1f);
+            Gizmos.DrawWireSphere(transform.position, grapplePointRange);
         }
 #endif
     }
