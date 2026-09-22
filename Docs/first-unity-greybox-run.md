@@ -85,7 +85,7 @@ Gamepad / PlayStation:
 - R2 — fire / charge
 - L2 — dash / charge
 - Square — melee
-- Circle — contextual Counter
+- Circle — character-specific contextual Counter
 - L1 — ability
 - R1 or Triangle — weapon cycle
 - L3 or D-pad Up — Guardian cycle
@@ -102,12 +102,15 @@ Run these before tuning values:
 5. Crouch + dash at all three tiers and verify Powerslide damage.
 6. Fire uncharged and all three charge tiers at both dummies.
 7. Confirm charged shots cancel hostile shots.
-8. Test Circle / I with no nearby enemy: it should select **Deflect** and reflect regular hostile shots during the active window.
-9. Stand within 2.40 units of an enemy but outside 1.15 units and press Counter: it should select **Intercept**.
-10. Stand within 1.15 units and press Counter: it should select **Reversal**.
-11. Perfect-deflect the periodic highlighted projectile by timing the 0.035–0.078 s perfect window.
-12. Test all three grounded melee hits, two aerial hits, and downward dive melee.
-13. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
+8. With the greybox player set to **Nova**, press Counter at distance/no close enemy: it should select **Deflect**.
+9. Perfect-deflect the periodic highlighted projectile by timing the 0.035–0.078 s perfect window.
+10. Stand within 1.15 units of a dummy without moving toward it and press Counter: it should select **DodgeCounter**.
+11. Hold movement toward a dummy inside 1.35 units and press Counter: it should select **Throw**.
+12. In the Nova player's `NovaCombatController`, temporarily change **Character** from Nova to Echo.
+13. With Echo selected and an enemy at distance, press Counter: it should select **Grapple** and pull the target toward Echo.
+14. Repeat close DodgeCounter and advancing Throw with Echo; the gameplay category is shared but presentation events carry Echo-specific IDs.
+15. Test all three grounded melee hits, two aerial hits, and downward dive melee.
+16. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
 ## After the first successful import
 
