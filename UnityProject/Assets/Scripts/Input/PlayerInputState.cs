@@ -25,7 +25,7 @@ namespace NovaStriker.Input
         public bool DashReleased;
 
         public bool MeleePressed;
-        public bool ParryPressed;
+        public bool CounterPressed;
         public bool AbilityPressed;
 
         public bool WeaponCyclePressed;
