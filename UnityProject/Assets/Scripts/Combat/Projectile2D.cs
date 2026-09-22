@@ -1,0 +1,201 @@
+using NovaStriker.Core;
+using NovaStriker.Data;
+using UnityEngine;
+
+namespace NovaStriker.Combat
+{
+    /// <summary>
+    /// Shared projectile ownership/collision model for the Unity migration.
+    /// Advanced weapon-specific behaviors are layered on later.
+    /// </summary>
+    [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+    public sealed class Projectile2D : MonoBehaviour
+    {
+        [SerializeField] private Rigidbody2D body;
+        [SerializeField] private Collider2D hitCollider;
+        [SerializeField, Min(0.05f)] private float lifetime = 3f;
+
+        private float lifeRemaining;
+        private bool initialized;
+
+        public CombatFaction Faction { get; private set; }
+        public int OwnerPlayerId { get; private set; } = -1;
+        public int Tier { get; private set; }
+        public float Damage { get; private set; }
+        public string WeaponId { get; private set; }
+        public WeaponBehavior Behavior { get; private set; }
+        public bool Piercing { get; private set; }
+        public bool Parryable { get; private set; }
+        public bool PerfectOpportunity { get; private set; }
+
+        public Vector2 Velocity => body ? body.linearVelocity : Vector2.zero;
+
+        private void Reset()
+        {
+            body = GetComponent<Rigidbody2D>();
+            hitCollider = GetComponent<Collider2D>();
+            if (hitCollider)
+                hitCollider.isTrigger = true;
+        }
+
+        private void Awake()
+        {
+            if (!body)
+                body = GetComponent<Rigidbody2D>();
+
+            if (!hitCollider)
+                hitCollider = GetComponent<Collider2D>();
+
+            lifeRemaining = lifetime;
+        }
+
+        public void Initialize(
+            int ownerPlayerId,
+            CombatFaction faction,
+            string weaponId,
+            WeaponBehavior behavior,
+            Vector2 direction,
+            float speed,
+            int tier,
+            float damage,
+            bool piercing = false,
+            bool parryable = true,
+            bool perfectOpportunity = false)
+        {
+            OwnerPlayerId = ownerPlayerId;
+            Faction = faction;
+            WeaponId = weaponId;
+            Behavior = behavior;
+            Tier = Mathf.Clamp(tier, 0, 3);
+            Damage = Mathf.Max(0f, damage);
+            Piercing = piercing;
+            Parryable = parryable;
+            PerfectOpportunity = perfectOpportunity;
+
+            Vector2 normalized = direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : Vector2.right;
+
+            body.linearVelocity = normalized * Mathf.Max(0f, speed);
+            lifeRemaining = lifetime;
+            initialized = true;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!initialized)
+                return;
+
+            lifeRemaining -= Time.fixedDeltaTime;
+
+            if (lifeRemaining <= 0f)
+                Destroy(gameObject);
+        }
+
+        /// <summary>
+        /// Reflect an enemy projectile using the timing/damage behavior from the
+        /// browser reference. A perfect opportunity plus a perfect parry receives
+        /// the highest reflected damage.
+        /// </summary>
+        public bool TryParry(int newOwnerPlayerId, bool perfect)
+        {
+            if (
+                Faction != CombatFaction.Enemy ||
+                !Parryable
+            )
+            {
+                return false;
+            }
+
+            Vector2 reverse = body.linearVelocity.sqrMagnitude > 0.0001f
+                ? -body.linearVelocity.normalized
+                : Vector2.right;
+
+            float speed = Mathf.Max(0.01f, body.linearVelocity.magnitude) * 1.25f;
+            bool bonus = PerfectOpportunity && perfect;
+
+            Faction = CombatFaction.Player;
+            OwnerPlayerId = newOwnerPlayerId;
+            Tier = (bonus || perfect) ? 3 : 2;
+            Damage = bonus ? 48f : perfect ? 34f : 20f;
+            PerfectOpportunity = false;
+
+            body.linearVelocity = reverse * speed;
+            return true;
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!initialized)
+                return;
+
+            Projectile2D otherProjectile = other.GetComponentInParent<Projectile2D>();
+
+            if (otherProjectile && otherProjectile != this)
+            {
+                HandleProjectileCollision(otherProjectile);
+                return;
+            }
+
+            Damageable2D damageable = other.GetComponentInParent<Damageable2D>();
+
+            if (!damageable)
+                return;
+
+            if (
+                damageable.Faction != CombatFaction.Neutral &&
+                damageable.Faction == Faction
+            )
+            {
+                return;
+            }
+
+            Vector2 direction = body.linearVelocity.sqrMagnitude > 0.0001f
+                ? body.linearVelocity.normalized
+                : Vector2.zero;
+
+            float knockbackScale = Tier >= 2 ? (1.4f + Tier * 0.6f) : 0f;
+            Vector2 knockback = new(
+                direction.x * knockbackScale,
+                Tier >= 2 ? 0.6f * Tier : 0f
+            );
+
+            bool applied = damageable.ApplyDamage(new DamagePacket(
+                Damage,
+                knockback,
+                transform.position,
+                Faction,
+                OwnerPlayerId,
+                Tier,
+                WeaponId
+            ));
+
+            if (applied && !Piercing)
+                Destroy(gameObject);
+        }
+
+        private void HandleProjectileCollision(Projectile2D other)
+        {
+            // Browser reference behavior: a friendly charge tier 1+ deletes a
+            // hostile projectile and continues travelling.
+            if (
+                Faction == CombatFaction.Player &&
+                Tier >= 1 &&
+                other.Faction == CombatFaction.Enemy
+            )
+            {
+                GameplayEventHub.Raise(new GameplayCue(
+                    GameplayCueType.ProjectileCancelled,
+                    OwnerPlayerId,
+                    other.transform.position,
+                    Velocity.normalized,
+                    Tier,
+                    other.Damage,
+                    WeaponId
+                ));
+
+                Destroy(other.gameObject);
+            }
+        }
+    }
+}
