@@ -23,6 +23,9 @@ namespace NovaStriker.Combat
         public float MaxHealth => maxHealth;
         public float Health { get; private set; }
         public bool IsDefeated => Health <= 0f;
+        public bool IsInvulnerable => invulnerabilityRemaining > 0f;
+
+        private float invulnerabilityRemaining;
 
         private void Reset()
         {
@@ -37,9 +40,21 @@ namespace NovaStriker.Combat
             Health = maxHealth;
         }
 
+        private void FixedUpdate()
+        {
+            if (invulnerabilityRemaining > 0f)
+            {
+                invulnerabilityRemaining =
+                    Mathf.Max(
+                        0f,
+                        invulnerabilityRemaining - Time.fixedDeltaTime
+                    );
+            }
+        }
+
         public bool ApplyDamage(DamagePacket packet)
         {
-            if (IsDefeated)
+            if (IsDefeated || IsInvulnerable)
                 return false;
 
             if (
@@ -88,9 +103,28 @@ namespace NovaStriker.Combat
             return true;
         }
 
+        public void GrantInvulnerability(float seconds)
+        {
+            invulnerabilityRemaining =
+                Mathf.Max(invulnerabilityRemaining, Mathf.Max(0f, seconds));
+        }
+
+        public void ApplyExternalVelocity(Vector2 velocity)
+        {
+            if (body)
+                body.linearVelocity = velocity;
+        }
+
+        public void AddExternalVelocity(Vector2 velocity)
+        {
+            if (body)
+                body.linearVelocity += velocity;
+        }
+
         public void RestoreFullHealth()
         {
             Health = maxHealth;
+            invulnerabilityRemaining = 0f;
         }
     }
 }
