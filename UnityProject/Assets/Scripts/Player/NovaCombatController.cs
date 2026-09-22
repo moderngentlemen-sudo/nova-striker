@@ -10,23 +10,31 @@ namespace NovaStriker.Player
     public enum CounterMode
     {
         Deflect = 0,
-        Intercept = 1,
-        Reversal = 2
+        Grapple = 1,
+        DodgeCounter = 2,
+        Throw = 3
     }
 
     /// <summary>
     /// Greybox combat controller for Nova/Echo.
-    /// Keeps timing, hit windows, projectile ownership, contextual counter
-    /// behavior, and damage in gameplay while emitting presentation cues for
-    /// animation/VFX/audio/camera.
+    ///
+    /// Circle / Counter is contextual:
+    /// - moving toward a nearby enemy -> Throw
+    /// - close enemy -> Dodge + Counter
+    /// - distance: Nova -> Deflect, Echo -> Grapple
+    ///
+    /// The gameplay layer chooses the action; animation/VFX/audio receive
+    /// character-specific cues and can present Nova/Echo differently.
     /// </summary>
     public sealed class NovaCombatController : MonoBehaviour
     {
         [Header("Identity")]
         [SerializeField] private int playerId;
+        [SerializeField] private StrikerCharacter character = StrikerCharacter.Nova;
 
         [Header("References")]
         [SerializeField] private NovaMotor2D motor;
+        [SerializeField] private Damageable2D selfDamageable;
         [SerializeField] private Transform muzzleSocket;
         [SerializeField] private Projectile2D projectilePrefab;
         [SerializeField] private WeaponDefinition equippedWeapon;
@@ -35,18 +43,36 @@ namespace NovaStriker.Player
         [SerializeField] private LayerMask damageableMask;
         [SerializeField] private LayerMask projectileMask;
 
-        [Header("Context Counter")]
-        [Tooltip("Hostile projectiles inside this radius can be reflected during the counter window.")]
-        [SerializeField] private float parryRadius = 0.72f;
-        [Tooltip("Enemy within this range selects the close Reversal counter.")]
-        [SerializeField] private float reversalRadius = 1.15f;
-        [Tooltip("Enemy within this range selects Intercept. Beyond it, Circle becomes Deflect.")]
-        [SerializeField] private float interceptRadius = 2.40f;
-        [SerializeField] private float reversalDamage = 14f;
-        [SerializeField] private float interceptDamage = 8f;
-        [SerializeField] private Vector2 reversalKnockback = new(5.4f, 2.4f);
-        [SerializeField] private Vector2 interceptKnockback = new(3.0f, 1.0f);
+        [Header("Context Counter — Ranges")]
+        [Tooltip("Nova projectile-deflection radius.")]
+        [SerializeField] private float deflectRadius = 0.72f;
+        [Tooltip("Inside this range, a non-advancing counter becomes Dodge + Counter.")]
+        [SerializeField] private float closeCounterRadius = 1.15f;
+        [Tooltip("Advancing toward an enemy inside this range triggers Throw.")]
+        [SerializeField] private float throwRange = 1.35f;
+        [Tooltip("Echo can grapple enemies at or inside this range.")]
+        [SerializeField] private float grappleRange = 4.25f;
+        [Tooltip("How directly movement must point toward the target to count as advancing.")]
+        [SerializeField, Range(-1f, 1f)] private float throwApproachDot = 0.55f;
+
+        [Header("Context Counter — Timing")]
         [SerializeField] private ParryWindow parryWindow;
+
+        [Header("Context Counter — Dodge")]
+        [SerializeField] private float dodgeCounterDamage = 14f;
+        [SerializeField] private Vector2 dodgeCounterKnockback = new(4.8f, 2.0f);
+        [SerializeField] private float dodgeSpeed = 7.4f;
+        [SerializeField] private float dodgeDuration = 0.11f;
+        [SerializeField] private float dodgeInvulnerability = 0.18f;
+
+        [Header("Context Counter — Throw")]
+        [SerializeField] private float throwDamage = 10f;
+        [SerializeField] private Vector2 throwKnockback = new(7.0f, 4.5f);
+        [SerializeField] private float throwInvulnerability = 0.12f;
+
+        [Header("Context Counter — Echo Grapple")]
+        [SerializeField] private float grapplePullSpeed = 10.5f;
+        [SerializeField] private float grappleLift = 1.4f;
 
         [Header("Melee")]
         [SerializeField] private float groundMeleeDuration = 0.20f;
@@ -82,14 +108,19 @@ namespace NovaStriker.Player
         private int airMeleeStep;
 
         public int PlayerId => playerId;
+        public StrikerCharacter Character => character;
         public float FireCharge => fireCharge;
 
         public bool IsCountering => counterElapsed >= 0f;
         public bool IsParrying => IsCountering;
         public bool IsParryActive =>
-            IsCountering && parryWindow.IsActive(counterElapsed);
+            IsCountering &&
+            currentCounterMode == CounterMode.Deflect &&
+            parryWindow.IsActive(counterElapsed);
         public bool IsPerfectParryWindow =>
-            IsCountering && parryWindow.IsPerfect(counterElapsed);
+            IsCountering &&
+            currentCounterMode == CounterMode.Deflect &&
+            parryWindow.IsPerfect(counterElapsed);
         public CounterMode CurrentCounterMode => currentCounterMode;
 
         public bool IsMeleeActive => meleeTimer > 0f;
@@ -99,6 +130,7 @@ namespace NovaStriker.Player
         private void Reset()
         {
             motor = GetComponent<NovaMotor2D>();
+            selfDamageable = GetComponent<Damageable2D>();
             parryWindow = ParryWindow.Default;
         }
 
@@ -106,6 +138,9 @@ namespace NovaStriker.Player
         {
             if (!motor)
                 motor = GetComponent<NovaMotor2D>();
+
+            if (!selfDamageable)
+                selfDamageable = GetComponent<Damageable2D>();
 
             if (parryWindow.TotalDuration <= 0f)
                 parryWindow = ParryWindow.Default;
@@ -139,6 +174,14 @@ namespace NovaStriker.Player
             equippedWeapon = weapon;
         }
 
+        public void SetCharacter(StrikerCharacter value)
+        {
+            character = value;
+
+            if (!IsCountering)
+                currentCounterMode = DefaultDistanceMode();
+        }
+
         private void FixedUpdate()
         {
             float dt = Time.fixedDeltaTime;
@@ -160,7 +203,7 @@ namespace NovaStriker.Player
                     counterElapsed = -1f;
                     contextualCounterPending = false;
                     contextualCounterTarget = null;
-                    currentCounterMode = CounterMode.Deflect;
+                    currentCounterMode = DefaultDistanceMode();
                 }
             }
 
@@ -323,19 +366,338 @@ namespace NovaStriker.Player
                 ExecuteContextCounter();
             }
 
-            if (!IsParryActive)
+            if (
+                currentCounterMode != CounterMode.Deflect ||
+                !parryWindow.IsActive(counterElapsed)
+            )
+            {
+                return;
+            }
+
+            UpdateProjectileDeflect();
+        }
+
+        private void BeginContextCounter()
+        {
+            counterElapsed = 0f;
+
+            float searchRadius =
+                character == StrikerCharacter.Echo
+                    ? Mathf.Max(grappleRange, throwRange)
+                    : Mathf.Max(closeCounterRadius, throwRange);
+
+            contextualCounterTarget =
+                FindNearestCounterTarget(
+                    searchRadius,
+                    out float distance
+                );
+
+            currentCounterMode =
+                SelectCounterMode(
+                    contextualCounterTarget,
+                    distance
+                );
+
+            contextualCounterPending =
+                currentCounterMode != CounterMode.Deflect;
+
+            if (
+                contextualCounterTarget &&
+                motor
+            )
+            {
+                motor.FaceToward(
+                    contextualCounterTarget.transform.position.x
+                );
+            }
+
+            string actionId =
+                $"{character.ToString().ToLowerInvariant()}-" +
+                $"{currentCounterMode.ToString().ToLowerInvariant()}";
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterStarted,
+                playerId,
+                transform.position,
+                contextualCounterTarget
+                    ? DirectionTo(contextualCounterTarget.transform.position)
+                    : AimDirection(),
+                (int)currentCounterMode,
+                contextualCounterTarget ? distance : 0f,
+                actionId
+            ));
+        }
+
+        private CounterMode SelectCounterMode(
+            Damageable2D target,
+            float distance)
+        {
+            if (target)
+            {
+                Vector2 toTarget =
+                    DirectionTo(target.transform.position);
+
+                if (
+                    distance <= throwRange &&
+                    IsMovingToward(toTarget)
+                )
+                {
+                    return CounterMode.Throw;
+                }
+
+                if (distance <= closeCounterRadius)
+                    return CounterMode.DodgeCounter;
+            }
+
+            if (character == StrikerCharacter.Echo)
+                return CounterMode.Grapple;
+
+            return CounterMode.Deflect;
+        }
+
+        private bool IsMovingToward(Vector2 directionToTarget)
+        {
+            if (input.Move.sqrMagnitude < 0.1225f)
+                return false;
+
+            Vector2 moveDirection = input.Move.normalized;
+
+            return Vector2.Dot(
+                moveDirection,
+                directionToTarget
+            ) >= throwApproachDot;
+        }
+
+        private CounterMode DefaultDistanceMode()
+        {
+            return character == StrikerCharacter.Echo
+                ? CounterMode.Grapple
+                : CounterMode.Deflect;
+        }
+
+        private void ExecuteContextCounter()
+        {
+            switch (currentCounterMode)
+            {
+                case CounterMode.Grapple:
+                    ExecuteEchoGrapple();
+                    break;
+
+                case CounterMode.DodgeCounter:
+                    ExecuteDodgeCounter();
+                    break;
+
+                case CounterMode.Throw:
+                    ExecuteThrow();
+                    break;
+            }
+        }
+
+        private void ExecuteDodgeCounter()
+        {
+            if (!HasValidCounterTarget(closeCounterRadius + 0.25f))
                 return;
 
+            Vector2 targetPosition =
+                contextualCounterTarget.transform.position;
+
+            Vector2 towardTarget =
+                DirectionTo(targetPosition);
+
+            if (motor)
+            {
+                motor.FaceToward(targetPosition.x);
+
+                Vector2 dodgeDirection = new(
+                    -Mathf.Sign(towardTarget.x == 0f ? motor.Facing : towardTarget.x),
+                    0.16f
+                );
+
+                motor.BeginCounterDodge(
+                    dodgeDirection,
+                    dodgeSpeed,
+                    dodgeDuration
+                );
+            }
+
+            selfDamageable?.GrantInvulnerability(
+                dodgeInvulnerability
+            );
+
+            Vector2 knockback = new(
+                towardTarget.x * dodgeCounterKnockback.x,
+                dodgeCounterKnockback.y
+            );
+
+            string actionId =
+                $"{character.ToString().ToLowerInvariant()}-dodge-counter";
+
+            bool applied =
+                contextualCounterTarget.ApplyDamage(
+                    new DamagePacket(
+                        dodgeCounterDamage,
+                        knockback,
+                        targetPosition,
+                        CombatFaction.Player,
+                        playerId,
+                        2,
+                        actionId
+                    )
+                );
+
+            if (!applied)
+                return;
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterDodge,
+                playerId,
+                targetPosition,
+                towardTarget,
+                2,
+                dodgeCounterDamage,
+                actionId
+            ));
+        }
+
+        private void ExecuteThrow()
+        {
+            if (!HasValidCounterTarget(throwRange + 0.20f))
+                return;
+
+            Vector2 targetPosition =
+                contextualCounterTarget.transform.position;
+
+            Vector2 towardTarget =
+                DirectionTo(targetPosition);
+
+            if (motor)
+                motor.FaceToward(targetPosition.x);
+
+            selfDamageable?.GrantInvulnerability(
+                throwInvulnerability
+            );
+
+            Vector2 throwDirection =
+                input.Move.sqrMagnitude > 0.1225f
+                    ? input.Move.normalized
+                    : towardTarget;
+
+            if (Mathf.Abs(throwDirection.x) < 0.25f)
+                throwDirection.x = towardTarget.x;
+
+            Vector2 knockback = new(
+                Mathf.Sign(throwDirection.x) * throwKnockback.x,
+                throwKnockback.y
+            );
+
+            string actionId =
+                $"{character.ToString().ToLowerInvariant()}-throw";
+
+            bool applied =
+                contextualCounterTarget.ApplyDamage(
+                    new DamagePacket(
+                        throwDamage,
+                        knockback,
+                        targetPosition,
+                        CombatFaction.Player,
+                        playerId,
+                        2,
+                        actionId
+                    )
+                );
+
+            if (!applied)
+                return;
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterThrow,
+                playerId,
+                targetPosition,
+                throwDirection,
+                2,
+                throwDamage,
+                actionId
+            ));
+        }
+
+        private void ExecuteEchoGrapple()
+        {
+            Vector2 grappleDirection =
+                contextualCounterTarget
+                    ? DirectionTo(contextualCounterTarget.transform.position)
+                    : AimDirection();
+
+            if (
+                !contextualCounterTarget ||
+                contextualCounterTarget.IsDefeated
+            )
+            {
+                GameplayEventHub.Raise(new GameplayCue(
+                    GameplayCueType.CounterGrapple,
+                    playerId,
+                    transform.position,
+                    grappleDirection,
+                    0,
+                    0f,
+                    "echo-grapple-whiff"
+                ));
+                return;
+            }
+
+            float distance =
+                Vector2.Distance(
+                    transform.position,
+                    contextualCounterTarget.transform.position
+                );
+
+            if (distance > grappleRange + 0.25f)
+                return;
+
+            Vector2 targetToEcho =
+                (
+                    (Vector2)transform.position -
+                    (Vector2)contextualCounterTarget.transform.position
+                ).normalized;
+
+            Vector2 pullVelocity =
+                targetToEcho * grapplePullSpeed +
+                Vector2.up * grappleLift;
+
+            contextualCounterTarget.ApplyExternalVelocity(
+                pullVelocity
+            );
+
+            if (motor)
+            {
+                motor.FaceToward(
+                    contextualCounterTarget.transform.position.x
+                );
+            }
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterGrapple,
+                playerId,
+                contextualCounterTarget.transform.position,
+                targetToEcho,
+                1,
+                distance,
+                "echo-grapple"
+            ));
+        }
+
+        private void UpdateProjectileDeflect()
+        {
             parryHits.Clear();
 
             int count = Physics2D.OverlapCircle(
                 transform.position,
-                parryRadius,
+                deflectRadius,
                 parryFilter,
                 parryHits
             );
 
-            bool perfect = IsPerfectParryWindow;
+            bool perfect =
+                parryWindow.IsPerfect(counterElapsed);
 
             for (int i = 0; i < count; i++)
             {
@@ -345,10 +707,21 @@ namespace NovaStriker.Player
                 if (!projectile)
                     continue;
 
-                bool bonusOpportunity = projectile.PerfectOpportunity;
+                bool bonusOpportunity =
+                    projectile.PerfectOpportunity;
 
                 if (!projectile.TryParry(playerId, perfect))
                     continue;
+
+                GameplayEventHub.Raise(new GameplayCue(
+                    GameplayCueType.CounterDeflect,
+                    playerId,
+                    projectile.transform.position,
+                    projectile.Velocity.normalized,
+                    projectile.Tier,
+                    projectile.Damage,
+                    "nova-deflect"
+                ));
 
                 GameplayEventHub.Raise(new GameplayCue(
                     perfect
@@ -364,136 +737,23 @@ namespace NovaStriker.Player
             }
         }
 
-        private void BeginContextCounter()
-        {
-            counterElapsed = 0f;
-            contextualCounterTarget =
-                FindNearestCounterTarget(
-                    interceptRadius,
-                    out float distance
-                );
-
-            if (!contextualCounterTarget)
-            {
-                currentCounterMode = CounterMode.Deflect;
-                contextualCounterPending = false;
-            }
-            else if (distance <= reversalRadius)
-            {
-                currentCounterMode = CounterMode.Reversal;
-                contextualCounterPending = true;
-            }
-            else
-            {
-                currentCounterMode = CounterMode.Intercept;
-                contextualCounterPending = true;
-            }
-
-            if (
-                contextualCounterTarget &&
-                motor
-            )
-            {
-                motor.FaceToward(
-                    contextualCounterTarget.transform.position.x
-                );
-            }
-
-            GameplayEventHub.Raise(new GameplayCue(
-                GameplayCueType.CounterStarted,
-                playerId,
-                transform.position,
-                contextualCounterTarget
-                    ? DirectionTo(contextualCounterTarget.transform.position)
-                    : AimDirection(),
-                (int)currentCounterMode,
-                contextualCounterTarget ? distance : 0f,
-                currentCounterMode.ToString().ToLowerInvariant()
-            ));
-        }
-
-        private void ExecuteContextCounter()
+        private bool HasValidCounterTarget(float allowedRange)
         {
             if (
                 !contextualCounterTarget ||
                 contextualCounterTarget.IsDefeated
             )
             {
-                return;
+                return false;
             }
 
-            float allowedRange = currentCounterMode == CounterMode.Reversal
-                ? reversalRadius + 0.20f
-                : interceptRadius + 0.25f;
-
-            Vector2 targetPosition =
-                contextualCounterTarget.transform.position;
-
-            Vector2 delta =
-                targetPosition - (Vector2)transform.position;
-
-            float distance = delta.magnitude;
-
-            if (distance > allowedRange)
-                return;
-
-            Vector2 direction = delta.sqrMagnitude > 0.0001f
-                ? delta.normalized
-                : new Vector2(motor && motor.Facing < 0 ? -1f : 1f, 0f);
-
-            if (motor)
-                motor.FaceToward(targetPosition.x);
-
-            bool reversal =
-                currentCounterMode == CounterMode.Reversal;
-
-            float damage =
-                reversal
-                    ? reversalDamage
-                    : interceptDamage;
-
-            Vector2 configuredKnockback =
-                reversal
-                    ? reversalKnockback
-                    : interceptKnockback;
-
-            Vector2 knockback = new(
-                direction.x * configuredKnockback.x,
-                configuredKnockback.y
-            );
-
-            string counterId =
-                reversal
-                    ? "counter-reversal"
-                    : "counter-intercept";
-
-            bool applied =
-                contextualCounterTarget.ApplyDamage(
-                    new DamagePacket(
-                        damage,
-                        knockback,
-                        targetPosition,
-                        CombatFaction.Player,
-                        playerId,
-                        reversal ? 2 : 1,
-                        counterId
-                    )
+            float distance =
+                Vector2.Distance(
+                    transform.position,
+                    contextualCounterTarget.transform.position
                 );
 
-            if (!applied)
-                return;
-
-            GameplayEventHub.Raise(new GameplayCue(
-                reversal
-                    ? GameplayCueType.CounterReversal
-                    : GameplayCueType.CounterIntercept,
-                playerId,
-                targetPosition,
-                direction,
-                reversal ? 2 : 1,
-                damage,
-                counterId
-            ));
+            return distance <= allowedRange;
         }
 
         private Damageable2D FindNearestCounterTarget(
@@ -519,6 +779,7 @@ namespace NovaStriker.Player
 
                 if (
                     !candidate ||
+                    candidate == selfDamageable ||
                     candidate.IsDefeated ||
                     candidate.Faction != CombatFaction.Enemy
                 )
@@ -566,8 +827,6 @@ namespace NovaStriker.Player
             if (meleeTimer <= 0f)
                 return;
 
-            // Browser reference active hit window:
-            // meleeTimer < 0.150s && meleeTimer > 0.045s.
             if (
                 meleeTimer >= 0.150f ||
                 meleeTimer <= 0.045f
@@ -728,13 +987,16 @@ namespace NovaStriker.Player
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, parryRadius);
+            Gizmos.DrawWireSphere(transform.position, deflectRadius);
 
             Gizmos.color = new Color(1f, 0.75f, 0.2f);
-            Gizmos.DrawWireSphere(transform.position, reversalRadius);
+            Gizmos.DrawWireSphere(transform.position, closeCounterRadius);
+
+            Gizmos.color = new Color(1f, 0.35f, 0.2f);
+            Gizmos.DrawWireSphere(transform.position, throwRange);
 
             Gizmos.color = new Color(0.65f, 0.4f, 1f);
-            Gizmos.DrawWireSphere(transform.position, interceptRadius);
+            Gizmos.DrawWireSphere(transform.position, grappleRange);
         }
 #endif
     }
