@@ -31,7 +31,7 @@ namespace NovaStriker.Debugging
         {
             EnsureStyles();
 
-            GUI.Box(new Rect(14, 14, 455, 236), GUIContent.none);
+            GUI.Box(new Rect(14, 14, 455, 252), GUIContent.none);
 
             GUI.Label(
                 new Rect(28, 24, 390, 28),
@@ -54,6 +54,7 @@ namespace NovaStriker.Debugging
             string state =
                 $"Character: {character}    " +
                 $"Counter: {(combat ? combat.CurrentCounterMode.ToString() : "-")}\n" +
+                $"Grapple lock: {(combat ? combat.CurrentGrappleLockKind.ToString() : "-")}\n" +
                 $"Grounded: {(motor && motor.Grounded)}    " +
                 $"Crouch: {(motor && motor.IsCrouching)}    " +
                 $"Dash tier: {dashTier}\n" +
@@ -65,13 +66,13 @@ namespace NovaStriker.Debugging
                 $"Health: {health:0}";
 
             GUI.Label(
-                new Rect(28, 58, 415, 118),
+                new Rect(28, 58, 415, 132),
                 state,
                 body
             );
 
             GUI.Label(
-                new Rect(28, 180, 420, 58),
+                new Rect(28, 194, 420, 58),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
                 "U / Square: melee    I / Circle: contextual Counter\n" +
