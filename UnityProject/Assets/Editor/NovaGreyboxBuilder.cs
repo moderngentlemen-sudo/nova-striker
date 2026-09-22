@@ -4,6 +4,7 @@ using NovaStriker.Data;
 using NovaStriker.Debugging;
 using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
+using NovaStriker.Traversal;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -53,6 +54,9 @@ namespace NovaStriker.EditorTools
         private const string ProjectileMaterialPath =
             GeneratedRoot + "/MAT_Greybox_Projectile.mat";
 
+        private const string GrapplePointMaterialPath =
+            GeneratedRoot + "/MAT_Greybox_GrapplePoint.mat";
+
         [MenuItem(
             "Nova Striker/Greybox/Build / Refresh Mechanics Lab",
             priority = 1)]
@@ -66,6 +70,7 @@ namespace NovaStriker.EditorTools
             int enemyLayer = EnsureLayer("Enemy");
             int playerProjectileLayer = EnsureLayer("PlayerProjectile");
             int enemyProjectileLayer = EnsureLayer("EnemyProjectile");
+            int grapplePointLayer = EnsureLayer("GrapplePoint");
 
             Material novaMaterial = CreateOrLoadMaterial(
                 NovaMaterialPath,
@@ -92,6 +97,11 @@ namespace NovaStriker.EditorTools
                 new Color(0.85f, 0.96f, 1f)
             );
 
+            Material grapplePointMaterial = CreateOrLoadMaterial(
+                GrapplePointMaterialPath,
+                new Color(0.25f, 0.95f, 1f)
+            );
+
             WeaponDefinition pulse = CreateOrLoadPulseWeapon();
 
             Projectile2D projectilePrefab = CreateProjectilePrefab(
@@ -107,7 +117,8 @@ namespace NovaStriker.EditorTools
                 oneWayLayer,
                 playerLayer,
                 enemyLayer,
-                enemyProjectileLayer
+                enemyProjectileLayer,
+                grapplePointLayer
             );
 
             Scene scene = EditorSceneManager.NewScene(
@@ -165,6 +176,30 @@ namespace NovaStriker.EditorTools
                 new Vector3(3.4f, 0.3f, 1f),
                 oneWayMaterial,
                 oneWayLayer
+            );
+
+            CreateGrapplePoint(
+                "GrapplePoint_A",
+                "greybox-grapple-a",
+                new Vector3(-1.8f, 3.15f, 0f),
+                grapplePointMaterial,
+                grapplePointLayer
+            );
+
+            CreateGrapplePoint(
+                "GrapplePoint_B",
+                "greybox-grapple-b",
+                new Vector3(3.35f, 3.85f, 0f),
+                grapplePointMaterial,
+                grapplePointLayer
+            );
+
+            CreateGrapplePoint(
+                "GrapplePoint_C",
+                "greybox-grapple-c",
+                new Vector3(8.0f, 2.85f, 0f),
+                grapplePointMaterial,
+                grapplePointLayer
             );
 
             GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(
@@ -467,7 +502,8 @@ namespace NovaStriker.EditorTools
             int oneWayLayer,
             int playerLayer,
             int enemyLayer,
-            int enemyProjectileLayer)
+            int enemyProjectileLayer,
+            int grapplePointLayer)
         {
             GameObject root = new("Nova_Greybox");
             root.layer = playerLayer;
@@ -592,6 +628,11 @@ namespace NovaStriker.EditorTools
                 combat,
                 "projectileMask",
                 1 << enemyProjectileLayer
+            );
+            SetLayerMask(
+                combat,
+                "grapplePointMask",
+                1 << grapplePointLayer
             );
 
             SetObjectReference(
@@ -732,6 +773,47 @@ namespace NovaStriker.EditorTools
             effector.surfaceArc = 180f;
 
             collider.usedByEffector = true;
+        }
+
+        private static void CreateGrapplePoint(
+            string name,
+            string grappleId,
+            Vector3 position,
+            Material material,
+            int layer)
+        {
+            GameObject root =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Sphere
+                );
+
+            root.name = name;
+            root.layer = layer;
+            root.transform.position = position;
+            root.transform.localScale =
+                Vector3.one * 0.46f;
+
+            Object.DestroyImmediate(
+                root.GetComponent<Collider>()
+            );
+
+            CircleCollider2D collider =
+                root.AddComponent<CircleCollider2D>();
+
+            collider.isTrigger = true;
+            collider.radius = 0.8f;
+
+            GrapplePoint2D point =
+                root.AddComponent<GrapplePoint2D>();
+
+            SetString(
+                point,
+                "grappleId",
+                grappleId
+            );
+
+            root.GetComponent<MeshRenderer>().
+                sharedMaterial = material;
         }
 
         private static void CreateDamageDummy(
@@ -915,6 +997,21 @@ namespace NovaStriker.EditorTools
                 serialized.FindProperty(propertyName);
 
             property.intValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetString(
+            Object target,
+            string propertyName,
+            string value)
+        {
+            SerializedObject serialized =
+                new(target);
+
+            SerializedProperty property =
+                serialized.FindProperty(propertyName);
+
+            property.stringValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
