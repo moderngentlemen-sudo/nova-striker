@@ -71,7 +71,7 @@ Keyboard:
 - J — fire / charge
 - K — dash / charge
 - U — melee
-- I — parry
+- I — contextual Counter
 - F — Guardian ability placeholder
 - Q — weapon cycle placeholder
 - R — Guardian cycle placeholder
@@ -85,7 +85,7 @@ Gamepad / PlayStation:
 - R2 — fire / charge
 - L2 — dash / charge
 - Square — melee
-- Circle — parry
+- Circle — contextual Counter
 - L1 — ability
 - R1 or Triangle — weapon cycle
 - L3 or D-pad Up — Guardian cycle
@@ -102,10 +102,12 @@ Run these before tuning values:
 5. Crouch + dash at all three tiers and verify Powerslide damage.
 6. Fire uncharged and all three charge tiers at both dummies.
 7. Confirm charged shots cancel hostile shots.
-8. Parry regular hostile shots.
-9. Perfect-parry the periodic highlighted timing opportunity by timing the parry window.
-10. Test all three grounded melee hits, two aerial hits, and downward dive melee.
-11. Connect a DualShock/DualSense and repeat core traversal and combat checks.
+8. Test Circle / I with no nearby enemy: it should select **Deflect** and reflect regular hostile shots during the active window.
+9. Stand within 2.40 units of an enemy but outside 1.15 units and press Counter: it should select **Intercept**.
+10. Stand within 1.15 units and press Counter: it should select **Reversal**.
+11. Perfect-deflect the periodic highlighted projectile by timing the 0.035–0.078 s perfect window.
+12. Test all three grounded melee hits, two aerial hits, and downward dive melee.
+13. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
 ## After the first successful import
 
