@@ -10,12 +10,12 @@ namespace NovaStriker.InputSystemIntegration
     ///
     /// Keyboard:
     /// WASD move, arrows aim, Space jump, J fire, K dash,
-    /// U melee, I parry, F ability, Q weapon, R Guardian, G Sync.
+    /// U melee, I context counter, F ability, Q weapon, R Guardian, G Sync.
     ///
     /// Gamepad / DualShock / DualSense:
     /// Left stick move, right stick aim,
     /// Cross/South jump, R2 fire, L2 dash,
-    /// Square/West melee, Circle/East parry,
+    /// Square/West melee, Circle/East context counter,
     /// L1 ability, R1 or Triangle/North weapon cycle,
     /// L3 or D-pad Up Guardian cycle, R3 Sync.
     /// </summary>
@@ -31,7 +31,7 @@ namespace NovaStriker.InputSystemIntegration
         private InputAction fire;
         private InputAction dash;
         private InputAction melee;
-        private InputAction parry;
+        private InputAction counter;
         private InputAction ability;
         private InputAction weaponCycle;
         private InputAction guardianCycle;
@@ -95,7 +95,7 @@ namespace NovaStriker.InputSystemIntegration
                 DashReleased = dash.WasReleasedThisFrame(),
 
                 MeleePressed = melee.WasPressedThisFrame(),
-                ParryPressed = parry.WasPressedThisFrame(),
+                CounterPressed = counter.WasPressedThisFrame(),
                 AbilityPressed = ability.WasPressedThisFrame(),
 
                 WeaponCyclePressed = weaponCycle.WasPressedThisFrame(),
@@ -161,8 +161,8 @@ namespace NovaStriker.InputSystemIntegration
                 "<Gamepad>/buttonWest"
             );
 
-            parry = AddButton(
-                "Parry",
+            counter = AddButton(
+                "Counter",
                 "<Keyboard>/i",
                 "<Gamepad>/buttonEast"
             );
