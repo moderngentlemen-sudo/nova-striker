@@ -107,26 +107,39 @@ The branch now contains:
 - Tier 2: 0.92–1.58 s
 - Tier 3: 1.58 s+
 
-### Context Counter
+### Character-specific Context Counter
 
-Circle / I chooses a counter action from the nearest enemy distance at the instant the button is pressed:
+Circle / I is now a **character-specific Counter command** rather than one universal parry.
 
-- **Reversal:** enemy at or inside 1.15 Unity units
-- **Intercept:** enemy beyond 1.15 and at or inside 2.40 Unity units
-- **Deflect:** no enemy inside 2.40 Unity units
+Selection priority when the button is pressed:
 
-All three modes share the defensive projectile-reflection timing:
+1. **Moving toward a nearby enemy + Counter → Throw** (Nova and Echo)
+2. **Close enemy + Counter → Dodge + Counter** (Nova and Echo)
+3. **Distance action**
+   - **Nova → Deflect**
+   - **Echo → Grapple / pull**
+
+Current greybox ranges:
+
+- close Dodge Counter: ≤ 1.15 Unity units
+- Throw assist range: ≤ 1.35 Unity units while movement points toward the target
+- Echo Grapple range: ≤ 4.25 Unity units
+- Nova Deflect projectile radius: 0.72 Unity units
+
+Close Dodge Counter grants a short evasive movement and temporary damage invulnerability, then strikes the target.
+
+Throw is an advancing context action: holding movement toward the enemy when Counter is pressed takes priority over the close Dodge Counter and launches the enemy away/upward.
+
+Echo's Grapple applies pull velocity toward Echo instead of automatically damaging the target. If no valid target is in grapple range, Echo still performs a grapple-whiff action cue so animation/VFX can play.
+
+Nova's distance Deflect retains the defensive projectile-reflection timing:
 
 - startup: 0.035 s
 - deflect active: 0.035–0.145 s
 - perfect deflect: 0.035–0.078 s
 - action ends: 0.405 s
 
-Current greybox tuning:
-
-- Reversal: 14 damage with stronger knockback
-- Intercept: 8 damage with moderate knockback
-- Deflect: no automatic enemy damage; it preserves the original projectile reflection behavior
+The close and Throw actions deliberately emit character-qualified action IDs such as `nova-dodge-counter`, `echo-dodge-counter`, `nova-throw`, and `echo-throw`. This lets Nova and Echo use completely different animations, poses, VFX, and later tuning even when the contextual category is shared.
 
 ### Melee
 
@@ -246,10 +259,12 @@ Presentation systems should subscribe to `GameplayEventHub.CueRaised`. Examples:
 - `ProjectileFired` → muzzle flash + recoil animation + audio
 - `MeleeStarted` → animation selection
 - `MeleeHit` → hit spark + camera impulse
-- `CounterStarted` → choose Reversal / Intercept / Deflect animation
-- `CounterReversal` → close-quarters counter hit + camera impulse
-- `CounterIntercept` → mid-range intercept effect
-- `PerfectParry` → gold-white perfect-deflect VFX + hit stop presentation + audio
+- `CounterStarted` → choose character-specific Counter animation
+- `CounterDodge` → Nova/Echo-specific close dodge-counter animation + camera impulse
+- `CounterThrow` → character-specific throw animation
+- `CounterGrapple` → Echo grapple line/arm/weapon presentation and enemy pull feedback
+- `CounterDeflect` → Nova projectile-deflection presentation
+- `PerfectParry` → gold-white perfect-deflect VFX + hit-stop presentation + audio
 - `DropThrough` → crouch/drop animation
 
 The gameplay code remains authoritative even if all presentation listeners are disabled.
@@ -266,7 +281,7 @@ Still required:
 - compiler-error review after the first real import
 - Play Mode validation
 - physical DualShock/DualSense validation
-- enemy attack-state awareness so future counters can react to telegraphed melee/rush attacks, not only proximity
+- enemy attack-state awareness so close Dodge Counters can eventually require/grade actual incoming melee or rush attacks rather than relying only on proximity
 - final Input System gamepad/touch adapters
 - weapon-specific behaviors beyond initial shot patterns
 - shields / armor / Break gauge
