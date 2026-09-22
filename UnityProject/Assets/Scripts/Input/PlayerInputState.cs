@@ -6,6 +6,9 @@ namespace NovaStriker.Input
     /// Presentation-agnostic per-player input snapshot.
     /// An Input System adapter can populate this without coupling gameplay code
     /// to a specific controller, keyboard, touch, or platform API.
+    ///
+    /// Coordinate convention follows Unity world space:
+    /// +X = right, +Y = up. Therefore crouch/down is Move.y < 0.
     /// </summary>
     public struct PlayerInputState
     {
