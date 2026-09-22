@@ -2,6 +2,22 @@
 
 This document describes the current playable-mechanics code on `dev/unity-gameplay` and the Unity scene setup required to exercise it.
 
+## First run
+
+1. Install/open Unity **6.3 LTS**. The project currently records editor version `6000.3.15f1`.
+2. Open the repository's `UnityProject/` folder in Unity Hub.
+3. Allow Package Manager to resolve `com.unity.inputsystem`.
+4. If Unity asks to activate the new Input System backend, accept and let the Editor restart. If no prompt appears, use **Project Settings → Player → Active Input Handling** and select **Input System Package (New)** or **Both**.
+5. After scripts compile, run:
+   `Nova Striker → Greybox → Build / Refresh Mechanics Lab`
+6. Open the generated scene if it is not already open:
+   `Assets/Greybox/Scenes/NovaMechanicsGreybox.unity`
+7. Press Play.
+
+The builder creates six project layers used by the mechanics lab: World, OneWay, Player, Enemy, PlayerProjectile, and EnemyProjectile.
+
+The generated assets are disposable test assets. Source mechanics remain under `Assets/Scripts`.
+
 ## Current implementation
 
 The branch now contains:
@@ -60,9 +76,15 @@ The branch now contains:
   - latches edge inputs safely across render/physics rates
   - keeps future controller/keyboard/touch adapters outside the mechanics code
 
+- `NovaInputSystemAdapter`
+  - Unity Input System keyboard + generic gamepad adapter
+  - bindings cover DualShock/DualSense through standard Gamepad controls
+  - R1 and Triangle both cycle weapons
+  - L3 and D-pad Up both cycle Guardians
+  - current greybox is single-player input routing; per-device pairing for co-op remains later work
+
 - `NovaKeyboardDebugInput`
-  - development-only keyboard adapter matching the browser controls
-  - provides an immediate mechanics test path before the final Input System action map
+  - retained as a legacy development fallback but not attached by the current greybox builder
 
 - `GreyboxHostileProjectileEmitter`
   - temporary hostile-shot generator for parry/perfect-parry testing
@@ -214,13 +236,15 @@ The gameplay code remains authoritative even if all presentation listeners are d
 
 ## Known incomplete items
 
-This branch is not yet a complete Unity build.
+This branch now contains an openable Unity project baseline and a one-click mechanics-lab generator, but it has **not yet been compiled or played in a Unity Editor session from this chat**.
 
 Still required:
 
-- Unity project generated/opened in a chosen Unity 6 editor version
-- committed Unity-generated `.meta` files
-- Input System adapter and action asset
+- first Unity Editor import/package resolution
+- generation and commit of Unity-created `.meta` files after the initial import
+- execution of the greybox builder inside Unity
+- compiler-error review after the first real import
+- Play Mode validation
 - physical DualShock/DualSense validation
 - contact-enemy parry
 - final Input System gamepad/touch adapters
