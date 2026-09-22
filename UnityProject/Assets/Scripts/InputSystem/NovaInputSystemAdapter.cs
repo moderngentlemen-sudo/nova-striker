@@ -66,11 +66,6 @@ namespace NovaStriker.InputSystemIntegration
                 player.ClearInput();
         }
 
-        private void OnDestroy()
-        {
-            map?.Dispose();
-        }
-
         private void Update()
         {
             if (!player || map == null)
@@ -111,7 +106,7 @@ namespace NovaStriker.InputSystemIntegration
 
         private void BuildActions()
         {
-            map?.Dispose();
+            map?.Disable();
             map = new InputActionMap("Nova");
 
             move = map.AddAction(
