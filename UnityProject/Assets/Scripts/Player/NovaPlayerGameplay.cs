@@ -50,7 +50,7 @@ namespace NovaStriker.Player
             latest.FireReleased |= state.FireReleased;
             latest.DashReleased |= state.DashReleased;
             latest.MeleePressed |= state.MeleePressed;
-            latest.ParryPressed |= state.ParryPressed;
+            latest.CounterPressed |= state.CounterPressed;
             latest.AbilityPressed |= state.AbilityPressed;
             latest.WeaponCyclePressed |= state.WeaponCyclePressed;
             latest.GuardianCyclePressed |= state.GuardianCyclePressed;
@@ -92,7 +92,7 @@ namespace NovaStriker.Player
             latest.FireReleased = false;
             latest.DashReleased = false;
             latest.MeleePressed = false;
-            latest.ParryPressed = false;
+            latest.CounterPressed = false;
             latest.AbilityPressed = false;
             latest.WeaponCyclePressed = false;
             latest.GuardianCyclePressed = false;
