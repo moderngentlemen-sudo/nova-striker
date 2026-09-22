@@ -14,6 +14,8 @@ namespace NovaStriker.Core
         DashEnded,
         SlideStarted,
         SlideEnded,
+        DashHit,
+        SlideHit,
         FireChargeStarted,
         FireChargeReleased,
         ProjectileFired,
