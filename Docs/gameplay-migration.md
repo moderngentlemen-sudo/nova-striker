@@ -22,7 +22,7 @@ Implementation status on `dev/unity-gameplay`:
 9. ✅ Ground and aerial melee state/hit logic.
 10. ✅ Character-specific Circle Counter:
    - Nova distance Deflect
-   - Echo distance Grapple/pull
+   - Echo distance soft-lock Grapple: pull enemies or attach to traversal GrapplePoints
    - shared close Dodge + Counter
    - advancing Throw
    - Nova perfect projectile deflection.
