@@ -399,6 +399,9 @@ namespace NovaStriker.Player
             if (!target)
                 return false;
 
+            if (target.GetComponent<PlatformEffector2D>() != null)
+                return true;
+
             int layerBit = 1 << target.gameObject.layer;
             return (oneWayMask.value & layerBit) != 0;
         }
