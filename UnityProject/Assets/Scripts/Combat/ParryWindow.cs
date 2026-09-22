@@ -3,8 +3,11 @@ using UnityEngine;
 namespace NovaStriker.Combat
 {
     /// <summary>
-    /// Shared parry timing model from the browser prototype.
-    /// Times are measured from parry activation.
+    /// Shared parry timing model carried forward from the browser reference.
+    ///
+    /// Active: 0.035s through 0.145s.
+    /// Perfect: 0.035s through 0.078s.
+    /// Full action: 0.405s.
     /// </summary>
     [System.Serializable]
     public struct ParryWindow
@@ -18,7 +21,7 @@ namespace NovaStriker.Combat
         {
             Startup = 0.035f,
             Active = 0.110f,
-            Perfect = 0.045f,
+            Perfect = 0.043f,
             Recovery = 0.260f
         };
 
