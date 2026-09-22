@@ -23,6 +23,16 @@ Nova Striker now uses a split production pipeline:
 
 The art pipeline intentionally keeps Blender source files separate from Unity-ready exported assets. Do not rely on Unity importing `.blend` files directly; export stable interchange files into the Unity project instead.
 
+## Unity baseline
+
+The repository-level Unity project is under `UnityProject/` and currently targets **Unity 6.3 LTS (6000.3.15f1)** with the Unity Input System package.
+
+The first mechanics lab is generated inside the Editor from repository code:
+
+`Nova Striker > Greybox > Build / Refresh Mechanics Lab`
+
+That creates the temporary Nova prefab, projectile prefab, Pulse weapon asset, test room, one-way platforms, damage dummies, parry projectile emitter, camera, and HUD under `Assets/Greybox/`.
+
 ## First milestone
 
 The first milestone remains a greybox gameplay room with Nova's complete movement and combat feel before production art is introduced. Blender production can develop in parallel, but gameplay tuning should not wait on final models.
