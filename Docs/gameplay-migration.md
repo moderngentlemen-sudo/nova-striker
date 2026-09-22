@@ -20,7 +20,7 @@ Implementation status on `dev/unity-gameplay`:
 7. ✅ Directional air dash.
 8. ✅ Powerslide from crouch + dash.
 9. ✅ Ground and aerial melee state/hit logic.
-10. ✅ Parry and perfect-parry timing plus projectile reflection.
+10. ✅ Circle contextual Counter: Reversal / Intercept / Deflect, plus perfect projectile reflection.
 11. ✅ Charged fire tiers and initial projectile patterns.
 
 Still required before this milestone is considered validated:
