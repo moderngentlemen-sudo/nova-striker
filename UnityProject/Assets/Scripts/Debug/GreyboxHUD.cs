@@ -52,7 +52,8 @@ namespace NovaStriker.Debugging
                 $"Dash tier: {dashTier}\n" +
                 $"Dash charge: {dashCharge:0.00}s    " +
                 $"Fire charge: {fireCharge:0.00}s\n" +
-                $"Parry active: {(combat && combat.IsParryActive)}    " +
+                $"Counter: {(combat ? combat.CurrentCounterMode.ToString() : "-")}    " +
+                $"Deflect window: {(combat && combat.IsParryActive)}    " +
                 $"Perfect: {(combat && combat.IsPerfectParryWindow)}    " +
                 $"Melee: {(combat ? combat.MeleeStep : 0)}\n" +
                 $"Health: {health:0}";
@@ -67,7 +68,7 @@ namespace NovaStriker.Debugging
                 new Rect(28, 142, 400, 72),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
-                "U / Square: melee    I / Circle: parry\n" +
+                "U / Square: melee    I / Circle: contextual counter\n" +
                 "Crouch + Jump: drop through one-way platform",
                 body
             );
