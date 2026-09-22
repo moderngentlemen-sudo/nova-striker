@@ -7,10 +7,18 @@ using UnityEngine;
 
 namespace NovaStriker.Player
 {
+    public enum CounterMode
+    {
+        Deflect = 0,
+        Intercept = 1,
+        Reversal = 2
+    }
+
     /// <summary>
     /// Greybox combat controller for Nova/Echo.
-    /// Keeps timing, hit windows, projectile ownership, and damage in gameplay
-    /// while emitting presentation cues for animation/VFX/audio/camera.
+    /// Keeps timing, hit windows, projectile ownership, contextual counter
+    /// behavior, and damage in gameplay while emitting presentation cues for
+    /// animation/VFX/audio/camera.
     /// </summary>
     public sealed class NovaCombatController : MonoBehaviour
     {
@@ -27,8 +35,17 @@ namespace NovaStriker.Player
         [SerializeField] private LayerMask damageableMask;
         [SerializeField] private LayerMask projectileMask;
 
-        [Header("Parry")]
+        [Header("Context Counter")]
+        [Tooltip("Hostile projectiles inside this radius can be reflected during the counter window.")]
         [SerializeField] private float parryRadius = 0.72f;
+        [Tooltip("Enemy within this range selects the close Reversal counter.")]
+        [SerializeField] private float reversalRadius = 1.15f;
+        [Tooltip("Enemy within this range selects Intercept. Beyond it, Circle becomes Deflect.")]
+        [SerializeField] private float interceptRadius = 2.40f;
+        [SerializeField] private float reversalDamage = 14f;
+        [SerializeField] private float interceptDamage = 8f;
+        [SerializeField] private Vector2 reversalKnockback = new(5.4f, 2.4f);
+        [SerializeField] private Vector2 interceptKnockback = new(3.0f, 1.0f);
         [SerializeField] private ParryWindow parryWindow;
 
         [Header("Melee")]
@@ -39,15 +56,22 @@ namespace NovaStriker.Player
 
         private readonly List<Collider2D> parryHits = new(24);
         private readonly List<Collider2D> meleeHits = new(24);
+        private readonly List<Collider2D> counterHits = new(24);
+
         private ContactFilter2D parryFilter;
         private ContactFilter2D meleeFilter;
+        private ContactFilter2D counterFilter;
+
         private readonly HashSet<int> meleeTargets = new();
 
         private PlayerInputState input;
 
         private float fireCharge;
 
-        private float parryElapsed = -1f;
+        private float counterElapsed = -1f;
+        private bool contextualCounterPending;
+        private Damageable2D contextualCounterTarget;
+        private CounterMode currentCounterMode = CounterMode.Deflect;
 
         private float meleeTimer;
         private float meleeDuration;
@@ -59,9 +83,15 @@ namespace NovaStriker.Player
 
         public int PlayerId => playerId;
         public float FireCharge => fireCharge;
-        public bool IsParrying => parryElapsed >= 0f;
-        public bool IsParryActive => IsParrying && parryWindow.IsActive(parryElapsed);
-        public bool IsPerfectParryWindow => IsParrying && parryWindow.IsPerfect(parryElapsed);
+
+        public bool IsCountering => counterElapsed >= 0f;
+        public bool IsParrying => IsCountering;
+        public bool IsParryActive =>
+            IsCountering && parryWindow.IsActive(counterElapsed);
+        public bool IsPerfectParryWindow =>
+            IsCountering && parryWindow.IsPerfect(counterElapsed);
+        public CounterMode CurrentCounterMode => currentCounterMode;
+
         public bool IsMeleeActive => meleeTimer > 0f;
         public int MeleeStep => meleeStep;
         public WeaponDefinition EquippedWeapon => equippedWeapon;
@@ -91,6 +121,12 @@ namespace NovaStriker.Player
                 useTriggers = true
             };
             meleeFilter.SetLayerMask(damageableMask);
+
+            counterFilter = new ContactFilter2D
+            {
+                useTriggers = true
+            };
+            counterFilter.SetLayerMask(damageableMask);
         }
 
         public void SetInput(PlayerInputState state)
@@ -109,18 +145,23 @@ namespace NovaStriker.Player
 
             UpdateTimers(dt);
             UpdateFire(dt);
-            UpdateParry();
+            UpdateCounter();
             UpdateMelee();
         }
 
         private void UpdateTimers(float dt)
         {
-            if (parryElapsed >= 0f)
+            if (counterElapsed >= 0f)
             {
-                parryElapsed += dt;
+                counterElapsed += dt;
 
-                if (parryElapsed > parryWindow.TotalDuration)
-                    parryElapsed = -1f;
+                if (counterElapsed > parryWindow.TotalDuration)
+                {
+                    counterElapsed = -1f;
+                    contextualCounterPending = false;
+                    contextualCounterTarget = null;
+                    currentCounterMode = CounterMode.Deflect;
+                }
             }
 
             meleeResetTimer = Mathf.Max(0f, meleeResetTimer - dt);
@@ -260,21 +301,26 @@ namespace NovaStriker.Player
             ));
         }
 
-        private void UpdateParry()
+        private void UpdateCounter()
         {
             if (
-                input.ParryPressed &&
-                parryElapsed < 0f
+                input.CounterPressed &&
+                counterElapsed < 0f
             )
             {
-                parryElapsed = 0f;
+                BeginContextCounter();
+            }
 
-                GameplayEventHub.Raise(new GameplayCue(
-                    GameplayCueType.ParryStarted,
-                    playerId,
-                    transform.position,
-                    AimDirection()
-                ));
+            if (!IsCountering)
+                return;
+
+            if (
+                contextualCounterPending &&
+                parryWindow.IsActive(counterElapsed)
+            )
+            {
+                contextualCounterPending = false;
+                ExecuteContextCounter();
             }
 
             if (!IsParryActive)
@@ -316,6 +362,200 @@ namespace NovaStriker.Player
                     projectile.WeaponId
                 ));
             }
+        }
+
+        private void BeginContextCounter()
+        {
+            counterElapsed = 0f;
+            contextualCounterTarget =
+                FindNearestCounterTarget(
+                    interceptRadius,
+                    out float distance
+                );
+
+            if (!contextualCounterTarget)
+            {
+                currentCounterMode = CounterMode.Deflect;
+                contextualCounterPending = false;
+            }
+            else if (distance <= reversalRadius)
+            {
+                currentCounterMode = CounterMode.Reversal;
+                contextualCounterPending = true;
+            }
+            else
+            {
+                currentCounterMode = CounterMode.Intercept;
+                contextualCounterPending = true;
+            }
+
+            if (
+                contextualCounterTarget &&
+                motor
+            )
+            {
+                motor.FaceToward(
+                    contextualCounterTarget.transform.position.x
+                );
+            }
+
+            GameplayEventHub.Raise(new GameplayCue(
+                GameplayCueType.CounterStarted,
+                playerId,
+                transform.position,
+                contextualCounterTarget
+                    ? DirectionTo(contextualCounterTarget.transform.position)
+                    : AimDirection(),
+                (int)currentCounterMode,
+                distance,
+                currentCounterMode.ToString().ToLowerInvariant()
+            ));
+        }
+
+        private void ExecuteContextCounter()
+        {
+            if (
+                !contextualCounterTarget ||
+                contextualCounterTarget.IsDefeated
+            )
+            {
+                return;
+            }
+
+            float allowedRange = currentCounterMode == CounterMode.Reversal
+                ? reversalRadius + 0.20f
+                : interceptRadius + 0.25f;
+
+            Vector2 targetPosition =
+                contextualCounterTarget.transform.position;
+
+            Vector2 delta =
+                targetPosition - (Vector2)transform.position;
+
+            float distance = delta.magnitude;
+
+            if (distance > allowedRange)
+                return;
+
+            Vector2 direction = delta.sqrMagnitude > 0.0001f
+                ? delta.normalized
+                : new Vector2(motor && motor.Facing < 0 ? -1f : 1f, 0f);
+
+            if (motor)
+                motor.FaceToward(targetPosition.x);
+
+            bool reversal =
+                currentCounterMode == CounterMode.Reversal;
+
+            float damage =
+                reversal
+                    ? reversalDamage
+                    : interceptDamage;
+
+            Vector2 configuredKnockback =
+                reversal
+                    ? reversalKnockback
+                    : interceptKnockback;
+
+            Vector2 knockback = new(
+                direction.x * configuredKnockback.x,
+                configuredKnockback.y
+            );
+
+            string counterId =
+                reversal
+                    ? "counter-reversal"
+                    : "counter-intercept";
+
+            bool applied =
+                contextualCounterTarget.ApplyDamage(
+                    new DamagePacket(
+                        damage,
+                        knockback,
+                        targetPosition,
+                        CombatFaction.Player,
+                        playerId,
+                        reversal ? 2 : 1,
+                        counterId
+                    )
+                );
+
+            if (!applied)
+                return;
+
+            GameplayEventHub.Raise(new GameplayCue(
+                reversal
+                    ? GameplayCueType.CounterReversal
+                    : GameplayCueType.CounterIntercept,
+                playerId,
+                targetPosition,
+                direction,
+                reversal ? 2 : 1,
+                damage,
+                counterId
+            ));
+        }
+
+        private Damageable2D FindNearestCounterTarget(
+            float radius,
+            out float nearestDistance)
+        {
+            counterHits.Clear();
+
+            int count = Physics2D.OverlapCircle(
+                transform.position,
+                radius,
+                counterFilter,
+                counterHits
+            );
+
+            Damageable2D nearest = null;
+            float nearestSqr = float.PositiveInfinity;
+
+            for (int i = 0; i < count; i++)
+            {
+                Damageable2D candidate =
+                    counterHits[i].GetComponentInParent<Damageable2D>();
+
+                if (
+                    !candidate ||
+                    candidate.IsDefeated ||
+                    candidate.Faction != CombatFaction.Enemy
+                )
+                {
+                    continue;
+                }
+
+                float sqr =
+                    (
+                        (Vector2)candidate.transform.position -
+                        (Vector2)transform.position
+                    ).sqrMagnitude;
+
+                if (sqr >= nearestSqr)
+                    continue;
+
+                nearest = candidate;
+                nearestSqr = sqr;
+            }
+
+            nearestDistance =
+                nearest
+                    ? Mathf.Sqrt(nearestSqr)
+                    : float.PositiveInfinity;
+
+            return nearest;
+        }
+
+        private Vector2 DirectionTo(Vector2 worldPosition)
+        {
+            Vector2 delta =
+                worldPosition -
+                (Vector2)transform.position;
+
+            return delta.sqrMagnitude > 0.0001f
+                ? delta.normalized
+                : AimDirection();
         }
 
         private void UpdateMelee()
@@ -489,6 +729,12 @@ namespace NovaStriker.Player
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(transform.position, parryRadius);
+
+            Gizmos.color = new Color(1f, 0.75f, 0.2f);
+            Gizmos.DrawWireSphere(transform.position, reversalRadius);
+
+            Gizmos.color = new Color(0.65f, 0.4f, 1f);
+            Gizmos.DrawWireSphere(transform.position, interceptRadius);
         }
 #endif
     }
