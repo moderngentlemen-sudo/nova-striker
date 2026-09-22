@@ -42,9 +42,12 @@ The branch now contains:
   - two-step aerial melee sequence
   - downward dive melee
   - browser-reference melee active window
-  - parry startup/active/recovery state
-  - perfect-parry timing
-  - projectile reflection
+  - Circle / I contextual Counter system
+  - close Reversal counter within 1.15 Unity units
+  - mid-range Intercept counter within 2.40 Unity units
+  - far/no-target Deflect counter
+  - all counter modes preserve the projectile deflect window
+  - perfect-deflect timing and projectile reflection
   - damage/knockback handoff
 
 - `NovaTraversalDamage`
@@ -104,12 +107,26 @@ The branch now contains:
 - Tier 2: 0.92–1.58 s
 - Tier 3: 1.58 s+
 
-### Parry
+### Context Counter
+
+Circle / I chooses a counter action from the nearest enemy distance at the instant the button is pressed:
+
+- **Reversal:** enemy at or inside 1.15 Unity units
+- **Intercept:** enemy beyond 1.15 and at or inside 2.40 Unity units
+- **Deflect:** no enemy inside 2.40 Unity units
+
+All three modes share the defensive projectile-reflection timing:
 
 - startup: 0.035 s
-- active: 0.035–0.145 s
-- perfect: 0.035–0.078 s
+- deflect active: 0.035–0.145 s
+- perfect deflect: 0.035–0.078 s
 - action ends: 0.405 s
+
+Current greybox tuning:
+
+- Reversal: 14 damage with stronger knockback
+- Intercept: 8 damage with moderate knockback
+- Deflect: no automatic enemy damage; it preserves the original projectile reflection behavior
 
 ### Melee
 
@@ -229,7 +246,10 @@ Presentation systems should subscribe to `GameplayEventHub.CueRaised`. Examples:
 - `ProjectileFired` → muzzle flash + recoil animation + audio
 - `MeleeStarted` → animation selection
 - `MeleeHit` → hit spark + camera impulse
-- `PerfectParry` → gold-white VFX + hit stop presentation + audio
+- `CounterStarted` → choose Reversal / Intercept / Deflect animation
+- `CounterReversal` → close-quarters counter hit + camera impulse
+- `CounterIntercept` → mid-range intercept effect
+- `PerfectParry` → gold-white perfect-deflect VFX + hit stop presentation + audio
 - `DropThrough` → crouch/drop animation
 
 The gameplay code remains authoritative even if all presentation listeners are disabled.
@@ -246,7 +266,7 @@ Still required:
 - compiler-error review after the first real import
 - Play Mode validation
 - physical DualShock/DualSense validation
-- contact-enemy parry
+- enemy attack-state awareness so future counters can react to telegraphed melee/rush attacks, not only proximity
 - final Input System gamepad/touch adapters
 - weapon-specific behaviors beyond initial shot patterns
 - shields / armor / Break gauge
