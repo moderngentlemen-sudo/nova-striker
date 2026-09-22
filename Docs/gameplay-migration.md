@@ -6,22 +6,30 @@ Rebuild Nova Striker's gameplay in Unity with presentation decoupled from mechan
 
 ## Milestone 1 — Nova greybox controller
 
-Implement and tune:
+Implementation status on `dev/unity-gameplay`:
 
-1. Run with acceleration/deceleration.
-2. Independent movement, facing, and 360-degree aim.
-3. Jump and one air jump.
-4. Crouch and one-way platform drop.
-5. Wall contact, cling/slide, wall jump, and regrab lockout.
-6. L2/keyboard dash charge:
+1. ✅ Run with acceleration/deceleration.
+2. ✅ Independent movement, facing, and 360-degree aim model.
+3. ✅ Jump and one air jump.
+4. ✅ Crouch and one-way platform drop.
+5. ✅ Wall contact, slide, wall jump, and regrab lockout.
+6. ✅ Dash charge:
    - Quick
    - Burst
    - Velocity Break
-7. Directional air dash.
-8. Powerslide from crouch + dash.
-9. Ground and aerial melee chains.
-10. Parry and perfect-parry windows.
-11. Charged fire tiers.
+7. ✅ Directional air dash.
+8. ✅ Powerslide from crouch + dash.
+9. ✅ Ground and aerial melee state/hit logic.
+10. ✅ Parry and perfect-parry timing plus projectile reflection.
+11. ✅ Charged fire tiers and initial projectile patterns.
+
+Still required before this milestone is considered validated:
+
+- Unity editor compile/import
+- greybox scene assembly
+- Input System adapter
+- physical controller testing
+- tuning against the browser reference
 
 ## Milestone 2 — Combat core
 
