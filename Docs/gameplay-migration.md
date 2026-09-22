@@ -20,7 +20,12 @@ Implementation status on `dev/unity-gameplay`:
 7. ✅ Directional air dash.
 8. ✅ Powerslide from crouch + dash.
 9. ✅ Ground and aerial melee state/hit logic.
-10. ✅ Circle contextual Counter: Reversal / Intercept / Deflect, plus perfect projectile reflection.
+10. ✅ Character-specific Circle Counter:
+   - Nova distance Deflect
+   - Echo distance Grapple/pull
+   - shared close Dodge + Counter
+   - advancing Throw
+   - Nova perfect projectile deflection.
 11. ✅ Charged fire tiers and initial projectile patterns.
 
 Still required before this milestone is considered validated:
