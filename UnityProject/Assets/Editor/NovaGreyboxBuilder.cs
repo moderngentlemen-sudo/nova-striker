@@ -230,6 +230,17 @@ namespace NovaStriker.EditorTools
                 ScenePath +
                 "\nPress Play to test keyboard or connected gamepad input."
             );
+
+#if !ENABLE_INPUT_SYSTEM
+            Debug.LogWarning(
+                "Unity Input System package is installed, but the new input " +
+                "backend is not active. In Project Settings > Player, set " +
+                "Active Input Handling to Input System Package (New) or Both, " +
+                "then restart the Editor."
+            );
+
+            SettingsService.OpenProjectSettings("Project/Player");
+#endif
         }
 
         [MenuItem(
