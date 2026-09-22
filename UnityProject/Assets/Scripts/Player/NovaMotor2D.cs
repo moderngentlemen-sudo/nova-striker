@@ -131,6 +131,17 @@ namespace NovaStriker.Player
             RestoreIgnoredOneWayCollisions();
         }
 
+        public void FaceToward(float worldX)
+        {
+            float delta = worldX - transform.position.x;
+
+            if (Mathf.Abs(delta) <= 0.01f)
+                return;
+
+            facing = delta < 0f ? -1 : 1;
+            AimDirection = new Vector2(facing, 0f);
+        }
+
         public void SetInput(PlayerInputState state)
         {
             input = state;
