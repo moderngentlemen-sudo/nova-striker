@@ -46,30 +46,36 @@ namespace NovaStriker.Debugging
                 ? motor.ActiveDashTier.ToString()
                 : "-";
 
+            string character =
+                combat
+                    ? combat.Character.ToString()
+                    : "-";
+
             string state =
+                $"Character: {character}    " +
+                $"Counter: {(combat ? combat.CurrentCounterMode.ToString() : "-")}\n" +
                 $"Grounded: {(motor && motor.Grounded)}    " +
                 $"Crouch: {(motor && motor.IsCrouching)}    " +
                 $"Dash tier: {dashTier}\n" +
                 $"Dash charge: {dashCharge:0.00}s    " +
                 $"Fire charge: {fireCharge:0.00}s\n" +
-                $"Counter: {(combat ? combat.CurrentCounterMode.ToString() : "-")}    " +
-                $"Deflect active: {(combat && combat.IsParryActive)}\n" +
-                $"Perfect window: {(combat && combat.IsPerfectParryWindow)}    " +
+                $"Deflect active: {(combat && combat.IsParryActive)}    " +
+                $"Perfect: {(combat && combat.IsPerfectParryWindow)}\n" +
                 $"Melee: {(combat ? combat.MeleeStep : 0)}\n" +
                 $"Health: {health:0}";
 
             GUI.Label(
-                new Rect(28, 58, 415, 102),
+                new Rect(28, 58, 415, 118),
                 state,
                 body
             );
 
             GUI.Label(
-                new Rect(28, 166, 420, 72),
+                new Rect(28, 180, 420, 58),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
-                "U / Square: melee    I / Circle: contextual counter\n" +
-                "Crouch + Jump: drop through one-way platform",
+                "U / Square: melee    I / Circle: contextual Counter\n" +
+                "Toward + Counter: Throw    Close: Dodge Counter",
                 body
             );
         }
