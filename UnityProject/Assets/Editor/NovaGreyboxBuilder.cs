@@ -237,7 +237,11 @@ namespace NovaStriker.EditorTools
             priority = 2)]
         public static void OpenGreybox()
         {
-            if (!File.Exists(ScenePath))
+            if (
+                !AssetDatabase.LoadAssetAtPath<SceneAsset>(
+                    ScenePath
+                )
+            )
             {
                 BuildGreybox();
                 return;
@@ -251,9 +255,10 @@ namespace NovaStriker.EditorTools
 
         private static void EnsureFolders()
         {
-            string projectRoot = Directory.GetParent(
-                Application.dataPath
-            )!.FullName;
+            string projectRoot =
+                Path.GetDirectoryName(
+                    Application.dataPath
+                ) ?? Application.dataPath;
 
             Directory.CreateDirectory(
                 Path.Combine(projectRoot, GreyboxRoot)
