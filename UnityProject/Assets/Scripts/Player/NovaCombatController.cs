@@ -407,7 +407,7 @@ namespace NovaStriker.Player
                     ? DirectionTo(contextualCounterTarget.transform.position)
                     : AimDirection(),
                 (int)currentCounterMode,
-                distance,
+                contextualCounterTarget ? distance : 0f,
                 currentCounterMode.ToString().ToLowerInvariant()
             ));
         }
