@@ -89,6 +89,9 @@ namespace NovaStriker.Player
         private float slideTimer;
         private ChargeTier activeSlideTier = ChargeTier.Quick;
 
+        private float counterMotionTimer;
+        private Vector2 counterMotionVelocity;
+
         private Vector2 standingColliderSize;
         private Vector2 standingColliderOffset;
 
@@ -142,6 +145,24 @@ namespace NovaStriker.Player
             AimDirection = new Vector2(facing, 0f);
         }
 
+        public void BeginCounterDodge(
+            Vector2 direction,
+            float speed,
+            float duration)
+        {
+            Vector2 normalized = direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : new Vector2(-facing, 0f);
+
+            counterMotionVelocity =
+                normalized * Mathf.Max(0f, speed);
+
+            counterMotionTimer =
+                Mathf.Max(counterMotionTimer, Mathf.Max(0f, duration));
+
+            body.linearVelocity = counterMotionVelocity;
+        }
+
         public void SetInput(PlayerInputState state)
         {
             input = state;
@@ -173,6 +194,12 @@ namespace NovaStriker.Player
             {
                 remainingAirJumps = airJumps;
                 remainingAirDashes = 1;
+            }
+
+            if (counterMotionTimer > 0f)
+            {
+                UpdateCounterMotion(dt);
+                return;
             }
 
             HandleCrouch();
@@ -653,6 +680,14 @@ namespace NovaStriker.Player
                     -wallSlideSpeed
                 );
             }
+        }
+
+        private void UpdateCounterMotion(float dt)
+        {
+            counterMotionTimer =
+                Mathf.Max(0f, counterMotionTimer - dt);
+
+            body.linearVelocity = counterMotionVelocity;
         }
 
         private void UpdateRun(float dt)
