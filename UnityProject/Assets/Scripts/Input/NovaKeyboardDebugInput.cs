@@ -6,7 +6,7 @@ namespace NovaStriker.Input
     /// <summary>
     /// Development-only keyboard adapter matching the browser prototype:
     /// WASD move, arrows aim, J fire, K dash, Space jump,
-    /// U melee, I parry, F Guardian/assist, Q weapon, R Guardian, G Sync.
+    /// U melee, I context counter, F Guardian/assist, Q weapon, R Guardian, G Sync.
     ///
     /// This is intentionally separate from the eventual Unity Input System
     /// gamepad/touch adapter so mechanics can be tested before device setup.
@@ -74,7 +74,7 @@ namespace NovaStriker.Input
                 DashReleased = UnityEngine.Input.GetKeyUp(KeyCode.K),
 
                 MeleePressed = UnityEngine.Input.GetKeyDown(KeyCode.U),
-                ParryPressed = UnityEngine.Input.GetKeyDown(KeyCode.I),
+                CounterPressed = UnityEngine.Input.GetKeyDown(KeyCode.I),
                 AbilityPressed = UnityEngine.Input.GetKeyDown(KeyCode.F),
 
                 WeaponCyclePressed = UnityEngine.Input.GetKeyDown(KeyCode.Q),
