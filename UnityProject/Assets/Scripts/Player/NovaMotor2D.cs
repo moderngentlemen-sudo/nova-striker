@@ -92,6 +92,11 @@ namespace NovaStriker.Player
         private float counterMotionTimer;
         private Vector2 counterMotionVelocity;
 
+        private float grappleTraversalTimer;
+        private Vector2 grappleTraversalTarget;
+        private float grappleTraversalSpeed;
+        private float grappleTraversalStopDistance;
+
         private Vector2 standingColliderSize;
         private Vector2 standingColliderOffset;
 
@@ -103,6 +108,7 @@ namespace NovaStriker.Player
         public bool IsDashing => dashTimer > 0f;
         public bool IsSliding => slideTimer > 0f;
         public bool IsDroppingThrough => oneWayDropTimer > 0f;
+        public bool IsGrapplingTraversal => grappleTraversalTimer > 0f;
         public float DashCharge => dashCharge;
         public ChargeTier ActiveDashTier => activeDashTier;
         public ChargeTier ActiveSlideTier => activeSlideTier;
@@ -154,6 +160,7 @@ namespace NovaStriker.Player
                 ? direction.normalized
                 : new Vector2(-facing, 0f);
 
+            grappleTraversalTimer = 0f;
             counterMotionVelocity =
                 normalized * Mathf.Max(0f, speed);
 
@@ -161,6 +168,28 @@ namespace NovaStriker.Player
                 Mathf.Max(counterMotionTimer, Mathf.Max(0f, duration));
 
             body.linearVelocity = counterMotionVelocity;
+        }
+
+        public void BeginGrappleTraversal(
+            Vector2 worldTarget,
+            float speed,
+            float maxDuration,
+            float stopDistance)
+        {
+            counterMotionTimer = 0f;
+            dashTimer = 0f;
+            slideTimer = 0f;
+
+            grappleTraversalTarget = worldTarget;
+            grappleTraversalSpeed = Mathf.Max(0f, speed);
+            grappleTraversalStopDistance = Mathf.Max(0.05f, stopDistance);
+            grappleTraversalTimer = Mathf.Max(0f, maxDuration);
+
+            Vector2 delta =
+                grappleTraversalTarget - body.position;
+
+            if (delta.sqrMagnitude > 0.0001f)
+                body.linearVelocity = delta.normalized * grappleTraversalSpeed;
         }
 
         public void SetInput(PlayerInputState state)
@@ -194,6 +223,12 @@ namespace NovaStriker.Player
             {
                 remainingAirJumps = airJumps;
                 remainingAirDashes = 1;
+            }
+
+            if (grappleTraversalTimer > 0f)
+            {
+                UpdateGrappleTraversal(dt);
+                return;
             }
 
             if (counterMotionTimer > 0f)
@@ -679,6 +714,49 @@ namespace NovaStriker.Player
                     body.linearVelocity.x,
                     -wallSlideSpeed
                 );
+            }
+        }
+
+        private void UpdateGrappleTraversal(float dt)
+        {
+            Vector2 delta =
+                grappleTraversalTarget - body.position;
+
+            float distance = delta.magnitude;
+
+            if (
+                distance <= grappleTraversalStopDistance ||
+                grappleTraversalTimer <= 0f
+            )
+            {
+                grappleTraversalTimer = 0f;
+
+                if (delta.sqrMagnitude > 0.0001f)
+                {
+                    body.linearVelocity =
+                        delta.normalized *
+                        grappleTraversalSpeed *
+                        0.62f;
+                }
+
+                return;
+            }
+
+            grappleTraversalTimer =
+                Mathf.Max(0f, grappleTraversalTimer - dt);
+
+            Vector2 direction =
+                delta.sqrMagnitude > 0.0001f
+                    ? delta.normalized
+                    : Vector2.zero;
+
+            body.linearVelocity =
+                direction * grappleTraversalSpeed;
+
+            if (Mathf.Abs(direction.x) > 0.08f)
+            {
+                facing = direction.x < 0f ? -1 : 1;
+                AimDirection = new Vector2(facing, 0f);
             }
         }
 
