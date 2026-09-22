@@ -31,6 +31,11 @@ The branch now contains:
   - projectile reflection
   - damage/knockback handoff
 
+- `NovaTraversalDamage`
+  - Velocity Break contact damage
+  - Powerslide contact damage
+  - one-hit-per-target traversal windows
+
 - `Projectile2D`
   - per-player ownership
   - Player / Enemy faction routing
@@ -52,7 +57,15 @@ The branch now contains:
 
 - `NovaPlayerGameplay`
   - one input snapshot fans out to movement and combat
+  - latches edge inputs safely across render/physics rates
   - keeps future controller/keyboard/touch adapters outside the mechanics code
+
+- `NovaKeyboardDebugInput`
+  - development-only keyboard adapter matching the browser controls
+  - provides an immediate mechanics test path before the final Input System action map
+
+- `GreyboxHostileProjectileEmitter`
+  - temporary hostile-shot generator for parry/perfect-parry testing
 
 ## Reference timings carried forward
 
@@ -126,6 +139,8 @@ Nova
 ├── NovaPlayerGameplay
 ├── NovaMotor2D
 ├── NovaCombatController
+├── NovaTraversalDamage
+├── NovaKeyboardDebugInput   (development only)
 └── MuzzleSocket
 ```
 
@@ -207,9 +222,8 @@ Still required:
 - committed Unity-generated `.meta` files
 - Input System adapter and action asset
 - physical DualShock/DualSense validation
-- hostile projectile spawner/test harness
 - contact-enemy parry
-- dash/Powerslide damage
+- final Input System gamepad/touch adapters
 - weapon-specific behaviors beyond initial shot patterns
 - shields / armor / Break gauge
 - Style meter
