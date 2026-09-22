@@ -31,7 +31,7 @@ namespace NovaStriker.Debugging
         {
             EnsureStyles();
 
-            GUI.Box(new Rect(14, 14, 430, 212), GUIContent.none);
+            GUI.Box(new Rect(14, 14, 455, 236), GUIContent.none);
 
             GUI.Label(
                 new Rect(28, 24, 390, 28),
@@ -53,19 +53,19 @@ namespace NovaStriker.Debugging
                 $"Dash charge: {dashCharge:0.00}s    " +
                 $"Fire charge: {fireCharge:0.00}s\n" +
                 $"Counter: {(combat ? combat.CurrentCounterMode.ToString() : "-")}    " +
-                $"Deflect window: {(combat && combat.IsParryActive)}    " +
-                $"Perfect: {(combat && combat.IsPerfectParryWindow)}    " +
+                $"Deflect active: {(combat && combat.IsParryActive)}\n" +
+                $"Perfect window: {(combat && combat.IsPerfectParryWindow)}    " +
                 $"Melee: {(combat ? combat.MeleeStep : 0)}\n" +
                 $"Health: {health:0}";
 
             GUI.Label(
-                new Rect(28, 58, 390, 82),
+                new Rect(28, 58, 415, 102),
                 state,
                 body
             );
 
             GUI.Label(
-                new Rect(28, 142, 400, 72),
+                new Rect(28, 166, 420, 72),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
                 "U / Square: melee    I / Circle: contextual counter\n" +
