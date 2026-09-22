@@ -37,8 +37,10 @@ namespace NovaStriker.Player
         [SerializeField] private float diveMeleeDuration = 0.22f;
         [SerializeField] private float comboReset = 0.38f;
 
-        private readonly Collider2D[] parryHits = new Collider2D[24];
-        private readonly Collider2D[] meleeHits = new Collider2D[24];
+        private readonly List<Collider2D> parryHits = new(24);
+        private readonly List<Collider2D> meleeHits = new(24);
+        private ContactFilter2D parryFilter;
+        private ContactFilter2D meleeFilter;
         private readonly HashSet<int> meleeTargets = new();
 
         private PlayerInputState input;
@@ -77,6 +79,18 @@ namespace NovaStriker.Player
 
             if (parryWindow.TotalDuration <= 0f)
                 parryWindow = ParryWindow.Default;
+
+            parryFilter = new ContactFilter2D
+            {
+                useTriggers = true
+            };
+            parryFilter.SetLayerMask(projectileMask);
+
+            meleeFilter = new ContactFilter2D
+            {
+                useTriggers = true
+            };
+            meleeFilter.SetLayerMask(damageableMask);
         }
 
         public void SetInput(PlayerInputState state)
@@ -266,11 +280,13 @@ namespace NovaStriker.Player
             if (!IsParryActive)
                 return;
 
-            int count = Physics2D.OverlapCircleNonAlloc(
+            parryHits.Clear();
+
+            int count = Physics2D.OverlapCircle(
                 transform.position,
                 parryRadius,
-                parryHits,
-                projectileMask
+                parryFilter,
+                parryHits
             );
 
             bool perfect = IsPerfectParryWindow;
@@ -388,11 +404,13 @@ namespace NovaStriker.Player
                 (Vector2)transform.position +
                 aim * reach;
 
-            int count = Physics2D.OverlapCircleNonAlloc(
+            meleeHits.Clear();
+
+            int count = Physics2D.OverlapCircle(
                 center,
                 diameter * 0.5f,
-                meleeHits,
-                damageableMask
+                meleeFilter,
+                meleeHits
             );
 
             for (int i = 0; i < count; i++)
