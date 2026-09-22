@@ -130,7 +130,23 @@ Close Dodge Counter grants a short evasive movement and temporary damage invulne
 
 Throw is an advancing context action: holding movement toward the enemy when Counter is pressed takes priority over the close Dodge Counter and launches the enemy away/upward.
 
-Echo's Grapple applies pull velocity toward Echo instead of automatically damaging the target. If no valid target is in grapple range, Echo still performs a grapple-whiff action cue so animation/VFX can play.
+Echo's distance Grapple now uses **soft-lock acquisition**. On the same Circle / I press, Echo chooses the best valid grapple candidate based primarily on aim alignment and secondarily on distance.
+
+Valid Echo grapple candidates are:
+
+- **Enemy targets:** soft-lock and pull the enemy toward Echo.
+- **Traversal GrapplePoints:** soft-lock and pull Echo toward the anchor for movement through the level.
+
+Current greybox ranges:
+
+- enemy grapple: ≤ 4.25 Unity units
+- traversal GrapplePoint acquisition: ≤ 5.75 Unity units
+
+Right-stick / arrow-key aim biases which candidate is selected. Without explicit aim, Echo uses his current facing/aim direction.
+
+A `CounterGrappleLock` cue is emitted as soon as a candidate is acquired so the final UI can display a lock reticle/tether preview before the grapple resolves. The current greybox executes the grapple on the same button press after the Counter startup window; it does not require a second Circle press.
+
+If no valid enemy or GrapplePoint is available, Echo still performs a grapple-whiff action cue so animation/VFX can play.
 
 Nova's distance Deflect retains the defensive projectile-reflection timing:
 
@@ -177,6 +193,7 @@ Create at least:
 - `Enemy`
 - `PlayerProjectile`
 - `EnemyProjectile`
+- `GrapplePoint`
 
 The exact layer numbers are not authoritative; the serialized LayerMasks on components are.
 
@@ -262,7 +279,9 @@ Presentation systems should subscribe to `GameplayEventHub.CueRaised`. Examples:
 - `CounterStarted` → choose character-specific Counter animation
 - `CounterDodge` → Nova/Echo-specific close dodge-counter animation + camera impulse
 - `CounterThrow` → character-specific throw animation
-- `CounterGrapple` → Echo grapple line/arm/weapon presentation and enemy pull feedback
+- `CounterGrappleLock` → show Echo target-lock reticle / tether preview
+- `CounterGrapple` → Echo enemy grapple line/arm/weapon presentation and enemy pull feedback
+- `CounterGrappleTraversal` → Echo-to-anchor tether, traversal camera/VFX, and arrival feedback
 - `CounterDeflect` → Nova projectile-deflection presentation
 - `PerfectParry` → gold-white perfect-deflect VFX + hit-stop presentation + audio
 - `DropThrough` → crouch/drop animation
