@@ -804,6 +804,7 @@ namespace NovaStriker.Player
         private void AcquireEchoGrappleLock()
         {
             ClearGrappleLock();
+            contextualCounterTarget = null;
 
             Vector2 aim =
                 input.Aim.sqrMagnitude > 0.0484f
