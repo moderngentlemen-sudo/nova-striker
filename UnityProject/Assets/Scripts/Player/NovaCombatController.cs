@@ -20,7 +20,7 @@ namespace NovaStriker.Player
     {
         None = 0,
         Enemy = 1,
-        TraversalPoint = 2
+        TraversalSurface = 2
     }
 
     /// <summary>
@@ -51,6 +51,8 @@ namespace NovaStriker.Player
         [SerializeField] private LayerMask damageableMask;
         [SerializeField] private LayerMask projectileMask;
         [SerializeField] private LayerMask grapplePointMask;
+        [Tooltip("Any solid surface on these layers can be used by Echo for traversal grappling when it is above him.")]
+        [SerializeField] private LayerMask grappleSurfaceMask;
 
         [Header("Context Counter — Ranges")]
         [Tooltip("Nova projectile-deflection radius.")]
@@ -83,8 +85,12 @@ namespace NovaStriker.Player
         [Tooltip("Maximum enemy grapple range.")]
         [SerializeField] private float grapplePullSpeed = 10.5f;
         [SerializeField] private float grappleLift = 1.4f;
-        [Tooltip("Maximum traversal-anchor acquisition range.")]
+        [Tooltip("Maximum traversal-surface acquisition range.")]
         [SerializeField] private float grapplePointRange = 5.75f;
+        [Tooltip("Surface grapple candidates must be at least this far above Echo.")]
+        [SerializeField] private float grappleMinimumHeight = 0.30f;
+        [Tooltip("Number of rays sampled across the upper hemisphere when searching for a solid traversal surface.")]
+        [SerializeField, Range(5, 25)] private int grappleSurfaceSamples = 13;
         [SerializeField] private float grappleTraversalSpeed = 13.5f;
         [SerializeField] private float grappleTraversalDuration = 0.68f;
         [Tooltip("Aim alignment matters more than raw distance when Echo selects a grapple lock.")]
@@ -118,6 +124,8 @@ namespace NovaStriker.Player
         private bool contextualCounterPending;
         private Damageable2D contextualCounterTarget;
         private GrapplePoint2D contextualGrapplePoint;
+        private Collider2D contextualGrappleSurfaceCollider;
+        private Vector2 contextualGrappleSurfacePoint;
         private GrappleLockKind grappleLockKind = GrappleLockKind.None;
         private CounterMode currentCounterMode = CounterMode.Deflect;
 
@@ -149,8 +157,8 @@ namespace NovaStriker.Player
         public Vector2 GrappleLockPosition =>
             grappleLockKind == GrappleLockKind.Enemy && contextualCounterTarget
                 ? contextualCounterTarget.transform.position
-                : grappleLockKind == GrappleLockKind.TraversalPoint && contextualGrapplePoint
-                    ? contextualGrapplePoint.AnchorPosition
+                : grappleLockKind == GrappleLockKind.TraversalSurface
+                    ? contextualGrappleSurfacePoint
                     : (Vector2)transform.position;
 
         public bool IsMeleeActive => meleeTimer > 0f;
@@ -693,7 +701,7 @@ namespace NovaStriker.Player
 
         private void ExecuteEchoGrapple()
         {
-            if (grappleLockKind == GrappleLockKind.TraversalPoint)
+            if (grappleLockKind == GrappleLockKind.TraversalSurface)
             {
                 ExecuteEchoTraversalGrapple();
                 return;
@@ -761,16 +769,15 @@ namespace NovaStriker.Player
         private void ExecuteEchoTraversalGrapple()
         {
             if (
-                !contextualGrapplePoint ||
-                !contextualGrapplePoint.Available ||
-                !motor
+                !motor ||
+                grappleLockKind != GrappleLockKind.TraversalSurface
             )
             {
                 return;
             }
 
             Vector2 anchor =
-                contextualGrapplePoint.AnchorPosition;
+                contextualGrappleSurfacePoint;
 
             float distance =
                 Vector2.Distance(
@@ -781,13 +788,23 @@ namespace NovaStriker.Player
             if (distance > grapplePointRange + 0.25f)
                 return;
 
+            float arrivalDistance =
+                contextualGrapplePoint
+                    ? contextualGrapplePoint.ArrivalDistance
+                    : 0.38f;
+
+            string grappleId =
+                contextualGrapplePoint
+                    ? contextualGrapplePoint.GrappleId
+                    : "echo-surface-grapple";
+
             motor.FaceToward(anchor.x);
 
             motor.BeginGrappleTraversal(
                 anchor,
                 grappleTraversalSpeed,
                 grappleTraversalDuration,
-                contextualGrapplePoint.ArrivalDistance
+                arrivalDistance
             );
 
             GameplayEventHub.Raise(new GameplayCue(
@@ -797,7 +814,7 @@ namespace NovaStriker.Player
                 DirectionTo(anchor),
                 1,
                 distance,
-                contextualGrapplePoint.GrappleId
+                grappleId
             ));
         }
 
@@ -909,10 +926,19 @@ namespace NovaStriker.Player
                     continue;
 
                 bestScore = score;
-                grappleLockKind = GrappleLockKind.TraversalPoint;
+                grappleLockKind = GrappleLockKind.TraversalSurface;
                 contextualCounterTarget = null;
                 contextualGrapplePoint = point;
+                contextualGrappleSurfaceCollider =
+                    point.GetComponent<Collider2D>();
+                contextualGrappleSurfacePoint =
+                    point.AnchorPosition;
             }
+
+            TryAcquireSolidSurfaceGrapple(
+                aim,
+                ref bestScore
+            );
 
             if (!HasGrappleLock)
                 return;
@@ -932,8 +958,103 @@ namespace NovaStriker.Player
                 ),
                 grappleLockKind == GrappleLockKind.Enemy
                     ? "echo-grapple-lock-enemy"
-                    : contextualGrapplePoint.GrappleId
+                    : contextualGrapplePoint
+                        ? contextualGrapplePoint.GrappleId
+                        : "echo-grapple-lock-surface"
             ));
+        }
+
+        private void TryAcquireSolidSurfaceGrapple(
+            Vector2 aim,
+            ref float bestScore)
+        {
+            if (grappleSurfaceMask.value == 0)
+                return;
+
+            Vector2 origin =
+                transform.position;
+
+            int samples =
+                Mathf.Max(5, grappleSurfaceSamples);
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t =
+                    samples <= 1
+                        ? 0.5f
+                        : (float)i / (samples - 1);
+
+                float angleDegrees =
+                    Mathf.Lerp(20f, 160f, t);
+
+                float angleRadians =
+                    angleDegrees * Mathf.Deg2Rad;
+
+                Vector2 direction = new(
+                    Mathf.Cos(angleRadians),
+                    Mathf.Sin(angleRadians)
+                );
+
+                RaycastHit2D hit =
+                    Physics2D.Raycast(
+                        origin,
+                        direction,
+                        grapplePointRange,
+                        grappleSurfaceMask
+                    );
+
+                if (!hit.collider)
+                    continue;
+
+                Vector2 point =
+                    hit.point;
+
+                if (
+                    point.y <
+                    origin.y + grappleMinimumHeight
+                )
+                {
+                    continue;
+                }
+
+                float distance =
+                    Vector2.Distance(
+                        origin,
+                        point
+                    );
+
+                float score =
+                    ScoreGrappleCandidate(
+                        point,
+                        aim,
+                        distance,
+                        grapplePointRange
+                    );
+
+                if (float.IsNegativeInfinity(score))
+                    continue;
+
+                // Slightly favor real world geometry over an equally scored
+                // enemy so traversal remains predictable when Echo is clearly
+                // aiming at an overhead surface.
+                score += 0.04f;
+
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                grappleLockKind =
+                    GrappleLockKind.TraversalSurface;
+                contextualCounterTarget = null;
+                contextualGrapplePoint =
+                    hit.collider.GetComponent<GrapplePoint2D>();
+                contextualGrappleSurfaceCollider =
+                    hit.collider;
+                contextualGrappleSurfacePoint =
+                    contextualGrapplePoint
+                        ? contextualGrapplePoint.AnchorPosition
+                        : point;
+            }
         }
 
         private float ScoreGrappleCandidate(
@@ -969,6 +1090,8 @@ namespace NovaStriker.Player
         {
             grappleLockKind = GrappleLockKind.None;
             contextualGrapplePoint = null;
+            contextualGrappleSurfaceCollider = null;
+            contextualGrappleSurfacePoint = transform.position;
         }
 
         private void UpdateProjectileDeflect()
@@ -1284,6 +1407,23 @@ namespace NovaStriker.Player
 
             Gizmos.color = new Color(0.25f, 0.95f, 1f);
             Gizmos.DrawWireSphere(transform.position, grapplePointRange);
+
+            Vector3 origin = transform.position;
+            int samples = Mathf.Max(5, grappleSurfaceSamples);
+            for (int i = 0; i < samples; i++)
+            {
+                float t = samples <= 1 ? 0.5f : (float)i / (samples - 1);
+                float angle = Mathf.Lerp(20f, 160f, t) * Mathf.Deg2Rad;
+                Vector3 direction = new(
+                    Mathf.Cos(angle),
+                    Mathf.Sin(angle),
+                    0f
+                );
+                Gizmos.DrawLine(
+                    origin,
+                    origin + direction * grapplePointRange
+                );
+            }
         }
 #endif
     }
