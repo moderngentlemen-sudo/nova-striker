@@ -189,13 +189,14 @@ namespace NovaStriker.Campaign
 
         public static SectorReference Get(int sectorIndex)
         {
-            return Get(
-                (SectorId)System.Math.Clamp(
-                    sectorIndex,
-                    0,
-                    SectorCount - 1
-                )
-            );
+            int clamped =
+                sectorIndex < 0
+                    ? 0
+                    : sectorIndex >= SectorCount
+                        ? SectorCount - 1
+                        : sectorIndex;
+
+            return Get((SectorId)clamped);
         }
     }
 }
