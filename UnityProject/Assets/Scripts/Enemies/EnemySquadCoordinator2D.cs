@@ -39,7 +39,8 @@ namespace NovaStriker.Enemies
 
         private readonly HashSet<EnemyBrain2D> registered = new();
         private readonly List<EnemyBrain2D> alive = new();
-        private readonly List<List<EnemyBrain2D>> squads = new();
+        private readonly List<List<EnemyBrain2D>> squadPool = new();
+        private int activeSquadCount;
 
         private float refreshTimer;
 
@@ -124,10 +125,10 @@ namespace NovaStriker.Enemies
                     )
             );
 
-            for (int i = 0; i < squads.Count; i++)
-                squads[i].Clear();
+            for (int i = 0; i < squadPool.Count; i++)
+                squadPool[i].Clear();
 
-            squads.Clear();
+            activeSquadCount = 0;
 
             List<EnemyBrain2D> current = null;
             float previousX = float.NegativeInfinity;
@@ -142,16 +143,23 @@ namespace NovaStriker.Enemies
                     x - previousX > squadGapDistance
                 )
                 {
-                    current = new List<EnemyBrain2D>();
-                    squads.Add(current);
+                    if (activeSquadCount >= squadPool.Count)
+                    {
+                        squadPool.Add(
+                            new List<EnemyBrain2D>(8)
+                        );
+                    }
+
+                    current =
+                        squadPool[activeSquadCount++];
                 }
 
                 current.Add(brain);
                 previousX = x;
             }
 
-            for (int i = 0; i < squads.Count; i++)
-                AssignSquad(squads[i]);
+            for (int i = 0; i < activeSquadCount; i++)
+                AssignSquad(squadPool[i]);
         }
 
         private void AssignSquad(List<EnemyBrain2D> squad)
