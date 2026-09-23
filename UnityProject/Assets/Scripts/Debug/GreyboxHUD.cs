@@ -57,7 +57,8 @@ namespace NovaStriker.Debugging
             string state =
                 $"Character: {character}    " +
                 $"Counter: {(combat ? combat.CurrentCounterMode.ToString() : "-")}\n" +
-                $"Grapple lock: {(combat ? combat.CurrentGrappleLockKind.ToString() : "-")}\n" +
+                $"Grapple lock: {(combat ? combat.CurrentGrappleLockKind.ToString() : "-")}    " +
+                $"Up+Counter: {(combat && combat.EchoTraversalGrappleRequested)}\n" +
                 $"Grounded: {(motor && motor.Grounded)}    " +
                 $"Wall slide: {(motor && motor.IsWallSliding)}    " +
                 $"Wall: {(motor ? motor.WallDirection : 0)}\n" +
@@ -83,8 +84,8 @@ namespace NovaStriker.Debugging
                 new Rect(28, 246, 420, 58),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
-                "U / Square: melee    I / Circle: contextual Counter\n" +
-                "Toward + Counter: Throw    Close: Dodge Counter",
+                "U / Square: melee    I / Circle: contextual Counter/Grapple\n" +
+                "Echo: Up/Up-diagonal + Counter = traversal grapple",
                 body
             );
         }
