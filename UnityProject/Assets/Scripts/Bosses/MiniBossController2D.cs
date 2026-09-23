@@ -257,7 +257,7 @@ namespace NovaStriker.Bosses
             }
 
             Projectile2D shot =
-                Instantiate(
+                ProjectilePool2D.Spawn(
                     projectilePrefab,
                     transform.position,
                     Quaternion.identity
