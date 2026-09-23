@@ -54,7 +54,7 @@ The scene contains:
 - Nova Player 1
 - floor and containment walls
 - three one-way platforms
-- three cyan Echo traversal GrapplePoints
+- three ordinary overhead traversal beams on the normal World layer
 - a light damage dummy
 - a heavy damage dummy
 - a hostile projectile emitter
@@ -109,14 +109,17 @@ Run these before tuning values:
 11. Hold movement toward a dummy inside 1.35 units and press Counter: it should select **Throw**.
 12. In the Nova player's `NovaCombatController`, temporarily change **Character** from Nova to Echo.
 13. With Echo selected and an enemy at distance, aim toward the enemy and press Counter: it should soft-lock the enemy and pull it toward Echo.
-14. Aim toward one of the cyan GrapplePoints and press Counter: Echo should soft-lock the anchor and be pulled toward it for traversal.
-15. Place an enemy and GrapplePoint at similar distance, then use right-stick/arrow aim to verify the intended candidate wins the soft-lock score.
-16. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
-17. Test all three grounded melee hits, two aerial hits, and downward dive melee.
-18. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
+14. Aim upward toward any ordinary solid beam, wall edge, or OneWay surface above Echo and press Counter: Echo should soft-lock the struck surface and be pulled toward it.
+15. Verify that the solid does **not** need a GrapplePoint component or special marker.
+16. Put an enemy and overhead surface in similar range, then use right-stick/arrow aim to verify the intended candidate wins the soft-lock score.
+17. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
+18. Wall-jump away from a wall while still holding toward it; the initial horizontal launch should remain intact for roughly 0.10 s before air steering resumes.
+19. Test Quick, Burst, and Velocity Break while watching the HUD's active Dash / Slide tier indicators.
+20. Test all three grounded melee hits, two aerial hits, and downward dive melee.
+21. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
 ## After the first successful import
 
 Commit Unity-generated `.meta` files and any safe ProjectSettings changes made by the Editor. Do not commit `Library/`, `Temp/`, `Logs/`, or other ignored generated directories.
 
-Do not mark the greybox as QA-approved until both Play Mode and a physical controller test pass.
+Unity 6.6 compile/import, Play Mode launch, and corrected wall-slide behavior have been user-confirmed. Do not mark the greybox as QA-approved until the broader checklist and a physical controller test pass.
