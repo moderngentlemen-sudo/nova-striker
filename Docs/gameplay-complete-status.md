@@ -131,6 +131,9 @@ This branch is the full pre-Blender gameplay-development run. The intent is to e
 - scene-independent Structural Batch validator
 - structural validation covers campaign composition, 12-enemy coverage, four-role Strike Team command contracts, and skill/perk catalog invariants
 - batch validator can return a non-zero Unity command-line exit code on structural failure
+- versioned `GameplayPresentationContract` now freezes production-facing Animator parameter names, generic rig/socket names, gameplay event IDs, VFX/audio IDs, and semantic haptic routes without transferring timing authority to production assets
+- Asset + Presentation Contract validator checks the 12-weapon/6-Guardian contracts, generated definitions when present, commerce integrity, presentation identifier uniqueness, gameplay-cue routing, and the four scalability tiers
+- generated greybox assets are warnings rather than source-only validation failures when they have not yet been rebuilt
 
 ## Unity validation status
 
@@ -143,12 +146,12 @@ The expanded `dev/gameplay-complete` branch is **code-integrated but not yet fre
 The branch is now close to the pre-Blender boundary. The remaining material work is primarily validation, profiling, integration verification, and tuning rather than missing gameplay architecture:
 
 - fresh Unity 6.6 compile/error reconciliation
-- regenerate the Mechanics Lab and run both validation tools
+- regenerate the Mechanics Lab and run all three validation layers
 - one/two/three/four-player Play Mode smoke passes
 - join/leave and controller disconnect/reconnect validation
 - end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
 - representative profiler/allocation captures and pool/budget tuning
-- final gameplay-facing presentation socket / Animator / VFX / audio / haptic contract freeze
+- instantiate production Animator/VFX/audio/haptic assets against the frozen presentation contract after gameplay validation; identifier design itself is no longer an open gameplay task
 - native provider adapters only where Steam/Xbox/PlayStation/Nintendo/mobile SDK access and credentials permit
 
 See `Docs/pre-blender-boundary.md` for the explicit dependency matrix and stop condition.
