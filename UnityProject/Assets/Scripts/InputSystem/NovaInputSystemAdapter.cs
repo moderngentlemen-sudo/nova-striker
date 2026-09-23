@@ -17,6 +17,7 @@ namespace NovaStriker.InputSystemIntegration
     public sealed class NovaInputSystemAdapter : MonoBehaviour
     {
         [SerializeField] private NovaPlayerGameplay player;
+        [SerializeField] private MobileVirtualInputSource mobileInput;
 
         [Header("Local Player")]
         [SerializeField, Range(0, 3)] private int playerSlot;
@@ -42,6 +43,9 @@ namespace NovaStriker.InputSystemIntegration
         {
             if (!player)
                 player = GetComponent<NovaPlayerGameplay>();
+
+            if (!mobileInput)
+                mobileInput = GetComponent<MobileVirtualInputSource>();
 
             ResolveAssignedGamepad();
         }
@@ -98,6 +102,14 @@ namespace NovaStriker.InputSystemIntegration
 
             if (gamepad)
                 ReadGamepad(gamepad, ref state);
+
+            if (mobileInput)
+            {
+                MergeState(
+                    ref state,
+                    mobileInput.ConsumeSnapshot()
+                );
+            }
 
             if (state.Move.sqrMagnitude > 1f)
                 state.Move.Normalize();
@@ -281,6 +293,40 @@ namespace NovaStriker.InputSystemIntegration
 
             state.SyncPressed |=
                 gamepad.rightStickButton.wasPressedThisFrame;
+        }
+
+        private static void MergeState(
+            ref PlayerInputState target,
+            PlayerInputState source)
+        {
+            if (source.Move.sqrMagnitude >= target.Move.sqrMagnitude)
+                target.Move = source.Move;
+
+            if (source.Aim.sqrMagnitude >= target.Aim.sqrMagnitude)
+                target.Aim = source.Aim;
+
+            target.JumpHeld |= source.JumpHeld;
+            target.JumpPressed |= source.JumpPressed;
+
+            target.FireHeld |= source.FireHeld;
+            target.FireReleased |= source.FireReleased;
+
+            target.DashHeld |= source.DashHeld;
+            target.DashReleased |= source.DashReleased;
+
+            target.MeleePressed |= source.MeleePressed;
+            target.CounterPressed |= source.CounterPressed;
+            target.AbilityHeld |= source.AbilityHeld;
+            target.AbilityPressed |= source.AbilityPressed;
+            target.Ability1Pressed |= source.Ability1Pressed;
+            target.Ability2Pressed |= source.Ability2Pressed;
+            target.Ability3Pressed |= source.Ability3Pressed;
+            target.UltimatePressed |= source.UltimatePressed;
+
+            target.WeaponCyclePressed |= source.WeaponCyclePressed;
+            target.GuardianCyclePressed |= source.GuardianCyclePressed;
+            target.GuardianActivatePressed |= source.GuardianActivatePressed;
+            target.SyncPressed |= source.SyncPressed;
         }
 
         private static float Axis(
