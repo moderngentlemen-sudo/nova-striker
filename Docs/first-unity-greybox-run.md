@@ -4,12 +4,12 @@ The `dev/unity-gameplay` branch now contains an openable Unity project under `Un
 
 ## Baseline
 
-- Unity target: **6.3 LTS**
-- Recorded editor: `6000.3.15f1`
-- Input package: `com.unity.inputsystem` `1.16.0`
+- Unity target: **6.6**
+- Recorded editor: `6000.6.2f1`
+- Input package: `com.unity.inputsystem` `1.20.0`
 - Physics step in the mechanics lab: 60 Hz
 
-Unity 6.3 LTS is the current long-term-support line selected for Nova Striker. If the project is opened in a later compatible 6000.3 patch, allow Unity to update `ProjectVersion.txt`.
+Nova Striker now targets Unity 6.6. The repository records `6000.6.2f1`; if you already have another compatible 6000.6.x patch installed, you can open the project with that version and allow Unity to update `ProjectVersion.txt` rather than installing 6.3.
 
 ## Open
 
