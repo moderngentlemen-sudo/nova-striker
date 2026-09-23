@@ -3,7 +3,10 @@ using UnityEngine;
 namespace NovaStriker.Traversal
 {
     /// <summary>
-    /// Level-authored traversal anchor for Echo's contextual grapple.
+    /// Optional level-authored traversal anchor for Echo's contextual grapple.
+    /// Echo can grapple ordinary solid World/OneWay geometry above him without
+    /// this component. Use GrapplePoint2D only when a designer needs a precise
+    /// anchor position, custom arrival distance, ID, or availability toggle.
     /// The collider should normally be a trigger on the GrapplePoint layer.
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
