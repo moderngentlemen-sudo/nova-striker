@@ -49,6 +49,8 @@ namespace NovaStriker.Session
 
         public event Action<float, float> SynergyChanged;
         public event Action<TeamSyncTier, int> TeamSyncActivated;
+        public event Action<int, StrikerPlayerIdentity> PlayerRegistered;
+        public event Action<int, StrikerPlayerIdentity> PlayerUnregistered;
 
         public int LastSyncParticipantMask { get; private set; }
 
@@ -56,6 +58,22 @@ namespace NovaStriker.Session
         public float MaxSynergy => maxSynergy;
         public float SynergyNormalized =>
             maxSynergy > 0f ? synergy / maxSynergy : 0f;
+
+        public int RegisteredPlayerCount
+        {
+            get
+            {
+                int count = 0;
+
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i])
+                        count++;
+                }
+
+                return count;
+            }
+        }
 
         public int ActivePlayerCount
         {
@@ -70,6 +88,29 @@ namespace NovaStriker.Session
                 }
 
                 return count;
+            }
+        }
+
+        public bool IsPartyWiped
+        {
+            get
+            {
+                int registered = 0;
+
+                for (int i = 0; i < players.Length; i++)
+                {
+                    StrikerPlayerIdentity player = players[i];
+
+                    if (!player)
+                        continue;
+
+                    registered++;
+
+                    if (IsCombatReady(player))
+                        return false;
+                }
+
+                return registered > 0;
             }
         }
 
@@ -158,7 +199,12 @@ namespace NovaStriker.Session
                 );
             }
 
+            bool changed = existing != player;
             players[slot] = player;
+
+            if (changed)
+                PlayerRegistered?.Invoke(slot, player);
+
             return true;
         }
 
@@ -177,6 +223,7 @@ namespace NovaStriker.Session
             {
                 players[slot] = null;
                 syncRequested[slot] = false;
+                PlayerUnregistered?.Invoke(slot, player);
             }
         }
 
@@ -186,6 +233,24 @@ namespace NovaStriker.Session
                 return null;
 
             return players[slot];
+        }
+
+        public bool IsSlotCombatReady(int slot)
+        {
+            return IsCombatReady(GetPlayer(slot));
+        }
+
+        public int GetRegisteredPlayerMask()
+        {
+            int mask = 0;
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i])
+                    mask |= 1 << i;
+            }
+
+            return mask;
         }
 
         public bool TryGetNearestCombatReadyPlayer(
