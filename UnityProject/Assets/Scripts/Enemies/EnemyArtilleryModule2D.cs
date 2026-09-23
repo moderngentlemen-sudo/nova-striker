@@ -132,7 +132,7 @@ namespace NovaStriker.Enemies
                     Mathf.Sin(angle)
                 );
 
-                Projectile2D projectile = Instantiate(
+                Projectile2D projectile = ProjectilePool2D.Spawn(
                     projectilePrefab,
                     origin,
                     Quaternion.identity
