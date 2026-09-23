@@ -26,7 +26,7 @@ namespace NovaStriker.Campaign
         {
             if (!progression)
                 progression =
-                    FindFirstObjectByType<CampaignProgressionController>();
+                    FindAnyObjectByType<CampaignProgressionController>();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -42,7 +42,7 @@ namespace NovaStriker.Campaign
 
             if (!progression)
                 progression =
-                    FindFirstObjectByType<CampaignProgressionController>();
+                    FindAnyObjectByType<CampaignProgressionController>();
 
             if (!progression)
                 return;
