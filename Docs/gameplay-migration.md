@@ -22,19 +22,23 @@ Implementation status on `dev/unity-gameplay`:
 9. ✅ Ground and aerial melee state/hit logic.
 10. ✅ Character-specific Circle Counter:
    - Nova distance Deflect
-   - Echo distance soft-lock Grapple: pull enemies or attach to traversal GrapplePoints
+   - Echo distance soft-lock Grapple: pull enemies or attach to any eligible solid surface above; GrapplePoint2D is optional
    - shared close Dodge + Counter
    - advancing Throw
    - Nova perfect projectile deflection.
 11. ✅ Charged fire tiers and initial projectile patterns.
 
-Still required before this milestone is considered validated:
+Current validation status:
 
-- Unity editor compile/import
-- greybox scene assembly
-- Input System adapter
-- physical controller testing
-- tuning against the browser reference
+- ✅ Unity 6.6 compile/import
+- ✅ greybox scene assembly and Play Mode launch
+- ✅ Input System adapter compiles
+- ✅ wall contact / wall-slide fix user-confirmed
+- ⏳ wall-jump feel tuning pass
+- ⏳ dash / Powerslide tier validation
+- ⏳ Nova/Echo Counter and Echo surface-grapple validation
+- ⏳ physical controller testing
+- ⏳ final tuning against the browser reference
 
 ## Milestone 2 — Combat core
 
