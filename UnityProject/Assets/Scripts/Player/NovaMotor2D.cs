@@ -20,6 +20,7 @@ namespace NovaStriker.Player
         [Header("References")]
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private CapsuleCollider2D capsule;
+        [SerializeField] private CombatState2D combatState;
         [SerializeField] private LayerMask worldMask;
         [SerializeField] private LayerMask oneWayMask;
 
@@ -123,6 +124,7 @@ namespace NovaStriker.Player
         {
             body = GetComponent<Rigidbody2D>();
             capsule = GetComponent<CapsuleCollider2D>();
+            combatState = GetComponent<CombatState2D>();
         }
 
         private void Awake()
@@ -132,6 +134,9 @@ namespace NovaStriker.Player
 
             if (!capsule)
                 capsule = GetComponent<CapsuleCollider2D>();
+
+            if (!combatState)
+                combatState = GetComponent<CombatState2D>();
 
             body.freezeRotation = true;
 
@@ -647,6 +652,8 @@ namespace NovaStriker.Player
                 _ => velocityBreakSpeed
             };
 
+            speed *= MovementStatusMultiplier();
+
             body.linearVelocity = dashDirection * speed;
 
             if (dashTimer > 0f)
@@ -696,6 +703,8 @@ namespace NovaStriker.Player
                 ChargeTier.Burst => burstSlideSpeed,
                 _ => velocitySlideSpeed
             };
+
+            speed *= MovementStatusMultiplier();
 
             body.linearVelocity = new Vector2(
                 dashDirection.x * speed,
@@ -800,7 +809,10 @@ namespace NovaStriker.Player
 
         private void UpdateRun(float dt)
         {
-            float speed = crouching ? crouchSpeed : runSpeed;
+            float speed =
+                (crouching ? crouchSpeed : runSpeed) *
+                MovementStatusMultiplier();
+
             float desired = input.Move.x * speed;
             float acceleration = grounded
                 ? groundAcceleration
@@ -816,6 +828,13 @@ namespace NovaStriker.Player
                 nextX,
                 body.linearVelocity.y
             );
+        }
+
+        private float MovementStatusMultiplier()
+        {
+            return combatState
+                ? combatState.MovementMultiplier
+                : 1f;
         }
 
 #if UNITY_EDITOR
