@@ -29,6 +29,20 @@ namespace NovaStriker.Campaign
 
         private bool collected;
 
+        public PickupKind Kind => kind;
+        public float Amount => amount;
+
+        public void Configure(
+            PickupKind value,
+            float rewardAmount,
+            bool shared)
+        {
+            kind = value;
+            amount = Mathf.Max(0f, rewardAmount);
+            sharedTeamPickup = shared;
+            collected = false;
+        }
+
         private void Reset()
         {
             Collider2D collider = GetComponent<Collider2D>();
