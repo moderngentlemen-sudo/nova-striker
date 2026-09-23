@@ -26,6 +26,7 @@ namespace NovaStriker.Combat
         private bool mineArmed;
 
         private readonly List<Collider2D> behaviorHits = new(24);
+        private readonly HashSet<Damageable2D> behaviorTargets = new();
         private ContactFilter2D enemyFilter;
 
         public CombatFaction Faction { get; private set; }
@@ -296,7 +297,7 @@ namespace NovaStriker.Combat
                 behaviorHits
             );
 
-            HashSet<Damageable2D> hitTargets = new();
+            behaviorTargets.Clear();
 
             for (int i = 0; i < count; i++)
             {
@@ -306,7 +307,7 @@ namespace NovaStriker.Combat
                 if (
                     !target ||
                     target.Faction != CombatFaction.Enemy ||
-                    !hitTargets.Add(target)
+                    !behaviorTargets.Add(target)
                 )
                 {
                     continue;
@@ -427,6 +428,12 @@ namespace NovaStriker.Combat
             if (!initialized)
                 return;
 
+            if (IsWorldCollider(other))
+            {
+                HandleWorldCollision();
+                return;
+            }
+
             Projectile2D otherProjectile = other.GetComponentInParent<Projectile2D>();
 
             if (otherProjectile && otherProjectile != this)
@@ -497,6 +504,47 @@ namespace NovaStriker.Combat
             )
             {
                 Destroy(gameObject);
+            }
+        }
+
+        private bool IsWorldCollider(Collider2D other)
+        {
+            if (!other)
+                return false;
+
+            int worldLayer =
+                LayerMask.NameToLayer("World");
+
+            int oneWayLayer =
+                LayerMask.NameToLayer("OneWay");
+
+            return
+                other.gameObject.layer == worldLayer ||
+                other.gameObject.layer == oneWayLayer;
+        }
+
+        private void HandleWorldCollision()
+        {
+            switch (Behavior)
+            {
+                case WeaponBehavior.Gravity:
+                    if (body)
+                        body.linearVelocity = Vector2.zero;
+                    break;
+
+                case WeaponBehavior.Mine:
+                    if (body)
+                        body.linearVelocity = Vector2.zero;
+                    mineArmed = true;
+                    break;
+
+                case WeaponBehavior.Boomerang:
+                    boomerangReturning = true;
+                    break;
+
+                default:
+                    Destroy(gameObject);
+                    break;
             }
         }
 
