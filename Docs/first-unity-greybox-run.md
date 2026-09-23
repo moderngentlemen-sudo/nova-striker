@@ -115,7 +115,7 @@ Run these before tuning values:
 17. Verify that ordinary solid traversal geometry does **not** need a GrapplePoint component or special marker.
 18. Put an enemy and an overhead surface in similar range: without Up the enemy should be chosen; with Up/Up-diagonal input the traversal surface should be chosen.
 19. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
-20. Wall-jump away from a wall while still holding toward it; the initial horizontal launch should remain intact for roughly 0.10 s before air steering resumes.
+20. Re-test wall jumps from both sides and compare the feel against the earlier behavior now that the temporary steering lock has been removed.
 21. Test Quick, Burst, and Velocity Break while watching the HUD's active Dash / Slide tier indicators.
 22. Test all three grounded melee hits, two aerial hits, and downward dive melee.
 23. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
