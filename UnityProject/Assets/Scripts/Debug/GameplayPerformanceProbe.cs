@@ -46,7 +46,9 @@ namespace NovaStriker.Debugging
             RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallInMechanicsLab()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!UnityEngine.Debug.isDebugBuild)
+                return;
+
             Scene scene = SceneManager.GetActiveScene();
 
             if (scene.name != MechanicsLabSceneName)
@@ -57,7 +59,6 @@ namespace NovaStriker.Debugging
 
             GameObject root = new("__GameplayPerformanceProbe");
             root.AddComponent<GameplayPerformanceProbe>();
-#endif
         }
 
         private void Awake()
@@ -126,7 +127,9 @@ namespace NovaStriker.Debugging
 
         private void OnGUI()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!UnityEngine.Debug.isDebugBuild)
+                return;
+
             EnsureStyles();
 
             RuntimeScalabilityManager scalability =
