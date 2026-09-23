@@ -417,6 +417,40 @@ namespace NovaStriker.Combat
                 TriggerBreak(source);
         }
 
+        public float RestoreShield(float amount)
+        {
+            if (maxShield <= 0f || amount <= 0f)
+                return 0f;
+
+            float before = Shield;
+
+            Shield =
+                Mathf.Clamp(
+                    Shield + amount,
+                    0f,
+                    maxShield
+                );
+
+            return Shield - before;
+        }
+
+        public float RestoreArmor(float amount)
+        {
+            if (maxArmor <= 0f || amount <= 0f)
+                return 0f;
+
+            float before = Armor;
+
+            Armor =
+                Mathf.Clamp(
+                    Armor + amount,
+                    0f,
+                    maxArmor
+                );
+
+            return Armor - before;
+        }
+
         public void RestoreLayers()
         {
             ResetLayers();
