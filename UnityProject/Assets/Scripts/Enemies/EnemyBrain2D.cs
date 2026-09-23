@@ -165,6 +165,22 @@ namespace NovaStriker.Enemies
             return hit.collider == null;
         }
 
+        public void MoveVelocity(
+            Vector2 desiredVelocity,
+            float acceleration,
+            float dt)
+        {
+            if (!body)
+                return;
+
+            body.linearVelocity =
+                Vector2.MoveTowards(
+                    body.linearVelocity,
+                    desiredVelocity,
+                    Mathf.Max(0f, acceleration) * dt
+                );
+        }
+
         public void MoveHorizontal(
             float desiredVelocity,
             float acceleration,
