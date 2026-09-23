@@ -60,6 +60,7 @@ namespace NovaStriker.Enemies
         public Transform Target => target;
         public bool HasTarget => target;
         public bool IsDefeated => !damageable || damageable.IsDefeated;
+        public int Facing { get; private set; } = 1;
 
         public Vector2 TargetPosition =>
             target ? (Vector2)target.position : (Vector2)transform.position;
@@ -81,6 +82,22 @@ namespace NovaStriker.Enemies
             target
                 ? Vector2.Distance(transform.position, target.position)
                 : float.PositiveInfinity;
+
+        public Vector2 TargetVelocity
+        {
+            get
+            {
+                if (!target)
+                    return Vector2.zero;
+
+                Rigidbody2D targetBody =
+                    target.GetComponent<Rigidbody2D>();
+
+                return targetBody
+                    ? targetBody.linearVelocity
+                    : Vector2.zero;
+            }
+        }
 
         private void Reset()
         {
@@ -148,6 +165,17 @@ namespace NovaStriker.Enemies
                 State = EnemyBrainState.Idle;
                 activeModule?.TickIdle(this, dt);
                 return;
+            }
+
+            Vector2 targetDirection =
+                DirectionToTarget;
+
+            if (Mathf.Abs(targetDirection.x) > 0.05f)
+            {
+                Facing =
+                    targetDirection.x < 0f
+                        ? -1
+                        : 1;
             }
 
             State = EnemyBrainState.Engage;
