@@ -28,6 +28,19 @@ namespace NovaStriker.Campaign
 
         public event Action<ActLevelVarietyReference> PlanConfigured;
 
+        public void ConfigureBindings(
+            LevelVariationModuleBinding[] moduleBindings,
+            SectorHazard2D[] hazardBindings)
+        {
+            modules =
+                moduleBindings ??
+                Array.Empty<LevelVariationModuleBinding>();
+
+            hazards =
+                hazardBindings ??
+                Array.Empty<SectorHazard2D>();
+        }
+
         public void ConfigurePlan(
             ActLevelVarietyReference plan)
         {
