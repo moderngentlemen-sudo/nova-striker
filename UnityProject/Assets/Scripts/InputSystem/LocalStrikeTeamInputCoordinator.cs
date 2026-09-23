@@ -177,7 +177,7 @@ namespace NovaStriker.InputSystemIntegration
                 Gamepad available =
                     FindFirstUnclaimedGamepad(claimed);
 
-                if (!available)
+                if (available == null)
                     continue;
 
                 adapter.AssignGamepad(available);
@@ -251,7 +251,7 @@ namespace NovaStriker.InputSystemIntegration
                 Gamepad candidate = Gamepad.all[i];
 
                 if (
-                    candidate &&
+                    candidate != null &&
                     !claimed.Contains(candidate.deviceId)
                 )
                 {
