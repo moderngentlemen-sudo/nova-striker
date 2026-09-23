@@ -51,6 +51,8 @@ namespace NovaStriker.Enemies
         private readonly List<EnemyRoleModule2D> modules = new();
         private EnemyRoleModule2D activeModule;
         private float retargetTimer;
+        private float reactionOverrideTimer;
+        private Vector2 reactionOverrideVelocity;
 
         public int ActorId => actorId;
         public EnemyRole Role => role;
@@ -160,6 +162,21 @@ namespace NovaStriker.Enemies
                 return;
             }
 
+            if (reactionOverrideTimer > 0f)
+            {
+                reactionOverrideTimer =
+                    Mathf.Max(
+                        0f,
+                        reactionOverrideTimer - dt
+                    );
+
+                if (body)
+                    body.linearVelocity = reactionOverrideVelocity;
+
+                State = EnemyBrainState.Recover;
+                return;
+            }
+
             if (!target || TargetDistance > detectionRange)
             {
                 State = EnemyBrainState.Idle;
@@ -254,6 +271,21 @@ namespace NovaStriker.Enemies
             );
 
             return hit.collider == null;
+        }
+
+        public void BeginReactionOverride(
+            Vector2 velocity,
+            float duration)
+        {
+            reactionOverrideVelocity = velocity;
+            reactionOverrideTimer =
+                Mathf.Max(
+                    reactionOverrideTimer,
+                    Mathf.Max(0f, duration)
+                );
+
+            if (body)
+                body.linearVelocity = velocity;
         }
 
         public void MoveVelocity(
