@@ -748,6 +748,20 @@ namespace NovaStriker.Player
             if (distance > grappleRange + 0.25f)
                 return;
 
+            if (!HasClearEnemyGrappleLine(contextualCounterTarget))
+            {
+                GameplayEventHub.Raise(new GameplayCue(
+                    GameplayCueType.CounterGrapple,
+                    playerId,
+                    contextualCounterTarget.transform.position,
+                    DirectionTo(contextualCounterTarget.transform.position),
+                    0,
+                    distance,
+                    "echo-grapple-blocked"
+                ));
+                return;
+            }
+
             Vector2 targetToEcho =
                 (
                     (Vector2)transform.position -
@@ -872,6 +886,9 @@ namespace NovaStriker.Player
 
                 Vector2 position =
                     candidate.transform.position;
+
+                if (!HasClearEnemyGrappleLine(candidate))
+                    continue;
 
                 float distance =
                     Vector2.Distance(
@@ -1119,6 +1136,31 @@ namespace NovaStriker.Player
                         ? contextualGrapplePoint.AnchorPosition
                         : point;
             }
+        }
+
+        private bool HasClearEnemyGrappleLine(
+            Damageable2D target)
+        {
+            if (!target)
+                return false;
+
+            if (grappleSurfaceMask.value == 0)
+                return true;
+
+            Vector2 origin =
+                transform.position;
+
+            Vector2 targetPosition =
+                target.transform.position;
+
+            RaycastHit2D obstruction =
+                Physics2D.Linecast(
+                    origin,
+                    targetPosition,
+                    grappleSurfaceMask
+                );
+
+            return obstruction.collider == null;
         }
 
         private float ScoreGrappleCandidate(
