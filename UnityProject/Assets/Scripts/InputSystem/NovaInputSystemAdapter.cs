@@ -15,8 +15,9 @@ namespace NovaStriker.InputSystemIntegration
     /// Gamepad / DualShock / DualSense:
     /// Left stick move, right stick aim,
     /// Cross/South jump, R2 fire, L2 dash,
-    /// Square/West melee, Circle/East context counter,
+    /// Square/West melee, Circle/East context counter / Echo grapple,
     /// L1 ability, R1 or Triangle/North weapon cycle,
+    /// Echo traversal grapple uses Left Stick Up / Up-Left / Up-Right + Circle.
     /// L3 or D-pad Up Guardian cycle, R3 Sync.
     /// </summary>
     [DefaultExecutionOrder(-300)]
