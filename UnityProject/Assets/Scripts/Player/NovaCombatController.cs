@@ -373,7 +373,7 @@ namespace NovaStriker.Player
                 ? muzzleSocket.position
                 : transform.position + (Vector3)(direction * 0.52f);
 
-            Projectile2D shot = Instantiate(
+            Projectile2D shot = ProjectilePool2D.Spawn(
                 projectilePrefab,
                 origin,
                 Quaternion.identity
