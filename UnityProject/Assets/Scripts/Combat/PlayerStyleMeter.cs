@@ -40,6 +40,7 @@ namespace NovaStriker.Combat
         [SerializeField] private float repeatActionMultiplier = 0.72f;
 
         private readonly Dictionary<string, float> recentActions = new();
+        private readonly List<string> expiredActions = new(16);
 
         private float style;
         private float graceTimer;
@@ -92,22 +93,20 @@ namespace NovaStriker.Combat
             if (recentActions.Count == 0)
                 return;
 
-            List<string> expired = null;
+            expiredActions.Clear();
 
             foreach (KeyValuePair<string, float> pair in recentActions)
             {
                 if (Time.unscaledTime - pair.Value <= varietyMemorySeconds)
                     continue;
 
-                expired ??= new List<string>();
-                expired.Add(pair.Key);
+                expiredActions.Add(pair.Key);
             }
 
-            if (expired == null)
-                return;
+            for (int i = 0; i < expiredActions.Count; i++)
+                recentActions.Remove(expiredActions[i]);
 
-            for (int i = 0; i < expired.Count; i++)
-                recentActions.Remove(expired[i]);
+            expiredActions.Clear();
         }
 
         private void OnGameplayCue(GameplayCue cue)
