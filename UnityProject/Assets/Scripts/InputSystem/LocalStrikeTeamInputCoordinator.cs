@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using NovaStriker.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,11 +22,19 @@ namespace NovaStriker.InputSystemIntegration
         [SerializeField] private bool playerOneKeyboardEnabled = true;
         [SerializeField] private bool autoAssignConnectedGamepads = true;
 
+        private readonly bool[] connectedState = new bool[4];
+        private bool connectionStateInitialized;
+
+        public event Action<int> PlayerJoined;
+        public event Action<int> PlayerLeft;
+        public event Action<int, bool, int> DeviceConnectionChanged;
+
         private void OnEnable()
         {
             InputSystem.onDeviceChange += OnDeviceChange;
             ConfigurePlayerSlots();
             ReconcileGamepads();
+            CaptureConnectionState(false);
         }
 
         private void OnDisable()
@@ -41,6 +51,71 @@ namespace NovaStriker.InputSystemIntegration
 
             ConfigurePlayerSlots();
             ReconcileGamepads();
+            CaptureConnectionState(false);
+        }
+
+        public bool RequestJoin(int slot)
+        {
+            NovaInputSystemAdapter adapter =
+                AdapterAt(slot);
+
+            if (!adapter)
+                return false;
+
+            bool hasInput =
+                adapter.HasAssignedGamepad ||
+                (
+                    slot == 0 &&
+                    playerOneKeyboardEnabled
+                );
+
+            if (!hasInput)
+                return false;
+
+            StrikerPlayerIdentity identity =
+                adapter.GetComponent<StrikerPlayerIdentity>();
+
+            if (!identity)
+                return false;
+
+            if (!identity.IsParticipating)
+            {
+                identity.SetParticipation(true);
+                PlayerJoined?.Invoke(slot);
+            }
+
+            return true;
+        }
+
+        public bool RequestLeave(int slot)
+        {
+            NovaInputSystemAdapter adapter =
+                AdapterAt(slot);
+
+            if (!adapter)
+                return false;
+
+            StrikerPlayerIdentity identity =
+                adapter.GetComponent<StrikerPlayerIdentity>();
+
+            if (!identity)
+                return false;
+
+            if (identity.IsParticipating)
+            {
+                identity.SetParticipation(false);
+                PlayerLeft?.Invoke(slot);
+            }
+
+            return true;
+        }
+
+        public bool IsDeviceConnected(int slot)
+        {
+            NovaInputSystemAdapter adapter =
+                AdapterAt(slot);
+
+            return adapter && adapter.HasAssignedGamepad;
         }
 
         private void ConfigurePlayerSlots()
@@ -108,6 +183,64 @@ namespace NovaStriker.InputSystemIntegration
                 adapter.AssignGamepad(available);
                 claimed.Add(available.deviceId);
             }
+
+            CaptureConnectionState(true);
+        }
+
+        private NovaInputSystemAdapter AdapterAt(int slot)
+        {
+            if (
+                players == null ||
+                slot < 0 ||
+                slot >= players.Length
+            )
+            {
+                return null;
+            }
+
+            return players[slot];
+        }
+
+        private void CaptureConnectionState(
+            bool raiseChanges)
+        {
+            if (players == null)
+                return;
+
+            int count =
+                Mathf.Min(
+                    connectedState.Length,
+                    players.Length
+                );
+
+            for (int i = 0; i < count; i++)
+            {
+                NovaInputSystemAdapter adapter =
+                    players[i];
+
+                bool connected =
+                    adapter &&
+                    adapter.HasAssignedGamepad;
+
+                if (
+                    raiseChanges &&
+                    connectionStateInitialized &&
+                    connectedState[i] != connected
+                )
+                {
+                    DeviceConnectionChanged?.Invoke(
+                        i,
+                        connected,
+                        adapter
+                            ? adapter.AssignedDeviceId
+                            : -1
+                    );
+                }
+
+                connectedState[i] = connected;
+            }
+
+            connectionStateInitialized = true;
         }
 
         private static Gamepad FindFirstUnclaimedGamepad(
