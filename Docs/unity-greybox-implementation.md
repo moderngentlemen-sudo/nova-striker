@@ -147,7 +147,7 @@ Throw is an advancing context action: holding movement toward the enemy when Cou
 
 Echo's distance Grapple is now split by directional intent rather than mixing enemies and traversal surfaces in one candidate pool.
 
-- **Circle / I without upward movement:** searches only for enemies in grapple range. Right-stick / arrow-key aim can bias which opponent is selected; if no aim is supplied, Echo uses his current facing direction.
+- **Circle / I without upward movement:** searches only for enemies in grapple range. Right-stick / arrow-key aim can bias which opponent is selected; if no aim is supplied, Echo uses his current facing direction. Enemy grapple candidates must also have an unobstructed line from Echo to the target; World and OneWay geometry block the grapple.
 - **Up, Up-Left, or Up-Right on the movement input + Circle / I:** searches only for traversal surfaces and optional GrapplePoint2D overrides. The movement direction defines the traversal-grapple cone, so Up-Left and Up-Right intentionally steer which overhead surface Echo acquires.
 
 Traversal candidates are:
@@ -162,7 +162,7 @@ Current greybox ranges:
 - the surface must be at least 0.30 Unity units above Echo
 - traversal acquisition uses 21 small CircleCast probes across the upper hemisphere for forgiving surface selection
 
-For traversal, the movement input—not the right stick—is authoritative: Up means vertical acquisition, while Up-Left and Up-Right bias the grapple cone diagonally. For enemy grappling, right-stick / arrow-key aim still biases target selection. The enemy grapple is intentionally much longer-range than traversal grappling so Echo can pull combatants from across large portions of the encounter space.
+For traversal, the movement input—not the right stick—is authoritative: Up means vertical acquisition, while Up-Left and Up-Right bias the grapple cone diagonally. For enemy grappling, right-stick / arrow-key aim still biases target selection. The enemy grapple is intentionally much longer-range than traversal grappling so Echo can pull combatants from across large portions of the encounter space, but platforms and other configured grapple-surface geometry occlude the tether. Line of sight is checked both when locking and again when the grapple resolves.
 
 A `CounterGrappleLock` cue is emitted as soon as a candidate is acquired so the final UI can display a lock reticle/tether preview before the grapple resolves. The current greybox executes the grapple on the same button press after the Counter startup window; it does not require a second Circle press.
 
