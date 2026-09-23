@@ -415,6 +415,10 @@ namespace NovaStriker.Session
                 case GameplayCueType.Defeated:
                     AddSynergy(-12f);
                     break;
+
+                case GameplayCueType.Revived:
+                    AddSynergy(10f);
+                    break;
             }
         }
 
