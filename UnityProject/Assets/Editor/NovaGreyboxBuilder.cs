@@ -562,6 +562,9 @@ namespace NovaStriker.EditorTools
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
 
+            GreyboxMechanicsVisualizer visualizer =
+                root.AddComponent<GreyboxMechanicsVisualizer>();
+
             GameObject visual =
                 GameObject.CreatePrimitive(
                     PrimitiveType.Capsule
@@ -667,6 +670,17 @@ namespace NovaStriker.EditorTools
                 input,
                 "player",
                 gameplay
+            );
+
+            SetObjectReference(
+                visualizer,
+                "motor",
+                motor
+            );
+            SetObjectReference(
+                visualizer,
+                "combat",
+                combat
             );
 
             PrefabUtility.SaveAsPrefabAsset(
