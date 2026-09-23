@@ -57,7 +57,7 @@ The scene contains:
 - three ordinary overhead traversal beams on the normal World layer
 - a light damage dummy
 - a heavy damage dummy
-- a moving/firing generic Enemy Skirmisher used to validate the new modular enemy framework
+- generic Skirmisher, Flanker, and Artillery enemies used to validate the modular enemy framework
 - a hostile projectile emitter
 - periodic perfect-parry opportunities
 - orthographic camera
@@ -178,13 +178,13 @@ For Counter validation, use the HUD's lock type and distance together with the l
 
 After pulling this phase, run **Nova Striker → Greybox → Build / Refresh Mechanics Lab** once.
 
-The regenerated scene adds `Enemy_Skirmisher`, a generic AI test enemy:
+The regenerated scene now includes three generic AI test enemies:
 
-- it approaches when outside its preferred range,
-- backs away when too close,
-- settles into a mid-range spacing band,
-- fires parryable shots only with clear line of sight,
-- stops autonomous behavior when defeated.
+- `Enemy_Skirmisher` — mid-range spacing and single parryable shots.
+- `Enemy_Flanker` — faster pressure, short reposition bursts, and quick close/mid-range shots.
+- `Enemy_Artillery` — larger preferred range and slower three-shot parryable salvos.
+
+All three should stop firing through World/OneWay geometry and stop autonomous behavior when defeated.
 
 Also confirm that damaging the enemy does not cause the player's presentation bridge to receive Hurt/Defeated cues; `Damageable2D` now emits those cues for the receiving actor ID.
 
