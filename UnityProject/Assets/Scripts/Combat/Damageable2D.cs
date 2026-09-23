@@ -124,6 +124,18 @@ namespace NovaStriker.Combat
             return true;
         }
 
+        public void ConfigureMaxHealth(
+            float value,
+            bool refill = true)
+        {
+            maxHealth = Mathf.Max(1f, value);
+
+            if (refill)
+                Health = maxHealth;
+            else
+                Health = Mathf.Min(Health, maxHealth);
+        }
+
         public void GrantInvulnerability(float seconds)
         {
             invulnerabilityRemaining =
