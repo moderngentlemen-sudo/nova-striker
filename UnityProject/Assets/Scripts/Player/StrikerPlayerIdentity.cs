@@ -16,6 +16,7 @@ namespace NovaStriker.Player
         [Header("Local Player")]
         [SerializeField, Range(0, StrikeTeamSession.MaxPlayers - 1)]
         private int playerSlot;
+        [SerializeField] private bool participating = true;
 
         [Header("Strike Team")]
         [SerializeField] private StrikeTeamRole teamRole =
@@ -32,6 +33,8 @@ namespace NovaStriker.Player
                 ? damageable.ActorId
                 : playerSlot;
 
+        public bool IsParticipating => participating;
+
         public StrikeTeamRole TeamRole => teamRole;
         public StrikeTeamCommandRank CommandRank =>
             StrikeTeamRoleRules.CommandRank(teamRole);
@@ -42,6 +45,7 @@ namespace NovaStriker.Player
                 : StrikerCharacter.Nova;
 
         public bool IsCombatReady =>
+            participating &&
             damageable &&
             !damageable.IsDefeated;
 
@@ -92,6 +96,21 @@ namespace NovaStriker.Player
 
             if (isActiveAndEnabled)
                 session?.Register(this);
+        }
+
+        public void SetParticipation(bool value)
+        {
+            if (participating == value)
+                return;
+
+            participating = value;
+
+            if (!participating)
+            {
+                GetComponent<NovaPlayerGameplay>()?.ClearInput();
+            }
+
+            session?.NotifyParticipationChanged(this);
         }
 
         public void SubmitTeamInput(
