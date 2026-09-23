@@ -103,6 +103,22 @@ namespace NovaStriker.Combat
                 packet.WeaponId
             ));
 
+            if (
+                packet.SourceFaction == CombatFaction.Player &&
+                packet.SourcePlayerId >= 0
+            )
+            {
+                GameplayEventHub.Raise(new GameplayCue(
+                    GameplayCueType.DamageDealt,
+                    packet.SourcePlayerId,
+                    packet.HitPoint,
+                    packet.Knockback.normalized,
+                    packet.Tier,
+                    packet.Damage,
+                    packet.WeaponId
+                ));
+            }
+
             if (!IsDefeated)
                 return true;
 
@@ -117,6 +133,22 @@ namespace NovaStriker.Combat
                 packet.Damage,
                 packet.WeaponId
             ));
+
+            if (
+                packet.SourceFaction == CombatFaction.Player &&
+                packet.SourcePlayerId >= 0
+            )
+            {
+                GameplayEventHub.Raise(new GameplayCue(
+                    GameplayCueType.DefeatDealt,
+                    packet.SourcePlayerId,
+                    transform.position,
+                    Vector2.zero,
+                    packet.Tier,
+                    packet.Damage,
+                    packet.WeaponId
+                ));
+            }
 
             if (destroyOnDefeat)
                 Destroy(gameObject);
