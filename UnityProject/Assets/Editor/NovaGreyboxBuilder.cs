@@ -7,6 +7,7 @@ using NovaStriker.Enemies;
 using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
 using NovaStriker.Presentation;
+using NovaStriker.Progression;
 using NovaStriker.Session;
 using NovaStriker.Traversal;
 using UnityEditor;
@@ -924,6 +925,9 @@ namespace NovaStriker.EditorTools
             StrikerPlayerIdentity identity =
                 root.AddComponent<StrikerPlayerIdentity>();
 
+            PlayerStyleMeter styleMeter =
+                root.AddComponent<PlayerStyleMeter>();
+
             StrikerDownedState downed =
                 root.AddComponent<StrikerDownedState>();
 
@@ -1124,6 +1128,12 @@ namespace NovaStriker.EditorTools
                 identity,
                 "combat",
                 combat
+            );
+
+            SetObjectReference(
+                styleMeter,
+                "identity",
+                identity
             );
 
             SetObjectReference(
