@@ -63,8 +63,8 @@ namespace NovaStriker.Player
         [SerializeField] private float closeCounterRadius = 1.15f;
         [Tooltip("Advancing toward an enemy inside this range triggers Throw.")]
         [SerializeField] private float throwRange = 1.35f;
-        [Tooltip("Echo can grapple enemies at or inside this range.")]
-        [SerializeField] private float grappleRange = 4.25f;
+        [Tooltip("Echo can grapple enemies at or inside this long-range combat radius.")]
+        [SerializeField] private float grappleRange = 14.0f;
         [Tooltip("How directly movement must point toward the target to count as advancing.")]
         [SerializeField, Range(-1f, 1f)] private float throwApproachDot = 0.55f;
 
@@ -92,7 +92,7 @@ namespace NovaStriker.Player
         [SerializeField] private float grapplePullSpeed = 10.5f;
         [SerializeField] private float grappleLift = 1.4f;
         [Tooltip("Maximum traversal-surface acquisition range.")]
-        [SerializeField] private float grapplePointRange = 5.75f;
+        [SerializeField] private float grapplePointRange = 8.5f;
         [Tooltip("Surface grapple candidates must be at least this far above Echo.")]
         [SerializeField] private float grappleMinimumHeight = 0.30f;
         [Tooltip("Number of forgiving surface probes sampled across the upper hemisphere.")]
