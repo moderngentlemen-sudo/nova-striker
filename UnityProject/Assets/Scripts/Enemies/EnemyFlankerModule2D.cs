@@ -149,7 +149,7 @@ namespace NovaStriker.Enemies
                 ((Vector2)brain.Target.position -
                  (Vector2)origin).normalized;
 
-            Projectile2D projectile = Instantiate(
+            Projectile2D projectile = ProjectilePool2D.Spawn(
                 projectilePrefab,
                 origin,
                 Quaternion.identity
