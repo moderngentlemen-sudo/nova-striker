@@ -6,37 +6,32 @@ using UnityEngine.InputSystem;
 namespace NovaStriker.InputSystemIntegration
 {
     /// <summary>
-    /// Unity Input System adapter for the Nova Striker greybox.
+    /// Per-player local input adapter.
     ///
-    /// Keyboard:
-    /// WASD move, arrows aim, Space jump, J fire, K dash,
-    /// U melee, I context counter, F ability, Q weapon, R Guardian, G Sync.
-    ///
-    /// Gamepad / DualShock / DualSense:
-    /// Left stick move, right stick aim,
-    /// Cross/South jump, R2 fire, L2 dash,
-    /// Square/West melee, Circle/East context counter / Echo grapple,
-    /// L1 ability, R1 or Triangle/North weapon cycle,
-    /// Echo traversal grapple uses Left Stick Up / Up-Left / Up-Right + Circle.
-    /// L3 or D-pad Up Guardian cycle, R3 Sync.
+    /// Each adapter reads at most one assigned Gamepad. Player 1 may also use
+    /// the keyboard. This prevents one physical controller from driving more
+    /// than one Striker and keeps device identity stable across reconnects.
     /// </summary>
     [DefaultExecutionOrder(-300)]
+    [DisallowMultipleComponent]
     public sealed class NovaInputSystemAdapter : MonoBehaviour
     {
         [SerializeField] private NovaPlayerGameplay player;
 
-        private InputActionMap map;
-        private InputAction move;
-        private InputAction aim;
-        private InputAction jump;
-        private InputAction fire;
-        private InputAction dash;
-        private InputAction melee;
-        private InputAction counter;
-        private InputAction ability;
-        private InputAction weaponCycle;
-        private InputAction guardianCycle;
-        private InputAction sync;
+        [Header("Local Player")]
+        [SerializeField, Range(0, 3)] private int playerSlot;
+        [SerializeField] private bool keyboardEnabled = true;
+
+        [Header("Assigned Gamepad")]
+        [SerializeField] private int assignedDeviceId = -1;
+
+        private Gamepad assignedGamepad;
+
+        public int PlayerSlot => playerSlot;
+        public bool KeyboardEnabled => keyboardEnabled;
+        public int AssignedDeviceId => assignedDeviceId;
+        public bool HasAssignedGamepad =>
+            ResolveAssignedGamepad() != null;
 
         private void Reset()
         {
@@ -48,165 +43,220 @@ namespace NovaStriker.InputSystemIntegration
             if (!player)
                 player = GetComponent<NovaPlayerGameplay>();
 
-            BuildActions();
-        }
-
-        private void OnEnable()
-        {
-            if (map == null)
-                BuildActions();
-
-            map.Enable();
+            ResolveAssignedGamepad();
         }
 
         private void OnDisable()
         {
-            map?.Disable();
-
             if (player)
                 player.ClearInput();
         }
 
+        public void ConfigureSlot(
+            int slot,
+            bool allowKeyboard)
+        {
+            playerSlot = Mathf.Clamp(slot, 0, 3);
+            keyboardEnabled = allowKeyboard;
+        }
+
+        public void AssignGamepad(Gamepad gamepad)
+        {
+            assignedGamepad = gamepad;
+            assignedDeviceId =
+                gamepad ? gamepad.deviceId : -1;
+        }
+
+        public void ClearGamepadAssignment()
+        {
+            assignedGamepad = null;
+            assignedDeviceId = -1;
+        }
+
+        public void RefreshAssignedDevice()
+        {
+            assignedGamepad = null;
+            ResolveAssignedGamepad();
+        }
+
         private void Update()
         {
-            if (!player || map == null)
+            if (!player)
                 return;
 
-            Vector2 moveValue = move.ReadValue<Vector2>();
-            Vector2 aimValue = aim.ReadValue<Vector2>();
-
-            if (moveValue.sqrMagnitude > 1f)
-                moveValue.Normalize();
-
-            if (aimValue.sqrMagnitude > 1f)
-                aimValue.Normalize();
-
-            player.SetInput(new PlayerInputState
+            PlayerInputState state = new()
             {
-                Move = moveValue,
-                Aim = aimValue,
+                Move = Vector2.zero,
+                Aim = Vector2.zero
+            };
 
-                JumpHeld = jump.IsPressed(),
-                JumpPressed = jump.WasPressedThisFrame(),
+            if (keyboardEnabled)
+                ReadKeyboard(ref state);
 
-                FireHeld = fire.IsPressed(),
-                FireReleased = fire.WasReleasedThisFrame(),
+            Gamepad gamepad =
+                ResolveAssignedGamepad();
 
-                DashHeld = dash.IsPressed(),
-                DashReleased = dash.WasReleasedThisFrame(),
+            if (gamepad)
+                ReadGamepad(gamepad, ref state);
 
-                MeleePressed = melee.WasPressedThisFrame(),
-                CounterPressed = counter.WasPressedThisFrame(),
-                AbilityPressed = ability.WasPressedThisFrame(),
+            if (state.Move.sqrMagnitude > 1f)
+                state.Move.Normalize();
 
-                WeaponCyclePressed = weaponCycle.WasPressedThisFrame(),
-                GuardianCyclePressed = guardianCycle.WasPressedThisFrame(),
-                SyncPressed = sync.WasPressedThisFrame()
-            });
+            if (state.Aim.sqrMagnitude > 1f)
+                state.Aim.Normalize();
+
+            player.SetInput(state);
         }
 
-        private void BuildActions()
+        private Gamepad ResolveAssignedGamepad()
         {
-            map?.Disable();
-            map = new InputActionMap("Nova");
+            if (
+                assignedGamepad &&
+                assignedGamepad.added &&
+                (
+                    assignedDeviceId < 0 ||
+                    assignedGamepad.deviceId == assignedDeviceId
+                )
+            )
+            {
+                return assignedGamepad;
+            }
 
-            move = map.AddAction(
-                "Move",
-                InputActionType.Value
-            );
+            assignedGamepad = null;
 
-            move.AddCompositeBinding("2DVector")
-                .With("Up", "<Keyboard>/w")
-                .With("Down", "<Keyboard>/s")
-                .With("Left", "<Keyboard>/a")
-                .With("Right", "<Keyboard>/d");
+            if (assignedDeviceId < 0)
+                return null;
 
-            move.AddBinding("<Gamepad>/leftStick");
+            for (int i = 0; i < Gamepad.all.Count; i++)
+            {
+                Gamepad candidate = Gamepad.all[i];
 
-            aim = map.AddAction(
-                "Aim",
-                InputActionType.Value
-            );
+                if (
+                    candidate &&
+                    candidate.deviceId == assignedDeviceId
+                )
+                {
+                    assignedGamepad = candidate;
+                    break;
+                }
+            }
 
-            aim.AddCompositeBinding("2DVector")
-                .With("Up", "<Keyboard>/upArrow")
-                .With("Down", "<Keyboard>/downArrow")
-                .With("Left", "<Keyboard>/leftArrow")
-                .With("Right", "<Keyboard>/rightArrow");
-
-            aim.AddBinding("<Gamepad>/rightStick");
-
-            jump = AddButton(
-                "Jump",
-                "<Keyboard>/space",
-                "<Gamepad>/buttonSouth"
-            );
-
-            fire = AddButton(
-                "Fire",
-                "<Keyboard>/j",
-                "<Gamepad>/rightTrigger"
-            );
-
-            dash = AddButton(
-                "Dash",
-                "<Keyboard>/k",
-                "<Gamepad>/leftTrigger"
-            );
-
-            melee = AddButton(
-                "Melee",
-                "<Keyboard>/u",
-                "<Gamepad>/buttonWest"
-            );
-
-            counter = AddButton(
-                "Counter",
-                "<Keyboard>/i",
-                "<Gamepad>/buttonEast"
-            );
-
-            ability = AddButton(
-                "Ability",
-                "<Keyboard>/f",
-                "<Gamepad>/leftShoulder"
-            );
-
-            weaponCycle = AddButton(
-                "Weapon Cycle",
-                "<Keyboard>/q",
-                "<Gamepad>/rightShoulder"
-            );
-            weaponCycle.AddBinding("<Gamepad>/buttonNorth");
-
-            guardianCycle = AddButton(
-                "Guardian Cycle",
-                "<Keyboard>/r",
-                "<Gamepad>/leftStickPress"
-            );
-            guardianCycle.AddBinding("<Gamepad>/dpad/up");
-
-            sync = AddButton(
-                "Sync",
-                "<Keyboard>/g",
-                "<Gamepad>/rightStickPress"
-            );
+            return assignedGamepad;
         }
 
-        private InputAction AddButton(
-            string name,
-            string keyboardBinding,
-            string gamepadBinding)
+        private static void ReadKeyboard(
+            ref PlayerInputState state)
         {
-            InputAction action = map.AddAction(
-                name,
-                InputActionType.Button
+            Keyboard keyboard = Keyboard.current;
+
+            if (keyboard == null)
+                return;
+
+            Vector2 move = new(
+                Axis(
+                    keyboard.aKey.isPressed,
+                    keyboard.dKey.isPressed
+                ),
+                Axis(
+                    keyboard.sKey.isPressed,
+                    keyboard.wKey.isPressed
+                )
             );
 
-            action.AddBinding(keyboardBinding);
-            action.AddBinding(gamepadBinding);
+            Vector2 aim = new(
+                Axis(
+                    keyboard.leftArrowKey.isPressed,
+                    keyboard.rightArrowKey.isPressed
+                ),
+                Axis(
+                    keyboard.downArrowKey.isPressed,
+                    keyboard.upArrowKey.isPressed
+                )
+            );
 
-            return action;
+            if (move.sqrMagnitude >= state.Move.sqrMagnitude)
+                state.Move = move;
+
+            if (aim.sqrMagnitude >= state.Aim.sqrMagnitude)
+                state.Aim = aim;
+
+            state.JumpHeld |= keyboard.spaceKey.isPressed;
+            state.JumpPressed |= keyboard.spaceKey.wasPressedThisFrame;
+
+            state.FireHeld |= keyboard.jKey.isPressed;
+            state.FireReleased |= keyboard.jKey.wasReleasedThisFrame;
+
+            state.DashHeld |= keyboard.kKey.isPressed;
+            state.DashReleased |= keyboard.kKey.wasReleasedThisFrame;
+
+            state.MeleePressed |= keyboard.uKey.wasPressedThisFrame;
+            state.CounterPressed |= keyboard.iKey.wasPressedThisFrame;
+            state.AbilityPressed |= keyboard.fKey.wasPressedThisFrame;
+
+            state.WeaponCyclePressed |= keyboard.qKey.wasPressedThisFrame;
+            state.GuardianCyclePressed |= keyboard.rKey.wasPressedThisFrame;
+            state.SyncPressed |= keyboard.gKey.wasPressedThisFrame;
+        }
+
+        private static void ReadGamepad(
+            Gamepad gamepad,
+            ref PlayerInputState state)
+        {
+            Vector2 move =
+                gamepad.leftStick.ReadValue();
+
+            Vector2 aim =
+                gamepad.rightStick.ReadValue();
+
+            if (move.sqrMagnitude >= state.Move.sqrMagnitude)
+                state.Move = move;
+
+            if (aim.sqrMagnitude >= state.Aim.sqrMagnitude)
+                state.Aim = aim;
+
+            state.JumpHeld |=
+                gamepad.buttonSouth.isPressed;
+            state.JumpPressed |=
+                gamepad.buttonSouth.wasPressedThisFrame;
+
+            state.FireHeld |=
+                gamepad.rightTrigger.isPressed;
+            state.FireReleased |=
+                gamepad.rightTrigger.wasReleasedThisFrame;
+
+            state.DashHeld |=
+                gamepad.leftTrigger.isPressed;
+            state.DashReleased |=
+                gamepad.leftTrigger.wasReleasedThisFrame;
+
+            state.MeleePressed |=
+                gamepad.buttonWest.wasPressedThisFrame;
+
+            state.CounterPressed |=
+                gamepad.buttonEast.wasPressedThisFrame;
+
+            state.AbilityPressed |=
+                gamepad.leftShoulder.wasPressedThisFrame;
+
+            state.WeaponCyclePressed |=
+                gamepad.rightShoulder.wasPressedThisFrame ||
+                gamepad.buttonNorth.wasPressedThisFrame;
+
+            state.GuardianCyclePressed |=
+                gamepad.leftStickButton.wasPressedThisFrame ||
+                gamepad.dpad.up.wasPressedThisFrame;
+
+            state.SyncPressed |=
+                gamepad.rightStickButton.wasPressedThisFrame;
+        }
+
+        private static float Axis(
+            bool negative,
+            bool positive)
+        {
+            return
+                (positive ? 1f : 0f) -
+                (negative ? 1f : 0f);
         }
     }
 }
