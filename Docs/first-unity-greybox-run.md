@@ -109,16 +109,17 @@ Run these before tuning values:
 11. Hold movement toward a dummy inside 1.35 units and press Counter: it should select **Throw**.
 12. In the Nova player's `NovaCombatController`, temporarily change **Character** from Nova to Echo.
 13. With Echo selected and an enemy at distance, aim toward the enemy and press Counter: it should soft-lock the enemy and pull it toward Echo.
-14. With Echo at substantial distance from an enemy—up to roughly **14 Unity units**—press **Circle / I without holding Up**: Echo should acquire the opponent and pull it toward him.
+14. With Echo at substantial distance from an enemy—up to roughly **14 Unity units**—press **Circle / I without holding Up**: Echo should acquire the opponent and pull it toward him only when there is a clear line of sight.
 15. Hold **Up + Circle / W + I** while under an ordinary solid beam or OneWay surface within roughly **8.5 Unity units**: Echo should grapple the overhead surface and travel toward it.
 16. Repeat with **Up-Left + Circle** and **Up-Right + Circle** to verify the traversal direction selects the corresponding overhead surface.
 17. Verify that ordinary solid traversal geometry does **not** need a GrapplePoint component or special marker.
 18. Put an enemy and an overhead surface in similar range: without Up the enemy should be chosen; with Up/Up-diagonal input the traversal surface should be chosen.
-19. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
-20. Re-test wall jumps from both sides and compare the feel against the earlier behavior now that the temporary steering lock has been removed.
-21. Test Quick, Burst, and Velocity Break while watching the HUD's active Dash / Slide tier indicators.
-22. Test all three grounded melee hits, two aerial hits, and downward dive melee.
-23. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
+19. Put a World or OneWay platform between Echo and an enemy, then press Circle / I without Up. Echo should **not** lock or pull that enemy through the platform. Moving to a clear line of sight should make the same enemy grappleable again.
+20. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
+21. Re-test wall jumps from both sides and compare the feel against the earlier behavior now that the temporary steering lock has been removed.
+22. Test Quick, Burst, and Velocity Break while watching the HUD's active Dash / Slide tier indicators.
+23. Test all three grounded melee hits, two aerial hits, and downward dive melee.
+24. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
 ## Greybox presentation validation
 
