@@ -86,7 +86,7 @@ Gamepad / PlayStation:
 - R2 — fire / charge
 - L2 — dash / charge
 - Square — melee
-- Circle — character-specific contextual Counter
+- Circle — character-specific contextual Counter / Echo grapple
 - L1 — ability
 - R1 or Triangle — weapon cycle
 - L3 or D-pad Up — Guardian cycle
@@ -109,14 +109,16 @@ Run these before tuning values:
 11. Hold movement toward a dummy inside 1.35 units and press Counter: it should select **Throw**.
 12. In the Nova player's `NovaCombatController`, temporarily change **Character** from Nova to Echo.
 13. With Echo selected and an enemy at distance, aim toward the enemy and press Counter: it should soft-lock the enemy and pull it toward Echo.
-14. Aim upward toward any ordinary solid beam, wall edge, or OneWay surface above Echo and press Counter: Echo should soft-lock the struck surface and be pulled toward it.
-15. Verify that the solid does **not** need a GrapplePoint component or special marker.
-16. Put an enemy and overhead surface in similar range, then use right-stick/arrow aim to verify the intended candidate wins the soft-lock score.
-17. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
-18. Wall-jump away from a wall while still holding toward it; the initial horizontal launch should remain intact for roughly 0.10 s before air steering resumes.
-19. Test Quick, Burst, and Velocity Break while watching the HUD's active Dash / Slide tier indicators.
-20. Test all three grounded melee hits, two aerial hits, and downward dive melee.
-21. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
+14. With Echo at distance from enemies, press **Circle / I without holding Up**: Echo should acquire an opponent and pull it toward him.
+15. Hold **Up + Circle / W + I** while under an ordinary solid beam or OneWay surface: Echo should grapple the overhead surface and travel toward it.
+16. Repeat with **Up-Left + Circle** and **Up-Right + Circle** to verify the traversal direction selects the corresponding overhead surface.
+17. Verify that ordinary solid traversal geometry does **not** need a GrapplePoint component or special marker.
+18. Put an enemy and an overhead surface in similar range: without Up the enemy should be chosen; with Up/Up-diagonal input the traversal surface should be chosen.
+19. Repeat close DodgeCounter and advancing Throw with Echo; those contexts still take priority over distance grappling.
+20. Wall-jump away from a wall while still holding toward it; the initial horizontal launch should remain intact for roughly 0.10 s before air steering resumes.
+21. Test Quick, Burst, and Velocity Break while watching the HUD's active Dash / Slide tier indicators.
+22. Test all three grounded melee hits, two aerial hits, and downward dive melee.
+23. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
 ## After the first successful import
 
