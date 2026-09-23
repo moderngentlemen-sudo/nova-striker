@@ -1,4 +1,4 @@
-# Enemy Framework — Phase 2
+# Enemy Framework — Phase 3
 
 This phase begins the Unity enemy-runtime architecture without claiming that any of the 12 production enemy archetypes has been ported.
 
@@ -34,16 +34,17 @@ Implemented role modules:
 - `EnemySkirmisherModule2D` — approaches when too far away, retreats when too close, maintains a mid-range spacing band, checks line of sight, and fires parryable pulse shots.
 - `EnemyArtilleryModule2D` — prefers a long-range firing band, retreats when pressured, and fires a slow, readable three-shot parryable salvo.
 - `EnemyFlankerModule2D` — closes aggressively, uses short lateral reposition bursts, retreats when overcrowded, and fires faster close-to-mid-range parryable shots.
-
-The Aerial role remains future work.
+- `EnemyAerialModule2D` — maintains an offset above the player and supports two browser-derived motion families: `HoverBob` for Drone-like behavior and `Orbit` for Orbiter-like behavior.
 
 ## Mechanics-lab representative enemy
 
-After regenerating the mechanics lab, the scene includes three generic framework-validation enemies:
+After regenerating the mechanics lab, the scene includes five generic framework-validation enemies:
 
 - `Enemy_Skirmisher` — mid-range spacing behavior.
 - `Enemy_Flanker` — faster pressure/reposition behavior.
 - `Enemy_Artillery` — long-range salvo behavior.
+- `Enemy_Aerial_HoverTest` — Drone-like hover/bob validation.
+- `Enemy_Aerial_OrbitTest` — Orbiter-like circular-motion validation.
 
 All three:
 
@@ -68,6 +69,8 @@ Greybox assignments:
 - Enemy Skirmisher: actor 110
 - Enemy Flanker: actor 111
 - Enemy Artillery: actor 112
+- Enemy Aerial Hover Test: actor 113
+- Enemy Aerial Orbit Test: actor 114
 
 Production identity allocation can be formalized later when co-op, encounter spawning, and save/checkpoint systems are introduced.
 
@@ -87,15 +90,37 @@ After pulling this phase:
 10. Confirm Nova can shoot/melee/Velocity Break/Powerslide all three enemies.
 11. Confirm Echo can enemy-grapple them only with unobstructed line of sight.
 12. Defeat each enemy and confirm its autonomous movement/attacks stop.
-13. Confirm damaging enemies does not trigger the player's Hurt/Defeated Animator cues.
+13. Verify the Hover aerial test maintains a position above/offset from the player and visibly bobs rather than falling under gravity.
+14. Verify the Orbit aerial test adds circular X/Y motion while still tracking the player.
+15. Put World/OneWay geometry between an aerial enemy and the player; it should stop firing through the obstruction.
+16. Confirm Echo can grapple airborne enemies only with clear line of sight.
+17. Confirm damaging enemies does not trigger the player's Hurt/Defeated Animator cues.
+
+## Named-archetype mapping
+
+Phase 3 adds `EnemyArchetypeCatalog` and `Docs/enemy-archetype-mapping.md`.
+
+The catalog mirrors the role mapping and concrete values present in the preserved browser reference. Browser movement/projectile values are stored explicitly as **reference units**, not silently reused as Unity-world tuning.
+
+Source-defined role mapping:
+
+- Anchor: Shield, Heavy, Guard
+- Artillery: Sniper, Turret
+- Flanker: Charger, Interceptor, Wall Hunter
+- Skirmisher: Walker, Hopper
+- Aerial: Drone, Orbiter
 
 ## Next enemy-framework step
 
-Once Skirmisher, Flanker, and Artillery are confirmed in Play Mode, the next engineering step is:
+After the five shared roles pass Play Mode validation, port archetype-specific behaviors that the shared role baseline does not cover:
 
-1. add the Aerial role module,
-2. extract the preserved browser behavior of each named enemy archetype,
-3. map those archetypes onto role + parameter combinations where the reference supports it,
-4. create bespoke modules only where a named enemy genuinely requires behavior that the shared roles cannot express.
+1. Shield brace / shield regeneration.
+2. Guard low-tier projectile reflection and nearby-melee counter.
+3. Charger / Hopper / Interceptor charged-shot dodge response.
+4. Interceptor predictive pursuit.
+5. Wall Hunter vertical pursuit.
+6. Sniper perfect-opportunity projectile treatment.
+7. Heavy armor/contact-damage tuning.
+8. Final Drone/Orbiter motion tuning.
 
-This avoids inventing behavior from archetype names alone and prevents the project from drifting away from the preserved gameplay reference.
+Named enemies remain `reference_only` until those specific behaviors are actually translated and tested.
