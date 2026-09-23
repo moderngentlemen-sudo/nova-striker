@@ -186,6 +186,17 @@ namespace NovaStriker.Combat
                 WeaponId
             ));
 
+            if (applied)
+            {
+                CombatState2D combatState =
+                    damageable.GetComponent<CombatState2D>();
+
+                combatState?.ApplyWeaponStatus(
+                    WeaponId,
+                    Tier
+                );
+            }
+
             if (applied && !Piercing)
                 Destroy(gameObject);
         }
