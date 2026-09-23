@@ -382,6 +382,12 @@ namespace NovaStriker.Player
             bool piercing =
                 equippedWeapon.Behavior == WeaponBehavior.Pierce ||
                 equippedWeapon.Behavior == WeaponBehavior.Spear ||
+                equippedWeapon.Behavior == WeaponBehavior.Boomerang ||
+                equippedWeapon.Behavior == WeaponBehavior.Gravity ||
+                (
+                    equippedWeapon.Behavior == WeaponBehavior.Beam &&
+                    tier >= 3
+                ) ||
                 (
                     equippedWeapon.Behavior == WeaponBehavior.Null &&
                     tier >= 1
