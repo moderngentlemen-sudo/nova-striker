@@ -28,6 +28,10 @@ namespace NovaStriker.Input
         public bool CounterPressed;
         public bool AbilityHeld;
         public bool AbilityPressed;
+        public bool Ability1Pressed;
+        public bool Ability2Pressed;
+        public bool Ability3Pressed;
+        public bool UltimatePressed;
 
         public bool WeaponCyclePressed;
         public bool GuardianCyclePressed;
