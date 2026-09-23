@@ -23,15 +23,25 @@ namespace NovaStriker.Progression
         private float saveTimer;
         private bool dirty;
 
+        public static WeaponMasteryService Active { get; private set; }
+
         public event Action<string, int> MasteryLevelChanged;
 
         private void Awake()
         {
+            Active = this;
+
             if (!saveService)
                 saveService = SaveGameService.Active;
 
             if (!session)
                 session = StrikeTeamSession.Active;
+        }
+
+        private void OnDestroy()
+        {
+            if (Active == this)
+                Active = null;
         }
 
         private void OnEnable()
@@ -127,6 +137,22 @@ namespace NovaStriker.Progression
 
             if (mastery.level != previous)
             {
+                int gainedLevels =
+                    Mathf.Max(
+                        0,
+                        mastery.level - previous
+                    );
+
+                if (
+                    gainedLevels > 0 &&
+                    saveService &&
+                    saveService.Current != null
+                )
+                {
+                    saveService.Current.skillPoints +=
+                        gainedLevels;
+                }
+
                 MasteryLevelChanged?.Invoke(
                     weaponId,
                     mastery.level
@@ -145,6 +171,45 @@ namespace NovaStriker.Progression
             return
                 baseExperiencePerLevel *
                 Mathf.Pow(level, 1.35f);
+        }
+
+        public int LevelFor(string weaponId)
+        {
+            WeaponMasterySave mastery =
+                Get(weaponId);
+
+            return mastery != null
+                ? mastery.level
+                : 0;
+        }
+
+        public float DamageMultiplierFor(
+            string weaponId)
+        {
+            int level = LevelFor(weaponId);
+
+            return 1f + level * 0.0125f;
+        }
+
+        public float ProjectileSpeedMultiplierFor(
+            string weaponId)
+        {
+            int level = LevelFor(weaponId);
+
+            return
+                1f +
+                Mathf.Floor(level / 2f) *
+                0.01f;
+        }
+
+        public float SuitEnergyOnDefeatFor(
+            string weaponId)
+        {
+            int level = LevelFor(weaponId);
+
+            return level >= 3
+                ? Mathf.Floor(level / 3f) * 1.5f
+                : 0f;
         }
 
         public void Flush()
@@ -205,6 +270,21 @@ namespace NovaStriker.Progression
                 weaponId,
                 xp * multiplier
             );
+
+            if (cue.Type == GameplayCueType.DefeatDealt)
+            {
+                StrikeSuitAbilityController suit =
+                    player.GetComponent<StrikeSuitAbilityController>();
+
+                float energy =
+                    SuitEnergyOnDefeatFor(weaponId);
+
+                if (energy > 0f)
+                    suit?.RestoreSuitEnergy(energy);
+
+                if (LevelFor(weaponId) >= maxMasteryLevel)
+                    suit?.AddUltimateCharge(2f);
+            }
         }
     }
 }
