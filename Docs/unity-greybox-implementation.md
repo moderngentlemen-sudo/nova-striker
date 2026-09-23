@@ -94,6 +94,12 @@ The branch now contains:
 - `GreyboxHostileProjectileEmitter`
   - temporary hostile-shot generator for parry/perfect-parry testing
 
+- `GreyboxHUD`
+  - live movement velocity and dash-charge tier prediction
+  - active Dash / Powerslide tier diagnostics
+  - Echo grapple lock type and lock distance
+  - last player gameplay cue, tier, value, and action ID for rapid Play Mode validation
+
 ## Reference timings carried forward
 
 ### Dash charge
