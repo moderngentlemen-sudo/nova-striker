@@ -312,7 +312,7 @@ namespace NovaStriker.EditorTools
                     teamSession
                 );
 
-                player
+                playerObject
                     .GetComponent<CosmeticLoadoutController>()
                     ?.ConfigurePlayerSlot(i);
 
