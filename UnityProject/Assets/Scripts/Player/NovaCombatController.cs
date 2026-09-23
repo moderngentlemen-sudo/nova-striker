@@ -89,8 +89,10 @@ namespace NovaStriker.Player
         [SerializeField] private float grapplePointRange = 5.75f;
         [Tooltip("Surface grapple candidates must be at least this far above Echo.")]
         [SerializeField] private float grappleMinimumHeight = 0.30f;
-        [Tooltip("Number of rays sampled across the upper hemisphere when searching for a solid traversal surface.")]
-        [SerializeField, Range(5, 25)] private int grappleSurfaceSamples = 13;
+        [Tooltip("Number of forgiving surface probes sampled across the upper hemisphere.")]
+        [SerializeField, Range(7, 31)] private int grappleSurfaceSamples = 21;
+        [Tooltip("Radius of each traversal-surface acquisition probe.")]
+        [SerializeField] private float grappleSurfaceProbeRadius = 0.12f;
         [SerializeField] private float grappleTraversalSpeed = 13.5f;
         [SerializeField] private float grappleTraversalDuration = 0.68f;
         [Tooltip("Aim alignment matters more than raw distance when Echo selects a grapple lock.")]
@@ -996,8 +998,9 @@ namespace NovaStriker.Player
                 );
 
                 RaycastHit2D hit =
-                    Physics2D.Raycast(
+                    Physics2D.CircleCast(
                         origin,
+                        grappleSurfaceProbeRadius,
                         direction,
                         grapplePointRange,
                         grappleSurfaceMask
