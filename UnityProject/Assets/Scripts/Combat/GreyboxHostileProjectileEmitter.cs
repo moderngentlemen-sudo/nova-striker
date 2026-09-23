@@ -50,7 +50,7 @@ namespace NovaStriker.Combat
                 perfectOpportunityEvery > 0 &&
                 fired % perfectOpportunityEvery == 0;
 
-            Projectile2D shot = Instantiate(
+            Projectile2D shot = ProjectilePool2D.Spawn(
                 projectilePrefab,
                 transform.position,
                 Quaternion.identity
