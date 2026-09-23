@@ -112,7 +112,10 @@ namespace NovaStriker.Player
         public bool IsSliding => slideTimer > 0f;
         public bool IsDroppingThrough => oneWayDropTimer > 0f;
         public bool IsGrapplingTraversal => grappleTraversalTimer > 0f;
+        public Vector2 Velocity => body ? body.linearVelocity : Vector2.zero;
         public float DashCharge => dashCharge;
+        public ChargeTier ChargingDashTier =>
+            ChargeTierRules.FromDashCharge(dashCharge);
         public ChargeTier ActiveDashTier => activeDashTier;
         public ChargeTier ActiveSlideTier => activeSlideTier;
 
