@@ -51,6 +51,7 @@ namespace NovaStriker.Session
         public event Action<TeamSyncTier, int> TeamSyncActivated;
         public event Action<int, StrikerPlayerIdentity> PlayerRegistered;
         public event Action<int, StrikerPlayerIdentity> PlayerUnregistered;
+        public event Action<int, bool> PlayerParticipationChanged;
 
         public int LastSyncParticipantMask { get; private set; }
 
@@ -69,6 +70,27 @@ namespace NovaStriker.Session
                 {
                     if (players[i])
                         count++;
+                }
+
+                return count;
+            }
+        }
+
+        public int ParticipatingPlayerCount
+        {
+            get
+            {
+                int count = 0;
+
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (
+                        players[i] &&
+                        players[i].IsParticipating
+                    )
+                    {
+                        count++;
+                    }
                 }
 
                 return count;
@@ -101,8 +123,13 @@ namespace NovaStriker.Session
                 {
                     StrikerPlayerIdentity player = players[i];
 
-                    if (!player)
+                    if (
+                        !player ||
+                        !player.IsParticipating
+                    )
+                    {
                         continue;
+                    }
 
                     registered++;
 
@@ -251,6 +278,49 @@ namespace NovaStriker.Session
             }
 
             return mask;
+        }
+
+        public int GetParticipatingPlayerMask()
+        {
+            int mask = 0;
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (
+                    players[i] &&
+                    players[i].IsParticipating
+                )
+                {
+                    mask |= 1 << i;
+                }
+            }
+
+            return mask;
+        }
+
+        public void NotifyParticipationChanged(
+            StrikerPlayerIdentity player)
+        {
+            if (!player)
+                return;
+
+            int slot = player.PlayerSlot;
+
+            if (
+                slot < 0 ||
+                slot >= MaxPlayers ||
+                players[slot] != player
+            )
+            {
+                return;
+            }
+
+            syncRequested[slot] = false;
+
+            PlayerParticipationChanged?.Invoke(
+                slot,
+                player.IsParticipating
+            );
         }
 
         public bool TryGetNearestCombatReadyPlayer(
