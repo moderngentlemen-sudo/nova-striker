@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using NovaStriker.CameraSystem;
 using NovaStriker.Combat;
 using NovaStriker.Core;
+using NovaStriker.Enemies;
 using NovaStriker.Player;
 using NovaStriker.Session;
 using UnityEngine;
@@ -157,6 +158,62 @@ namespace NovaStriker.Campaign
             );
 
             sequence = StartCoroutine(RunEncounter());
+        }
+
+        public void ResetForRetry()
+        {
+            if (sequence != null)
+            {
+                StopCoroutine(sequence);
+                sequence = null;
+            }
+
+            defeatedScratch.Clear();
+
+            foreach (Damageable2D enemy in activeEnemies)
+            {
+                if (enemy)
+                    defeatedScratch.Add(enemy);
+            }
+
+            for (int i = 0; i < defeatedScratch.Count; i++)
+            {
+                Damageable2D enemy = defeatedScratch[i];
+
+                if (!enemy)
+                    continue;
+
+                enemy.Defeated -= OnEnemyDefeated;
+
+                if (IsPreplaced(enemy))
+                {
+                    ResetEnemyRuntime(enemy);
+                }
+                else if (
+                    !useSpawnPooling ||
+                    !EncounterEnemyPool2D.TryRelease(enemy)
+                )
+                {
+                    Destroy(enemy.transform.root.gameObject);
+                }
+            }
+
+            activeEnemies.Clear();
+            defeatedScratch.Clear();
+
+            if (preplacedEnemies != null)
+            {
+                for (int i = 0; i < preplacedEnemies.Length; i++)
+                    ResetEnemyRuntime(preplacedEnemies[i]);
+            }
+
+            Started = false;
+            Completed = false;
+            currentWaveIndex = -1;
+            waveSpawnFinished = false;
+
+            if (lockCamera)
+                teamCamera?.ClearArenaBounds();
         }
 
         public void ForceComplete()
@@ -416,6 +473,35 @@ namespace NovaStriker.Campaign
                     encounterId
                 )
             );
+        }
+
+        private bool IsPreplaced(Damageable2D enemy)
+        {
+            if (!enemy || preplacedEnemies == null)
+                return false;
+
+            for (int i = 0; i < preplacedEnemies.Length; i++)
+            {
+                if (preplacedEnemies[i] == enemy)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ResetEnemyRuntime(
+            Damageable2D enemy)
+        {
+            if (!enemy)
+                return;
+
+            enemy.RestoreFullHealth();
+            enemy.GetComponent<CombatState2D>()?.RestoreLayers();
+            enemy.GetComponent<EnemyBrain2D>()?.PrepareForPoolSpawn();
+            enemy.GetComponent<EnemyArchetypeController2D>()?.PrepareForPoolSpawn();
+
+            if (!enemy.gameObject.activeSelf)
+                enemy.gameObject.SetActive(true);
         }
 
         private void UnsubscribeAll()
