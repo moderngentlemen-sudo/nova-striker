@@ -128,7 +128,7 @@ namespace NovaStriker.Player
             session =
                 StrikeTeamSession.Active
                 ? StrikeTeamSession.Active
-                : Object.FindFirstObjectByType<StrikeTeamSession>();
+                : Object.FindAnyObjectByType<StrikeTeamSession>();
         }
     }
 }
