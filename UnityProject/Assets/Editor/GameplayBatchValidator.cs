@@ -47,6 +47,11 @@ namespace NovaStriker.EditorTools
                 ref warnings
             );
 
+            ValidateLevelVariety(
+                ref errors,
+                ref warnings
+            );
+
             ValidateStrikeTeamContracts(
                 ref errors
             );
@@ -254,6 +259,214 @@ namespace NovaStriker.EditorTools
                     enemyCoverage.Count + "/" +
                     archetypeCount +
                     " named enemy archetypes."
+                );
+            }
+        }
+
+        private static void ValidateLevelVariety(
+            ref int errors,
+            ref int warnings)
+        {
+            int expectedActs =
+                CampaignCatalog.SectorCount *
+                CampaignCatalog.ActsPerSector;
+
+            if (ActLevelVarietyCatalog.Count != expectedActs)
+            {
+                Error(
+                    ref errors,
+                    "Expected " + expectedActs +
+                    " level-variety plans, found " +
+                    ActLevelVarietyCatalog.Count + "."
+                );
+            }
+
+            HashSet<LevelTopologyKind> topologyCoverage = new();
+            HashSet<TraversalEmphasisKind> traversalCoverage = new();
+            HashSet<EncounterObjectiveKind> objectiveCoverage = new();
+            HashSet<RouteChoiceKind> routeCoverage = new();
+            HashSet<HazardPatternKind> hazardCoverage = new();
+
+            for (
+                int sector = 0;
+                sector < CampaignCatalog.SectorCount;
+                sector++
+            )
+            {
+                HashSet<LevelTopologyKind> sectorTopologies = new();
+                HashSet<EncounterObjectiveKind> sectorObjectives = new();
+
+                for (
+                    int act = 0;
+                    act < CampaignCatalog.ActsPerSector;
+                    act++
+                )
+                {
+                    ActGameplayReference gameplay =
+                        ActGameplayCatalog.Get(
+                            sector,
+                            act
+                        );
+
+                    ActLevelVarietyReference variety =
+                        ActLevelVarietyCatalog.Get(
+                            sector,
+                            act
+                        );
+
+                    if (variety.Key != gameplay.Key)
+                    {
+                        Error(
+                            ref errors,
+                            "Level-variety plan " +
+                            variety.Key +
+                            " does not align with gameplay act " +
+                            gameplay.Key + "."
+                        );
+                    }
+
+                    if (string.IsNullOrWhiteSpace(variety.ClimaxId))
+                    {
+                        Error(
+                            ref errors,
+                            variety.Key +
+                            " has no level-variety climax id."
+                        );
+                    }
+
+                    if (
+                        variety.ModuleTags == null ||
+                        variety.ModuleTags.Length < 2
+                    )
+                    {
+                        Error(
+                            ref errors,
+                            variety.Key +
+                            " requires at least two modular level tags."
+                        );
+                    }
+                    else
+                    {
+                        HashSet<string> tags =
+                            new(StringComparer.OrdinalIgnoreCase);
+
+                        for (int i = 0; i < variety.ModuleTags.Length; i++)
+                        {
+                            string tag =
+                                variety.ModuleTags[i];
+
+                            if (string.IsNullOrWhiteSpace(tag))
+                            {
+                                Error(
+                                    ref errors,
+                                    variety.Key +
+                                    " contains an empty level module tag."
+                                );
+                            }
+                            else if (!tags.Add(tag))
+                            {
+                                Error(
+                                    ref errors,
+                                    variety.Key +
+                                    " contains duplicate module tag " +
+                                    tag + "."
+                                );
+                            }
+                        }
+                    }
+
+                    if (variety.HazardPhaseStride < 0f)
+                    {
+                        Error(
+                            ref errors,
+                            variety.Key +
+                            " has a negative hazard phase stride."
+                        );
+                    }
+
+                    if (
+                        variety.SupportsPairSplit &&
+                        variety.RouteChoice == RouteChoiceKind.None
+                    )
+                    {
+                        Warning(
+                            ref warnings,
+                            variety.Key +
+                            " supports pair splitting without a route-choice contract."
+                        );
+                    }
+
+                    topologyCoverage.Add(variety.Topology);
+                    traversalCoverage.Add(variety.Traversal);
+                    objectiveCoverage.Add(variety.Objective);
+                    routeCoverage.Add(variety.RouteChoice);
+                    hazardCoverage.Add(variety.HazardPattern);
+
+                    sectorTopologies.Add(variety.Topology);
+                    sectorObjectives.Add(variety.Objective);
+                }
+
+                if (sectorTopologies.Count < 2)
+                {
+                    Warning(
+                        ref warnings,
+                        CampaignCatalog.Get(sector).DisplayName +
+                        " exposes fewer than two distinct act topologies."
+                    );
+                }
+
+                if (sectorObjectives.Count < 2)
+                {
+                    Warning(
+                        ref warnings,
+                        CampaignCatalog.Get(sector).DisplayName +
+                        " exposes fewer than two distinct objective styles."
+                    );
+                }
+            }
+
+            if (topologyCoverage.Count < 7)
+            {
+                Warning(
+                    ref warnings,
+                    "Campaign level-variety topology coverage is only " +
+                    topologyCoverage.Count + "/8."
+                );
+            }
+
+            if (traversalCoverage.Count < 7)
+            {
+                Warning(
+                    ref warnings,
+                    "Campaign traversal-emphasis coverage is only " +
+                    traversalCoverage.Count + "/8."
+                );
+            }
+
+            if (objectiveCoverage.Count < 6)
+            {
+                Warning(
+                    ref warnings,
+                    "Campaign objective-style coverage is only " +
+                    objectiveCoverage.Count + "/8."
+                );
+            }
+
+            if (routeCoverage.Count < 5)
+            {
+                Warning(
+                    ref warnings,
+                    "Campaign route-choice coverage is only " +
+                    routeCoverage.Count + "/6."
+                );
+            }
+
+            if (hazardCoverage.Count < 5)
+            {
+                Warning(
+                    ref warnings,
+                    "Campaign hazard-pattern coverage is only " +
+                    hazardCoverage.Count + "/6."
                 );
             }
         }
