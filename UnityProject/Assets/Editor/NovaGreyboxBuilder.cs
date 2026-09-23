@@ -4,6 +4,7 @@ using NovaStriker.Data;
 using NovaStriker.Debugging;
 using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
+using NovaStriker.Presentation;
 using NovaStriker.Traversal;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -42,6 +43,9 @@ namespace NovaStriker.EditorTools
         private const string NovaMaterialPath =
             GeneratedRoot + "/MAT_Greybox_Nova.mat";
 
+        private const string EchoMaterialPath =
+            GeneratedRoot + "/MAT_Greybox_Echo.mat";
+
         private const string WorldMaterialPath =
             GeneratedRoot + "/MAT_Greybox_World.mat";
 
@@ -74,6 +78,11 @@ namespace NovaStriker.EditorTools
                 new Color(0.12f, 0.58f, 0.95f)
             );
 
+            Material echoMaterial = CreateOrLoadMaterial(
+                EchoMaterialPath,
+                new Color(0.96f, 0.66f, 0.12f)
+            );
+
             Material worldMaterial = CreateOrLoadMaterial(
                 WorldMaterialPath,
                 new Color(0.12f, 0.16f, 0.22f)
@@ -103,6 +112,7 @@ namespace NovaStriker.EditorTools
 
             GameObject playerPrefab = CreatePlayerPrefab(
                 novaMaterial,
+                echoMaterial,
                 pulse,
                 projectilePrefab,
                 worldLayer,
@@ -490,7 +500,8 @@ namespace NovaStriker.EditorTools
         }
 
         private static GameObject CreatePlayerPrefab(
-            Material material,
+            Material novaMaterial,
+            Material echoMaterial,
             WeaponDefinition pulse,
             Projectile2D projectilePrefab,
             int worldLayer,
@@ -565,25 +576,64 @@ namespace NovaStriker.EditorTools
             GreyboxMechanicsVisualizer visualizer =
                 root.AddComponent<GreyboxMechanicsVisualizer>();
 
-            GameObject visual =
+            StrikerPresentationBridge presentation =
+                root.AddComponent<StrikerPresentationBridge>();
+
+            GameObject novaVisualRoot =
+                new("NovaVisualRoot");
+            novaVisualRoot.transform.SetParent(
+                root.transform,
+                false
+            );
+
+            GameObject novaVisual =
                 GameObject.CreatePrimitive(
                     PrimitiveType.Capsule
                 );
 
-            visual.name = "Visual";
-            visual.transform.SetParent(
-                root.transform,
+            novaVisual.name = "Nova_Placeholder";
+            novaVisual.transform.SetParent(
+                novaVisualRoot.transform,
                 false
             );
-            visual.transform.localScale =
+            novaVisual.transform.localScale =
                 new Vector3(0.55f, 0.9f, 0.55f);
 
             Object.DestroyImmediate(
-                visual.GetComponent<Collider>()
+                novaVisual.GetComponent<Collider>()
             );
 
-            visual.GetComponent<MeshRenderer>().
-                sharedMaterial = material;
+            novaVisual.GetComponent<MeshRenderer>().
+                sharedMaterial = novaMaterial;
+
+            GameObject echoVisualRoot =
+                new("EchoVisualRoot");
+            echoVisualRoot.transform.SetParent(
+                root.transform,
+                false
+            );
+
+            GameObject echoVisual =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Capsule
+                );
+
+            echoVisual.name = "Echo_Placeholder";
+            echoVisual.transform.SetParent(
+                echoVisualRoot.transform,
+                false
+            );
+            echoVisual.transform.localScale =
+                new Vector3(0.52f, 0.88f, 0.55f);
+
+            Object.DestroyImmediate(
+                echoVisual.GetComponent<Collider>()
+            );
+
+            echoVisual.GetComponent<MeshRenderer>().
+                sharedMaterial = echoMaterial;
+
+            echoVisualRoot.SetActive(false);
 
             GameObject muzzle =
                 new("MuzzleSocket");
@@ -681,6 +731,27 @@ namespace NovaStriker.EditorTools
                 visualizer,
                 "combat",
                 combat
+            );
+
+            SetObjectReference(
+                presentation,
+                "motor",
+                motor
+            );
+            SetObjectReference(
+                presentation,
+                "combat",
+                combat
+            );
+            SetObjectReference(
+                presentation,
+                "novaVisualRoot",
+                novaVisualRoot
+            );
+            SetObjectReference(
+                presentation,
+                "echoVisualRoot",
+                echoVisualRoot
             );
 
             PrefabUtility.SaveAsPrefabAsset(
