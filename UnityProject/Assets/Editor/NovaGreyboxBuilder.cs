@@ -261,7 +261,33 @@ namespace NovaStriker.EditorTools
             CreateArtilleryEnemy(
                 "Enemy_Artillery",
                 112,
-                new Vector3(8.0f, -2.72f, 0f),
+                new Vector3(7.4f, -2.72f, 0f),
+                player.transform,
+                projectilePrefab,
+                enemyMaterial,
+                enemyLayer,
+                worldLayer,
+                oneWayLayer
+            );
+
+            CreateAerialEnemy(
+                "Enemy_Aerial_HoverTest",
+                113,
+                new Vector3(-1.7f, 2.0f, 0f),
+                AerialMotionPattern.HoverBob,
+                player.transform,
+                projectilePrefab,
+                enemyMaterial,
+                enemyLayer,
+                worldLayer,
+                oneWayLayer
+            );
+
+            CreateAerialEnemy(
+                "Enemy_Aerial_OrbitTest",
+                114,
+                new Vector3(4.4f, 3.0f, 0f),
+                AerialMotionPattern.Orbit,
                 player.transform,
                 projectilePrefab,
                 enemyMaterial,
@@ -271,7 +297,7 @@ namespace NovaStriker.EditorTools
             );
 
             CreateHostileEmitter(
-                new Vector3(8.2f, 1.0f, 0f),
+                new Vector3(9.2f, 1.0f, 0f),
                 player.transform,
                 projectilePrefab,
                 enemyMaterial,
@@ -1313,6 +1339,110 @@ namespace NovaStriker.EditorTools
 
             SetObjectReference(
                 artillery,
+                "projectilePrefab",
+                projectilePrefab
+            );
+
+            root.GetComponent<MeshRenderer>().
+                sharedMaterial = material;
+        }
+
+        private static void CreateAerialEnemy(
+            string name,
+            int actorId,
+            Vector3 position,
+            AerialMotionPattern motionPattern,
+            Transform target,
+            Projectile2D projectilePrefab,
+            Material material,
+            int enemyLayer,
+            int worldLayer,
+            int oneWayLayer)
+        {
+            GameObject root =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Sphere
+                );
+
+            root.name = name;
+            root.layer = enemyLayer;
+            root.transform.position = position;
+            root.transform.localScale =
+                new Vector3(0.82f, 0.72f, 0.82f);
+
+            Object.DestroyImmediate(
+                root.GetComponent<SphereCollider>()
+            );
+
+            CircleCollider2D collider =
+                root.AddComponent<CircleCollider2D>();
+
+            collider.radius = 0.52f;
+
+            Rigidbody2D body =
+                root.AddComponent<Rigidbody2D>();
+
+            body.gravityScale = 0f;
+            body.freezeRotation = true;
+            body.interpolation =
+                RigidbodyInterpolation2D.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode2D.Continuous;
+
+            Damageable2D damageable =
+                root.AddComponent<Damageable2D>();
+
+            SetInt(damageable, "actorId", actorId);
+            SetEnum(
+                damageable,
+                "faction",
+                (int)CombatFaction.Enemy
+            );
+            SetFloat(damageable, "maxHealth", 65f);
+            SetObjectReference(
+                damageable,
+                "body",
+                body
+            );
+
+            EnemyBrain2D brain =
+                root.AddComponent<EnemyBrain2D>();
+
+            SetInt(brain, "actorId", actorId);
+            SetEnum(
+                brain,
+                "role",
+                (int)EnemyRole.Aerial
+            );
+            SetFloat(brain, "detectionRange", 14f);
+            SetObjectReference(brain, "body", body);
+            SetObjectReference(
+                brain,
+                "damageable",
+                damageable
+            );
+            SetObjectReference(
+                brain,
+                "target",
+                target
+            );
+            SetLayerMask(
+                brain,
+                "lineOfSightMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
+            );
+
+            EnemyAerialModule2D aerial =
+                root.AddComponent<EnemyAerialModule2D>();
+
+            SetEnum(
+                aerial,
+                "motionPattern",
+                (int)motionPattern
+            );
+            SetObjectReference(
+                aerial,
                 "projectilePrefab",
                 projectilePrefab
             );
