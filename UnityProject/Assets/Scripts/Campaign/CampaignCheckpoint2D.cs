@@ -12,8 +12,13 @@ namespace NovaStriker.Campaign
     public sealed class CampaignCheckpoint2D : MonoBehaviour
     {
         [SerializeField, Min(0)] private int checkpointIndex;
+        [SerializeField] private Transform respawnPoint;
         [SerializeField] private CampaignProgressionController progression;
         [SerializeField] private bool activateOnce = true;
+
+        public int CheckpointIndex => checkpointIndex;
+        public Vector3 RespawnPosition =>
+            respawnPoint ? respawnPoint.position : transform.position;
 
         private bool activated;
 
