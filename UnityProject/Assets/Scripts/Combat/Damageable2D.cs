@@ -11,6 +11,7 @@ namespace NovaStriker.Combat
     /// </summary>
     public sealed class Damageable2D : MonoBehaviour
     {
+        [SerializeField] private int actorId = -1;
         [SerializeField] private CombatFaction faction = CombatFaction.Enemy;
         [SerializeField, Min(1f)] private float maxHealth = 100f;
         [SerializeField] private Rigidbody2D body;
@@ -19,6 +20,7 @@ namespace NovaStriker.Combat
         public event Action<DamagePacket> Damaged;
         public event Action<DamagePacket> Defeated;
 
+        public int ActorId => actorId;
         public CombatFaction Faction => faction;
         public float MaxHealth => maxHealth;
         public float Health { get; private set; }
@@ -74,7 +76,7 @@ namespace NovaStriker.Combat
 
             GameplayEventHub.Raise(new GameplayCue(
                 GameplayCueType.DamageTaken,
-                packet.SourcePlayerId,
+                actorId,
                 packet.HitPoint,
                 packet.Knockback.normalized,
                 packet.Tier,
@@ -89,7 +91,7 @@ namespace NovaStriker.Combat
 
             GameplayEventHub.Raise(new GameplayCue(
                 GameplayCueType.Defeated,
-                packet.SourcePlayerId,
+                actorId,
                 transform.position,
                 Vector2.zero,
                 packet.Tier,
