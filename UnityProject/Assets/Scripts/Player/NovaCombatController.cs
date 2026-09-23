@@ -108,7 +108,7 @@ namespace NovaStriker.Player
         private ContactFilter2D counterFilter;
         private ContactFilter2D grapplePointFilter;
 
-        private readonly HashSet<int> meleeTargets = new();
+        private readonly HashSet<Damageable2D> meleeTargets = new();
 
         private PlayerInputState input;
 
@@ -1206,9 +1206,7 @@ namespace NovaStriker.Player
                 if (!target)
                     continue;
 
-                int instanceId = target.GetEntityId();
-
-                if (!meleeTargets.Add(instanceId))
+                if (!meleeTargets.Add(target))
                     continue;
 
                 float damage = grounded
