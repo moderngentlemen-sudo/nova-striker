@@ -272,36 +272,36 @@ namespace NovaStriker.EditorTools
 
             for (int i = 0; i < players.Length; i++)
             {
-                GameObject player =
+                GameObject playerObject =
                     (GameObject)PrefabUtility.InstantiatePrefab(
                         playerPrefab
                     );
 
-                players[i] = player;
-                player.name = $"Striker_Player{i + 1}";
-                player.transform.position =
+                players[i] = playerObject;
+                playerObject.name = $"Striker_Player{i + 1}";
+                playerObject.transform.position =
                     playerPositions[i];
 
                 Damageable2D health =
-                    player.GetComponent<Damageable2D>();
+                    playerObject.GetComponent<Damageable2D>();
 
-                NovaMotor2D motor =
-                    player.GetComponent<NovaMotor2D>();
+                NovaMotor2D motorComponent =
+                    playerObject.GetComponent<NovaMotor2D>();
 
-                NovaCombatController combat =
-                    player.GetComponent<NovaCombatController>();
+                NovaCombatController combatController =
+                    playerObject.GetComponent<NovaCombatController>();
 
                 StrikerPlayerIdentity identity =
-                    player.GetComponent<StrikerPlayerIdentity>();
+                    playerObject.GetComponent<StrikerPlayerIdentity>();
 
                 NovaInputSystemAdapter input =
-                    player.GetComponent<NovaInputSystemAdapter>();
+                    playerObject.GetComponent<NovaInputSystemAdapter>();
 
                 SetInt(health, "actorId", i);
-                SetInt(motor, "playerId", i);
-                SetInt(combat, "playerId", i);
+                SetInt(motorComponent, "playerId", i);
+                SetInt(combatController, "playerId", i);
                 SetEnum(
-                    combat,
+                    combatController,
                     "character",
                     (int)labCharacters[i]
                 );
