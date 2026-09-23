@@ -29,7 +29,9 @@ namespace NovaStriker.Player
     /// Circle / Counter is contextual:
     /// - moving toward a nearby enemy -> Throw
     /// - close enemy -> Dodge + Counter
-    /// - distance: Nova -> Deflect, Echo -> Grapple
+    /// - Nova at distance -> Deflect
+    /// - Echo at distance, no Up input -> grapple an opponent
+    /// - Echo with Up / Up-Left / Up-Right + Circle -> traversal grapple
     ///
     /// The gameplay layer chooses the action; animation/VFX/audio receive
     /// character-specific cues and can present Nova/Echo differently.
@@ -82,6 +84,10 @@ namespace NovaStriker.Player
         [SerializeField] private float throwInvulnerability = 0.12f;
 
         [Header("Context Counter — Echo Grapple")]
+        [Tooltip("Minimum upward movement input required for traversal grapple intent.")]
+        [SerializeField, Range(0.1f, 1f)] private float grappleTraversalInputThreshold = 0.45f;
+        [Tooltip("How closely a surface candidate must align with Up / Up-Left / Up-Right traversal input.")]
+        [SerializeField, Range(-1f, 1f)] private float grappleTraversalMinimumAimDot = 0.20f;
         [Tooltip("Maximum enemy grapple range.")]
         [SerializeField] private float grapplePullSpeed = 10.5f;
         [SerializeField] private float grappleLift = 1.4f;
@@ -156,6 +162,9 @@ namespace NovaStriker.Player
         public CounterMode CurrentCounterMode => currentCounterMode;
         public GrappleLockKind CurrentGrappleLockKind => grappleLockKind;
         public bool HasGrappleLock => grappleLockKind != GrappleLockKind.None;
+        public bool EchoTraversalGrappleRequested =>
+            character == StrikerCharacter.Echo &&
+            input.Move.y >= grappleTraversalInputThreshold;
         public Vector2 GrappleLockPosition =>
             grappleLockKind == GrappleLockKind.Enemy && contextualCounterTarget
                 ? contextualCounterTarget.transform.position
@@ -454,7 +463,10 @@ namespace NovaStriker.Player
                 currentCounterMode == CounterMode.Grapple
             )
             {
-                AcquireEchoGrappleLock();
+                if (EchoTraversalGrappleRequested)
+                    AcquireEchoTraversalGrappleLock();
+                else
+                    AcquireEchoEnemyGrappleLock();
             }
 
             contextualCounterPending =
@@ -820,7 +832,7 @@ namespace NovaStriker.Player
             ));
         }
 
-        private void AcquireEchoGrappleLock()
+        private void AcquireEchoEnemyGrappleLock()
         {
             ClearGrappleLock();
             contextualCounterTarget = null;
@@ -873,7 +885,7 @@ namespace NovaStriker.Player
                         aim,
                         distance,
                         grappleRange
-                    ) + 0.08f;
+                    );
 
                 if (score <= bestScore)
                     continue;
@@ -881,8 +893,26 @@ namespace NovaStriker.Player
                 bestScore = score;
                 grappleLockKind = GrappleLockKind.Enemy;
                 contextualCounterTarget = candidate;
-                contextualGrapplePoint = null;
             }
+
+            EmitEchoGrappleLockCue();
+        }
+
+        private void AcquireEchoTraversalGrappleLock()
+        {
+            ClearGrappleLock();
+            contextualCounterTarget = null;
+
+            Vector2 traversalDirection =
+                input.Move.sqrMagnitude > 0.0001f
+                    ? input.Move.normalized
+                    : Vector2.up;
+
+            if (traversalDirection.y <= 0f)
+                traversalDirection = Vector2.up;
+
+            float bestScore =
+                float.NegativeInfinity;
 
             grapplePointHits.Clear();
 
@@ -910,6 +940,27 @@ namespace NovaStriker.Player
                 Vector2 position =
                     point.AnchorPosition;
 
+                if (
+                    position.y <
+                    transform.position.y + grappleMinimumHeight
+                )
+                {
+                    continue;
+                }
+
+                Vector2 direction =
+                    DirectionTo(position);
+
+                if (
+                    Vector2.Dot(
+                        traversalDirection,
+                        direction
+                    ) < grappleTraversalMinimumAimDot
+                )
+                {
+                    continue;
+                }
+
                 float distance =
                     Vector2.Distance(
                         transform.position,
@@ -919,7 +970,7 @@ namespace NovaStriker.Player
                 float score =
                     ScoreGrappleCandidate(
                         position,
-                        aim,
+                        traversalDirection,
                         distance,
                         grapplePointRange
                     );
@@ -928,8 +979,8 @@ namespace NovaStriker.Player
                     continue;
 
                 bestScore = score;
-                grappleLockKind = GrappleLockKind.TraversalSurface;
-                contextualCounterTarget = null;
+                grappleLockKind =
+                    GrappleLockKind.TraversalSurface;
                 contextualGrapplePoint = point;
                 contextualGrappleSurfaceCollider =
                     point.GetComponent<Collider2D>();
@@ -938,10 +989,15 @@ namespace NovaStriker.Player
             }
 
             TryAcquireSolidSurfaceGrapple(
-                aim,
+                traversalDirection,
                 ref bestScore
             );
 
+            EmitEchoGrappleLockCue();
+        }
+
+        private void EmitEchoGrappleLockCue()
+        {
             if (!HasGrappleLock)
                 return;
 
@@ -967,7 +1023,7 @@ namespace NovaStriker.Player
         }
 
         private void TryAcquireSolidSurfaceGrapple(
-            Vector2 aim,
+            Vector2 traversalDirection,
             ref float bestScore)
         {
             if (grappleSurfaceMask.value == 0)
@@ -996,6 +1052,16 @@ namespace NovaStriker.Player
                     Mathf.Cos(angleRadians),
                     Mathf.Sin(angleRadians)
                 );
+
+                if (
+                    Vector2.Dot(
+                        traversalDirection,
+                        direction
+                    ) < grappleTraversalMinimumAimDot
+                )
+                {
+                    continue;
+                }
 
                 RaycastHit2D hit =
                     Physics2D.CircleCast(
@@ -1029,18 +1095,13 @@ namespace NovaStriker.Player
                 float score =
                     ScoreGrappleCandidate(
                         point,
-                        aim,
+                        traversalDirection,
                         distance,
                         grapplePointRange
                     );
 
                 if (float.IsNegativeInfinity(score))
                     continue;
-
-                // Slightly favor real world geometry over an equally scored
-                // enemy so traversal remains predictable when Echo is clearly
-                // aiming at an overhead surface.
-                score += 0.04f;
 
                 if (score <= bestScore)
                     continue;
