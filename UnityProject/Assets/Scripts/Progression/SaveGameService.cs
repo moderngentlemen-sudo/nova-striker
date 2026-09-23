@@ -84,7 +84,7 @@ namespace NovaStriker.Progression
         {
             if (Active && Active != this)
             {
-                Destroy(gameObject);
+                Destroy(this);
                 return;
             }
 
