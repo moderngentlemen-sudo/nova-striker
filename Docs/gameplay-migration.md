@@ -71,7 +71,7 @@ Move the 12 weapons to ScriptableObjects. Gameplay code should reference data as
 
 ## Milestone 4 — Enemy framework
 
-Phase 1 is now **in progress** on `dev/unity-gameplay`.
+Phase 2 is now **in progress** on `dev/unity-gameplay`.
 
 Implemented:
 
@@ -80,8 +80,10 @@ Implemented:
 - role-module architecture
 - Anchor baseline module
 - Skirmisher active module
+- Flanker active module with reposition bursts
+- Artillery active module with long-range salvos
 - target detection and World/OneWay line-of-sight checks
-- representative moving/firing `Enemy_Skirmisher` in the mechanics lab
+- representative Skirmisher, Flanker, and Artillery enemies in the mechanics lab
 
 Role vocabulary:
 
@@ -93,16 +95,14 @@ Role vocabulary:
 
 Still required:
 
-- Artillery role module
-- Flanker role module
 - Aerial role module
 - encounter/spawn ownership
 - stagger/armor/Break integration
 - mapping the preserved 12 enemy archetypes onto role + parameter combinations
 - production art/animation integration
-- Play Mode and controller validation of the representative enemy
+- Play Mode and controller validation of the representative enemy roles
 
-The current `Enemy_Skirmisher` is a generic framework-validation enemy, not a claim that a named browser archetype has been fully ported.
+The current Skirmisher, Flanker, and Artillery objects are generic framework-validation enemies, not claims that named browser archetypes have been fully ported. Named archetype mapping will be based on the preserved browser behavior rather than inferred from names alone.
 
 ## Milestone 5 — Guardians
 
