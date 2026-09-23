@@ -43,6 +43,17 @@ Current validation status:
 - ⏳ physical controller testing
 - ⏳ final tuning against the browser reference
 
+## Presentation handoff — in progress
+
+- ✅ separate Nova and Echo visual roots on the generated player prefab
+- ✅ runtime character visual switching
+- ✅ gameplay-cue → optional Animator trigger bridge
+- ✅ continuous movement/combat Animator parameter bridge
+- ✅ presentation remains non-authoritative for physics and combat timing
+- ⏳ production Nova model / rig / Animator
+- ⏳ production Echo model / rig / Animator
+- ⏳ authored animation clips and production VFX
+
 ## Milestone 2 — Combat core
 
 - projectile ownership and cancellation
