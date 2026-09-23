@@ -25,6 +25,13 @@ namespace NovaStriker.Campaign
             cooldownKeys = new(8);
 
         public bool Active => active;
+        public HazardId Hazard => hazard;
+
+        public void ConfigureHazard(HazardId value)
+        {
+            hazard = value;
+            ResetCycle();
+        }
 
         private void Reset()
         {
