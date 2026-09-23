@@ -102,7 +102,7 @@ namespace NovaStriker.Player
                 if (!target)
                     continue;
 
-                int id = target.GetInstanceID();
+                int id = target.GetEntityId();
 
                 if (!hitTargets.Add(id))
                     continue;
