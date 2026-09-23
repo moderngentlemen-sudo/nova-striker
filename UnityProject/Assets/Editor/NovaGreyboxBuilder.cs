@@ -697,6 +697,14 @@ namespace NovaStriker.EditorTools
             SetFloat(health, "maxHealth", 100f);
             SetObjectReference(health, "body", body);
 
+            AddCombatState(
+                root,
+                health,
+                0f,
+                0f,
+                100f
+            );
+
             NovaMotor2D motor =
                 root.AddComponent<NovaMotor2D>();
 
@@ -1177,6 +1185,14 @@ namespace NovaStriker.EditorTools
                 body
             );
 
+            AddCombatState(
+                root,
+                damageable,
+                0f,
+                0f,
+                70f
+            );
+
             root.GetComponent<MeshRenderer>().
                 sharedMaterial = material;
         }
@@ -1247,6 +1263,14 @@ namespace NovaStriker.EditorTools
                 damageable,
                 "body",
                 body
+            );
+
+            AddCombatState(
+                root,
+                damageable,
+                0f,
+                0f,
+                70f
             );
 
             EnemyBrain2D brain =
@@ -1357,6 +1381,14 @@ namespace NovaStriker.EditorTools
                 body
             );
 
+            AddCombatState(
+                root,
+                damageable,
+                0f,
+                0f,
+                70f
+            );
+
             EnemyBrain2D brain =
                 root.AddComponent<EnemyBrain2D>();
 
@@ -1454,6 +1486,14 @@ namespace NovaStriker.EditorTools
                 damageable,
                 "body",
                 body
+            );
+
+            AddCombatState(
+                root,
+                damageable,
+                0f,
+                0f,
+                70f
             );
 
             EnemyBrain2D brain =
@@ -1555,6 +1595,14 @@ namespace NovaStriker.EditorTools
                 body
             );
 
+            AddCombatState(
+                root,
+                damageable,
+                0f,
+                0f,
+                70f
+            );
+
             EnemyBrain2D brain =
                 root.AddComponent<EnemyBrain2D>();
 
@@ -1599,6 +1647,40 @@ namespace NovaStriker.EditorTools
 
             root.GetComponent<MeshRenderer>().
                 sharedMaterial = material;
+        }
+
+        private static CombatState2D AddCombatState(
+            GameObject root,
+            Damageable2D damageable,
+            float maxShield,
+            float maxArmor,
+            float breakMax,
+            float armorReduction = 0.24f)
+        {
+            CombatState2D state =
+                root.AddComponent<CombatState2D>();
+
+            SetObjectReference(
+                state,
+                "damageable",
+                damageable
+            );
+            SetObjectReference(
+                damageable,
+                "combatState",
+                state
+            );
+
+            SetFloat(state, "maxShield", maxShield);
+            SetFloat(state, "maxArmor", maxArmor);
+            SetFloat(state, "breakMax", breakMax);
+            SetFloat(
+                state,
+                "armorDamageReduction",
+                armorReduction
+            );
+
+            return state;
         }
 
         private static void CreateHostileEmitter(
