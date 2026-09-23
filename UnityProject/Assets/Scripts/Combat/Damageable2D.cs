@@ -15,6 +15,7 @@ namespace NovaStriker.Combat
         [SerializeField] private CombatFaction faction = CombatFaction.Enemy;
         [SerializeField, Min(1f)] private float maxHealth = 100f;
         [SerializeField] private Rigidbody2D body;
+        [SerializeField] private CombatState2D combatState;
         [SerializeField] private bool destroyOnDefeat;
 
         public event Action<DamagePacket> Damaged;
@@ -33,12 +34,16 @@ namespace NovaStriker.Combat
         private void Reset()
         {
             body = GetComponent<Rigidbody2D>();
+            combatState = GetComponent<CombatState2D>();
         }
 
         private void Awake()
         {
             if (!body)
                 body = GetComponent<Rigidbody2D>();
+
+            if (!combatState)
+                combatState = GetComponent<CombatState2D>();
 
             Health = maxHealth;
         }
@@ -68,7 +73,20 @@ namespace NovaStriker.Combat
                 return false;
             }
 
-            Health = Mathf.Max(0f, Health - Mathf.Max(0f, packet.Damage));
+            bool contactedDefense =
+                combatState &&
+                combatState.ResolveIncomingDamage(
+                    ref packet
+                );
+
+            if (packet.Damage <= 0f)
+                return contactedDefense;
+
+            Health =
+                Mathf.Max(
+                    0f,
+                    Health - packet.Damage
+                );
 
             if (body && packet.Knockback.sqrMagnitude > 0f)
                 body.linearVelocity += packet.Knockback;
@@ -162,6 +180,8 @@ namespace NovaStriker.Combat
                     Mathf.Max(0f, invulnerabilitySeconds)
                 );
 
+            combatState?.RestoreLayers();
+
             Revived?.Invoke();
 
             GameplayEventHub.Raise(
@@ -183,6 +203,7 @@ namespace NovaStriker.Combat
         {
             Health = maxHealth;
             invulnerabilityRemaining = 0f;
+            combatState?.RestoreLayers();
         }
     }
 }
