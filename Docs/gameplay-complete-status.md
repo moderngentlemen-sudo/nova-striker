@@ -2,25 +2,26 @@
 
 Branch: `dev/gameplay-complete`
 
-This branch is the full pre-Blender gameplay-development run. The goal is to complete every meaningful gameplay/runtime system that can be implemented and validated with generated/greybox assets before production modeling, rigging, animation, and environment art become the limiting dependency.
+This branch is the full pre-Blender gameplay-development run. The intent is to exhaust meaningful gameplay/runtime engineering that can be implemented with Unity code, generated data, and greybox content before production modeling, rigging, animation, environment art, final VFX/audio, or native platform SDK work becomes the limiting dependency.
 
-## Current code-complete / in-progress systems
+## Current code-complete systems
 
-### Players and four-player local co-op
+### Four-player local co-op
 
 - one-to-four simultaneous local player slots
 - canonical Strike Team roles: Tank, Striker 0, Striker 1, Support
-- Striker 1 lead / Striker 0 second-in-command metadata
+- Striker 1 lead / Striker 0 second-in-command metadata and rules
+- art-independent Tank/Support gameplay contracts
 - isolated per-player controller assignment
-- keyboard support for Player 1
+- remembered controller identity and reconnect reservation
+- explicit join/leave hooks
+- Player 1 keyboard support
 - mobile/touch virtual-input abstraction
 - one-screen dynamic four-player camera framing
 - player-player collision suppression
 - nearest-combat-ready enemy targeting across four players
-- shared Synergy meter
-- Pair / Formation / Full Strike Sync tiers
-- co-op downed and multi-contributor revive
-- downed-player camera retention
+- shared Synergy meter and Pair / Formation / Full Strike Sync tiers
+- co-op downed state, multi-contributor revive, assist-chain rewards, and downed-player camera retention
 
 ### Nova and Echo gameplay identity
 
@@ -34,7 +35,7 @@ This branch is the full pre-Blender gameplay-development run. The goal is to com
 - Echo Pursuit Mark, Reel Strike, Staff Burst, Pursuit Protocol hooks
 - character-specific gameplay cues remain presentation-independent
 
-### Combat
+### Combat and progression
 
 - health / healing / invulnerability / defeat / revival
 - knockback and external velocity
@@ -44,20 +45,22 @@ This branch is the full pre-Blender gameplay-development run. The goal is to com
 - mark / vulnerable / exposed
 - cryo slow
 - burn
-- shock state
+- shock and shock chaining
 - projectile cancellation and reflection
 - hostile perfect-opportunity projectiles
 - melee, aerial melee, dive melee
 - Dash / Velocity Break / Powerslide damage
 - per-player Style meter with variety/repetition logic and decay
 - shared weapon mastery progression
+- six baseline skill/perk unlocks with runtime effects
 
 ### Weapons and Guardian abilities
 
 - 12 generated WeaponDefinition assets
 - loadout cycling per player
-- all established weapon behavior categories wired into the runtime
+- established weapon behavior categories wired into runtime
 - boomerang, gravity-well, mine, spread, cyclone, beam/pierce/status behavior foundations
+- projectile pooling foundation
 - six player-usable Guardian abilities
 - six generated GuardianDefinition assets
 
@@ -65,33 +68,37 @@ This branch is the full pre-Blender gameplay-development run. The goal is to com
 
 - shared EnemyBrain2D
 - Anchor, Artillery, Flanker, Skirmisher, Aerial roles
-- named 12-archetype browser-reference catalog
+- full named 12-archetype catalog
 - named archetype behavior controller
 - four-player target selection
-- stagger/slow integration
+- stagger/slow/status integration
 - mixed-role squad coordinator
 - Advance / Fortify / Pincer / Crossfire positioning logic
 - geometry-aware firing / grapple occlusion
+- pooled encounter-enemy foundation
 
 ### Encounter and campaign runtime
 
-- six sectors / eighteen-act catalog
+- six sectors / eighteen-act gameplay catalog
+- authored scalable combat compositions for all eighteen acts
 - sector hazards
 - setpiece runtime for Train Rush, Furnace Surge, Vine Bridge, Ice Collapse, Lightning Chase, Null Warp
 - scalable one-to-four-player encounter waves
 - arena camera locking
 - persistent checkpoint triggers
 - health / Suit Energy / Synergy / Ultimate pickups
+- encounter reward spawning
 - Gauntlet / Weapon Trial / Dash Course secret-challenge framework
 - campaign progression authority
-- versioned save system with replaceable backend
+- party-wipe, retry, and checkpoint-respawn flow
+- versioned save system with replaceable local/cloud backend contract
 
 ### Boss framework
 
-- four preserved mini-boss identities represented by a shared mini-boss runtime
+- four preserved mini-boss identities represented by shared mini-boss runtime
 - six Guardian boss identities represented by shared phase/weak-point runtime
 - Guardian phase transitions
-- Guardian-specific action families
+- Guardian-specific action families and defense profiles
 - Guardian weak-point open/close gameplay events
 - multi-player target acquisition
 
@@ -101,43 +108,51 @@ This branch is the full pre-Blender gameplay-development run. The goal is to com
 - low / medium / high / ultra runtime presentation budgets
 - 60/120 render-target architecture
 - scalable VFX/light/shadow/render-scale guidance
-- storefront-neutral saves and commerce interfaces
+- storefront-neutral platform runtime provider interface
+- cloud-save backend extension contract
 - mobile/touch input bridge
 
 ### Commerce / DLC
 
 - storefront-neutral commerce catalog/provider interface
 - editor/offline mock commerce provider
+- purchase restore and entitlement-reconciliation extension contract
 - persistent entitlements
 - per-player cosmetic loadout persistence
 - suit / helmet / weapon / trail cosmetic slots
 - entitlement-driven DLC content gates
 - gameplay-stat purchase flag exists so commerce can remain cosmetic/content-oriented by default
 
-## Not yet Unity-validated in this branch
+### Validation / developer tooling
 
-The original Unity migration and approved wallslide fix were previously user-tested in Unity 6.6, but the large gameplay-complete expansion has **not** yet received a fresh full Unity 6.6 compile/Play Mode pass.
+- Mechanics Lab greybox builder
+- boss/enemy/debug spawning support
+- scene/configuration Gameplay Preflight validator
+- scene-independent Structural Batch validator
+- structural validation covers campaign composition, 12-enemy coverage, four-role Strike Team command contracts, and skill/perk catalog invariants
+- batch validator can return a non-zero Unity command-line exit code on structural failure
 
-Therefore the systems above are code status, not QA approval.
+## Unity validation status
 
-## Major remaining pre-Blender engineering
+The earlier `dev/unity-gameplay` baseline was imported/compiled in Unity 6.6 and received user Play Mode validation for multiple core mechanics, including the corrected wall slide.
 
-- full Unity compile-error pass after the large branch expansion
-- broader projectile pooling / spawn pooling for high-density encounters
-- additional status interactions such as shock chaining
-- deeper named enemy archetype tuning/reactions
-- encounter composition for all 18 acts
-- mini-boss and Guardian mechanics refinement after Play Mode feedback
-- production-quality player join/leave flow and reconnect UX hooks
-- skill/perk implementation and mastery reward effects
-- campaign death/retry/party-wipe handling
-- additional secrets/challenge/setpiece composition
-- boss/encounter debug spawning and automated validation tooling
-- platform-specific provider adapter interfaces where SDK access permits
-- performance/allocation audit
-- final presentation socket/Animator/VFX/audio/haptic handoff audit
-- final pre-Blender dependency matrix
+The expanded `dev/gameplay-complete` branch is **code-integrated but not yet freshly Unity-validated**. No code-complete claim in this branch should be interpreted as a successful Unity 6.6 compile, Play Mode QA pass, profiler pass, or platform certification result.
+
+## Remaining meaningful pre-Blender work
+
+The branch is now close to the pre-Blender boundary. The remaining material work is primarily validation, profiling, integration verification, and tuning rather than missing gameplay architecture:
+
+- fresh Unity 6.6 compile/error reconciliation
+- regenerate the Mechanics Lab and run both validation tools
+- one/two/three/four-player Play Mode smoke passes
+- join/leave and controller disconnect/reconnect validation
+- end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
+- representative profiler/allocation captures and pool/budget tuning
+- final gameplay-facing presentation socket / Animator / VFX / audio / haptic contract freeze
+- native provider adapters only where Steam/Xbox/PlayStation/Nintendo/mobile SDK access and credentials permit
+
+See `Docs/pre-blender-boundary.md` for the explicit dependency matrix and stop condition.
 
 ## Stop boundary
 
-Do not mark this branch complete until all meaningful gameplay/runtime work that can be done with primitives/generated assets is exhausted. Final 3D models, rigs, authored character animation, production materials/textures, final environment meshes, and asset-dependent polish belong to the Blender/art-production phase.
+Do not add gameplay authority merely to compensate for missing production art. Once the validation/profiling list above passes, remaining meaningful work should move to Blender/production assets and Unity presentation integration: final models, rigs, authored animation, materials/textures, environment meshes, final VFX/audio/lighting, and production polish.
