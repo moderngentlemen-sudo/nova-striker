@@ -322,6 +322,32 @@ namespace NovaStriker.Player
             ClearInputEdges();
         }
 
+        public void RestoreSuitEnergy(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            suitEnergy =
+                Mathf.Clamp(
+                    suitEnergy + amount,
+                    0f,
+                    maxSuitEnergy
+                );
+        }
+
+        public void AddUltimateCharge(float amount)
+        {
+            if (amount <= 0f)
+                return;
+
+            ultimateCharge =
+                Mathf.Clamp(
+                    ultimateCharge + amount,
+                    0f,
+                    ultimateChargeRequired
+                );
+        }
+
         private void TryActivateSecondary(int index)
         {
             float cost =
