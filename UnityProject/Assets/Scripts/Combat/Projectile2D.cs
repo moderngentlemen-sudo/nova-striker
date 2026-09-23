@@ -376,6 +376,44 @@ namespace NovaStriker.Combat
             return true;
         }
 
+        public bool TryEnemyReflect(
+            float speedMultiplier = 0.75f,
+            float damageMultiplier = 1f)
+        {
+            if (
+                !initialized ||
+                Faction != CombatFaction.Player
+            )
+            {
+                return false;
+            }
+
+            Vector2 reverse =
+                body &&
+                body.linearVelocity.sqrMagnitude > 0.0001f
+                    ? -body.linearVelocity.normalized
+                    : Vector2.left;
+
+            float speed =
+                body
+                    ? Mathf.Max(
+                        0.1f,
+                        body.linearVelocity.magnitude *
+                        Mathf.Max(0.1f, speedMultiplier)
+                    )
+                    : 1f;
+
+            Faction = CombatFaction.Enemy;
+            OwnerPlayerId = -1;
+            Damage *= Mathf.Max(0f, damageMultiplier);
+            SetPhysicsLayerForFaction();
+
+            if (body)
+                body.linearVelocity = reverse * speed;
+
+            return true;
+        }
+
         /// <summary>
         /// Reflect an enemy projectile using the timing/damage behavior from the
         /// browser reference. A perfect opportunity plus a perfect parry receives
