@@ -38,10 +38,10 @@ Examples:
 
 | ID | Asset | Concept | Sheet | Blender | Rig | Anim | Unity | Gameplay |
 |---|---|---|---|---|---|---|---|---|
-| CHR-NOVA | Nova | foundation | not_started | not_started | not_started | not_started | not_started | in_progress |
-| CHR-ECHO | Echo | foundation | not_started | not_started | not_started | not_started | not_started | not_started |
+| CHR-NOVA | Nova | foundation | not_started | not_started | not_started | not_started | scaffolded | in_progress |
+| CHR-ECHO | Echo | foundation | not_started | not_started | not_started | not_started | scaffolded | in_progress |
 
-Nova's Unity gameplay state is `in_progress` because the branch already contains the initial greybox movement controller. This is not an art/model completion state.
+Nova and Echo now both have active Unity gameplay work plus a scaffolded presentation handoff: separate character visual roots and a shared `StrikerPresentationBridge` for Animator/event integration. `scaffolded` in the Unity column does **not** mean a production model, rig, or character-art prefab exists.
 
 ### Guardians
 
