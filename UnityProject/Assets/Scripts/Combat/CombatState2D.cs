@@ -1,0 +1,474 @@
+using NovaStriker.Core;
+using UnityEngine;
+
+namespace NovaStriker.Combat
+{
+    /// <summary>
+    /// Layered combat state shared by players, standard enemies, mini-bosses,
+    /// and Guardians. Health remains in Damageable2D; this component owns
+    /// shields, armor, Break/stagger, and timed weapon statuses.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class CombatState2D : MonoBehaviour
+    {
+        [SerializeField] private Damageable2D damageable;
+
+        [Header("Shield")]
+        [SerializeField, Min(0f)] private float maxShield;
+        [SerializeField, Min(0f)] private float shieldRechargeDelay = 4.5f;
+        [SerializeField, Min(0f)] private float shieldRechargePerSecond;
+
+        [Header("Armor")]
+        [SerializeField, Min(0f)] private float maxArmor;
+        [SerializeField, Range(0f, 0.8f)] private float armorDamageReduction = 0.24f;
+
+        [Header("Break")]
+        [SerializeField, Min(0f)] private float breakMax = 80f;
+        [SerializeField, Min(0f)] private float breakDecayPerSecond = 10f;
+        [SerializeField, Min(0f)] private float breakStaggerDuration = 0.75f;
+
+        [Header("Statuses")]
+        [SerializeField, Range(0f, 1f)] private float cryoSlowMultiplier = 0.55f;
+
+        private float shieldRechargeTimer;
+        private float burnTimer;
+        private float burnDamagePerSecond;
+        private float markTimer;
+        private int markStacks;
+        private float vulnerableTimer;
+        private float exposedTimer;
+        private float shockTimer;
+        private float staggerTimer;
+
+        public float Shield { get; private set; }
+        public float MaxShield => maxShield;
+        public float Armor { get; private set; }
+        public float MaxArmor => maxArmor;
+        public float BreakGauge { get; private set; }
+        public float BreakMax => breakMax;
+
+        public bool ShieldBroken => maxShield > 0f && Shield <= 0f;
+        public bool ArmorBroken => maxArmor > 0f && Armor <= 0f;
+        public bool IsStaggered => staggerTimer > 0f;
+        public bool IsBurning => burnTimer > 0f;
+        public bool IsMarked => markTimer > 0f && markStacks > 0;
+        public bool IsVulnerable => vulnerableTimer > 0f;
+        public bool IsExposed => exposedTimer > 0f;
+        public bool IsShocked => shockTimer > 0f;
+        public bool IsSlowed => cryoSlowTimer > 0f;
+
+        private float cryoSlowTimer;
+
+        public int MarkStacks => markStacks;
+
+        public float MovementMultiplier =>
+            IsSlowed
+                ? cryoSlowMultiplier
+                : 1f;
+
+        private void Reset()
+        {
+            damageable = GetComponent<Damageable2D>();
+        }
+
+        private void Awake()
+        {
+            if (!damageable)
+                damageable = GetComponent<Damageable2D>();
+
+            ResetLayers();
+        }
+
+        private void FixedUpdate()
+        {
+            float dt = Time.fixedDeltaTime;
+
+            staggerTimer = Mathf.Max(0f, staggerTimer - dt);
+            vulnerableTimer = Mathf.Max(0f, vulnerableTimer - dt);
+            exposedTimer = Mathf.Max(0f, exposedTimer - dt);
+            shockTimer = Mathf.Max(0f, shockTimer - dt);
+            cryoSlowTimer = Mathf.Max(0f, cryoSlowTimer - dt);
+
+            if (markTimer > 0f)
+            {
+                markTimer = Mathf.Max(0f, markTimer - dt);
+
+                if (markTimer <= 0f)
+                    markStacks = 0;
+            }
+
+            if (burnTimer > 0f)
+            {
+                burnTimer = Mathf.Max(0f, burnTimer - dt);
+
+                if (
+                    damageable &&
+                    !damageable.IsDefeated &&
+                    burnDamagePerSecond > 0f
+                )
+                {
+                    damageable.ApplyDamage(
+                        new DamagePacket(
+                            burnDamagePerSecond * dt,
+                            Vector2.zero,
+                            transform.position,
+                            CombatFaction.Neutral,
+                            -1,
+                            0,
+                            "status-burn"
+                        )
+                    );
+                }
+            }
+
+            if (!IsStaggered && BreakGauge > 0f)
+            {
+                BreakGauge =
+                    Mathf.Max(
+                        0f,
+                        BreakGauge -
+                        breakDecayPerSecond * dt
+                    );
+            }
+
+            if (maxShield <= 0f || Shield >= maxShield)
+                return;
+
+            shieldRechargeTimer =
+                Mathf.Max(0f, shieldRechargeTimer - dt);
+
+            if (
+                shieldRechargeTimer <= 0f &&
+                shieldRechargePerSecond > 0f
+            )
+            {
+                Shield =
+                    Mathf.Min(
+                        maxShield,
+                        Shield +
+                        shieldRechargePerSecond * dt
+                    );
+            }
+        }
+
+        /// <summary>
+        /// Applies defensive layers and damage multipliers. Returns true when
+        /// the incoming hit contacted a defensive layer even if no health
+        /// damage remains.
+        /// </summary>
+        public bool ResolveIncomingDamage(
+            ref DamagePacket packet)
+        {
+            float incoming =
+                Mathf.Max(0f, packet.Damage);
+
+            bool contactedDefense = false;
+
+            if (incoming <= 0f)
+            {
+                packet.Damage = 0f;
+                return false;
+            }
+
+            shieldRechargeTimer = shieldRechargeDelay;
+
+            if (Shield > 0f)
+            {
+                contactedDefense = true;
+
+                float absorbed =
+                    Mathf.Min(Shield, incoming);
+
+                Shield -= absorbed;
+                incoming -= absorbed;
+
+                if (Shield <= 0f)
+                {
+                    RaiseLayerCue(
+                        GameplayCueType.ShieldBroken,
+                        packet,
+                        maxShield,
+                        "shield-break"
+                    );
+                }
+            }
+
+            if (incoming > 0f && Armor > 0f)
+            {
+                contactedDefense = true;
+
+                bool bypass =
+                    packet.WeaponId == "rail" ||
+                    packet.WeaponId == "spear" ||
+                    packet.WeaponId == "null";
+
+                float raw = incoming;
+
+                if (!bypass)
+                {
+                    incoming *=
+                        1f -
+                        Mathf.Clamp01(armorDamageReduction);
+                }
+
+                float armorDamage =
+                    raw *
+                    (bypass ? 0.85f : 0.42f);
+
+                Armor =
+                    Mathf.Max(
+                        0f,
+                        Armor - armorDamage
+                    );
+
+                if (Armor <= 0f)
+                {
+                    RaiseLayerCue(
+                        GameplayCueType.ArmorBroken,
+                        packet,
+                        maxArmor,
+                        "armor-break"
+                    );
+                }
+            }
+
+            if (markStacks > 0)
+                incoming *= 1f + markStacks * 0.04f;
+
+            if (IsVulnerable)
+                incoming *= 1.15f;
+
+            if (IsExposed)
+                incoming *= 1.12f;
+
+            packet.Damage = Mathf.Max(0f, incoming);
+
+            if (packet.Damage > 0f && breakMax > 0f)
+            {
+                BreakGauge +=
+                    packet.Damage * 0.72f;
+
+                if (BreakGauge >= breakMax)
+                    TriggerBreak(packet);
+            }
+
+            return contactedDefense;
+        }
+
+        public void ApplyWeaponStatus(
+            string weaponId,
+            int tier)
+        {
+            if (string.IsNullOrEmpty(weaponId))
+                return;
+
+            tier = Mathf.Clamp(tier, 0, 3);
+
+            switch (weaponId)
+            {
+                case "pulse":
+                    markTimer = 2.6f;
+                    markStacks =
+                        Mathf.Clamp(
+                            markStacks + 1,
+                            0,
+                            3
+                        );
+                    break;
+
+                case "arc":
+                    shockTimer =
+                        Mathf.Max(
+                            shockTimer,
+                            1.8f + tier * 0.25f
+                        );
+                    break;
+
+                case "volt":
+                    shockTimer =
+                        Mathf.Max(shockTimer, 2.5f);
+                    break;
+
+                case "rail":
+                    DamageArmor(18f + tier * 14f);
+                    exposedTimer =
+                        Mathf.Max(exposedTimer, 1.3f);
+                    break;
+
+                case "cryo":
+                    cryoSlowTimer =
+                        Mathf.Max(
+                            cryoSlowTimer,
+                            2.2f + tier * 0.45f
+                        );
+
+                    if (tier >= 3)
+                    {
+                        staggerTimer =
+                            Mathf.Max(staggerTimer, 0.7f);
+                    }
+                    break;
+
+                case "nova":
+                    exposedTimer =
+                        Mathf.Max(
+                            exposedTimer,
+                            2f + tier * 0.3f
+                        );
+                    break;
+
+                case "spear":
+                    DamageArmor(22f + tier * 16f);
+                    break;
+
+                case "gravity":
+                    vulnerableTimer =
+                        Mathf.Max(vulnerableTimer, 2.8f);
+                    break;
+
+                case "magma":
+                    burnTimer =
+                        Mathf.Max(
+                            burnTimer,
+                            2.8f + tier * 0.4f
+                        );
+
+                    burnDamagePerSecond =
+                        Mathf.Max(
+                            burnDamagePerSecond,
+                            8f + tier * 5f
+                        );
+                    break;
+
+                case "mines":
+                    staggerTimer =
+                        Mathf.Max(
+                            staggerTimer,
+                            0.5f + tier * 0.12f
+                        );
+                    break;
+
+                case "null":
+                    DamageArmor(35f + tier * 22f);
+                    vulnerableTimer =
+                        Mathf.Max(vulnerableTimer, 1.5f);
+                    break;
+            }
+
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    GameplayCueType.StatusApplied,
+                    damageable ? damageable.ActorId : -1,
+                    transform.position,
+                    Vector2.zero,
+                    tier,
+                    0f,
+                    weaponId
+                )
+            );
+        }
+
+        public void AddBreak(
+            float amount,
+            DamagePacket source)
+        {
+            if (breakMax <= 0f || amount <= 0f)
+                return;
+
+            BreakGauge += amount;
+
+            if (BreakGauge >= breakMax)
+                TriggerBreak(source);
+        }
+
+        public void RestoreLayers()
+        {
+            ResetLayers();
+        }
+
+        private void ResetLayers()
+        {
+            Shield = Mathf.Max(0f, maxShield);
+            Armor = Mathf.Max(0f, maxArmor);
+            BreakGauge = 0f;
+            shieldRechargeTimer = 0f;
+            burnTimer = 0f;
+            burnDamagePerSecond = 0f;
+            markTimer = 0f;
+            markStacks = 0;
+            vulnerableTimer = 0f;
+            exposedTimer = 0f;
+            shockTimer = 0f;
+            staggerTimer = 0f;
+            cryoSlowTimer = 0f;
+        }
+
+        private void DamageArmor(float amount)
+        {
+            if (Armor <= 0f || amount <= 0f)
+                return;
+
+            Armor =
+                Mathf.Max(
+                    0f,
+                    Armor - amount
+                );
+
+            if (Armor <= 0f && maxArmor > 0f)
+            {
+                GameplayEventHub.Raise(
+                    new GameplayCue(
+                        GameplayCueType.ArmorBroken,
+                        damageable ? damageable.ActorId : -1,
+                        transform.position,
+                        Vector2.zero,
+                        0,
+                        maxArmor,
+                        "armor-break-status"
+                    )
+                );
+            }
+        }
+
+        private void TriggerBreak(DamagePacket packet)
+        {
+            BreakGauge = 0f;
+            staggerTimer =
+                Mathf.Max(
+                    staggerTimer,
+                    breakStaggerDuration
+                );
+
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    GameplayCueType.GuardBroken,
+                    damageable ? damageable.ActorId : -1,
+                    transform.position,
+                    packet.Knockback.normalized,
+                    packet.Tier,
+                    breakStaggerDuration,
+                    "guard-break"
+                )
+            );
+        }
+
+        private void RaiseLayerCue(
+            GameplayCueType type,
+            DamagePacket packet,
+            float value,
+            string id)
+        {
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    type,
+                    damageable ? damageable.ActorId : -1,
+                    transform.position,
+                    packet.Knockback.normalized,
+                    packet.Tier,
+                    value,
+                    id
+                )
+            );
+        }
+    }
+}
