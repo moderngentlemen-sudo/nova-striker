@@ -16,6 +16,7 @@ namespace NovaStriker.Player
         [SerializeField] private NovaCombatController combat;
         [SerializeField] private StrikerPlayerIdentity identity;
         [SerializeField] private StrikerReviveInteractor reviveInteractor;
+        [SerializeField] private StrikeSuitAbilityController suitAbilities;
 
         private PlayerInputState latest;
         private bool hasInput;
@@ -26,6 +27,7 @@ namespace NovaStriker.Player
             combat = GetComponent<NovaCombatController>();
             identity = GetComponent<StrikerPlayerIdentity>();
             reviveInteractor = GetComponent<StrikerReviveInteractor>();
+            suitAbilities = GetComponent<StrikeSuitAbilityController>();
         }
 
         private void Awake()
@@ -41,6 +43,9 @@ namespace NovaStriker.Player
 
             if (!reviveInteractor)
                 reviveInteractor = GetComponent<StrikerReviveInteractor>();
+
+            if (!suitAbilities)
+                suitAbilities = GetComponent<StrikeSuitAbilityController>();
         }
 
         /// <summary>
@@ -88,6 +93,7 @@ namespace NovaStriker.Player
 
             identity?.SubmitTeamInput(step);
             reviveInteractor?.SetInput(step);
+            suitAbilities?.SetInput(step);
 
             ClearTransientEdges();
         }
@@ -104,6 +110,7 @@ namespace NovaStriker.Player
                 combat.SetInput(latest);
 
             reviveInteractor?.SetInput(latest);
+            suitAbilities?.SetInput(latest);
         }
 
         private void ClearTransientEdges()
