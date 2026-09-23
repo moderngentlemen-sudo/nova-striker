@@ -120,6 +120,34 @@ Run these before tuning values:
 22. Test all three grounded melee hits, two aerial hits, and downward dive melee.
 23. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
+## Dash / Counter telemetry pass
+
+The greybox HUD now exposes additional runtime diagnostics for this tuning pass:
+
+- live Rigidbody velocity
+- current dash charge time
+- the tier that the current dash charge will release into
+- active Dash and Powerslide tiers
+- Echo grapple lock type and lock distance
+- whether Up + Counter traversal intent is active
+- the last player gameplay cue, including tier, value, and action ID where available
+
+Use the HUD to validate the dash boundaries directly:
+
+- release before **0.30 s** → Quick
+- release from **0.30–0.85 s** → Burst
+- release at **0.85 s or later** → Velocity Break
+
+For Powerslide, hold Down first so Crouch is active, then charge/release Dash. Confirm the HUD changes from `Dash` to `Slide` and reports the intended tier. `SlideHit` should appear as the last cue when the slide damages a target; `DashHit` should appear only for Velocity Break contact damage.
+
+For Counter validation, use the HUD's lock type and distance together with the last cue:
+
+- Nova distance Counter → `CounterDeflect` when a projectile is successfully reflected
+- Echo distance Counter without Up → `CounterGrapple` / `echo-grapple-enemy`
+- Echo Up or Up-diagonal + Counter → `CounterGrappleTraversal`
+- close enemy → `CounterDodge`
+- moving toward a close enemy → `CounterThrow`
+
 ## After the first successful import
 
 Commit Unity-generated `.meta` files and any safe ProjectSettings changes made by the Editor. Do not commit `Library/`, `Temp/`, `Logs/`, or other ignored generated directories.
