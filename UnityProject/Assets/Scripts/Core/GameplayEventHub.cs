@@ -34,7 +34,8 @@ namespace NovaStriker.Core
         ParrySuccess,
         PerfectParry,
         DamageTaken,
-        Defeated
+        Defeated,
+        Revived
     }
 
     /// <summary>
