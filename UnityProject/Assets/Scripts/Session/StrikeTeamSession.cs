@@ -26,6 +26,9 @@ namespace NovaStriker.Session
     {
         public const int MaxPlayers = 4;
 
+        [Header("Local Co-op Physics")]
+        [SerializeField] private bool ignorePlayerPlayerCollision = true;
+
         [Header("Synergy")]
         [SerializeField] private float maxSynergy = 100f;
         [SerializeField] private float pairSyncCost = 40f;
@@ -81,6 +84,26 @@ namespace NovaStriker.Session
 
             Active = this;
             synergy = 0f;
+
+            ConfigureTeamPhysics();
+        }
+
+        private void ConfigureTeamPhysics()
+        {
+            if (!ignorePlayerPlayerCollision)
+                return;
+
+            int playerLayer =
+                LayerMask.NameToLayer("Player");
+
+            if (playerLayer >= 0)
+            {
+                Physics2D.IgnoreLayerCollision(
+                    playerLayer,
+                    playerLayer,
+                    true
+                );
+            }
         }
 
         private void OnEnable()
