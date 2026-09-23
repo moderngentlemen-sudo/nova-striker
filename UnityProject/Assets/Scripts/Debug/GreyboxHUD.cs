@@ -31,7 +31,7 @@ namespace NovaStriker.Debugging
         {
             EnsureStyles();
 
-            GUI.Box(new Rect(14, 14, 455, 268), GUIContent.none);
+            GUI.Box(new Rect(14, 14, 455, 286), GUIContent.none);
 
             GUI.Label(
                 new Rect(28, 24, 390, 28),
@@ -58,6 +58,8 @@ namespace NovaStriker.Debugging
                 $"Grounded: {(motor && motor.Grounded)}    " +
                 $"Wall slide: {(motor && motor.IsWallSliding)}    " +
                 $"Wall: {(motor ? motor.WallDirection : 0)}\n" +
+                $"Wall-jump lock: {(motor && motor.IsWallJumpControlLocked)}    " +
+                $"Grapple travel: {(motor && motor.IsGrapplingTraversal)}\n" +
                 $"Crouch: {(motor && motor.IsCrouching)}    " +
                 $"Dash tier: {dashTier}\n" +
                 $"Dash charge: {dashCharge:0.00}s    " +
@@ -68,13 +70,13 @@ namespace NovaStriker.Debugging
                 $"Health: {health:0}";
 
             GUI.Label(
-                new Rect(28, 58, 415, 148),
+                new Rect(28, 58, 415, 166),
                 state,
                 body
             );
 
             GUI.Label(
-                new Rect(28, 210, 420, 58),
+                new Rect(28, 228, 420, 58),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
                 "U / Square: melee    I / Circle: contextual Counter\n" +
