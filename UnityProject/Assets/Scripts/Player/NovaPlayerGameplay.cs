@@ -74,6 +74,7 @@ namespace NovaStriker.Player
             latest.UltimatePressed |= state.UltimatePressed;
             latest.WeaponCyclePressed |= state.WeaponCyclePressed;
             latest.GuardianCyclePressed |= state.GuardianCyclePressed;
+            latest.GuardianActivatePressed |= state.GuardianActivatePressed;
             latest.SyncPressed |= state.SyncPressed;
 
             hasInput = true;
@@ -127,6 +128,7 @@ namespace NovaStriker.Player
             latest.UltimatePressed = false;
             latest.WeaponCyclePressed = false;
             latest.GuardianCyclePressed = false;
+            latest.GuardianActivatePressed = false;
             latest.SyncPressed = false;
         }
     }
