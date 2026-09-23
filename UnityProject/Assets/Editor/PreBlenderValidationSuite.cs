@@ -33,25 +33,7 @@ namespace NovaStriker.EditorTools
             RunSuite(rebuildMechanicsLab: true);
         }
 
-        /// <summary>
-        /// Source/scene validation entry point suitable for Unity batch mode.
-        /// This intentionally avoids rebuilding generated assets so CI can run
-        /// against a checked-out project without mutating repository content.
-        /// Individual validators retain their own error/warning logging.
-        ///
-        /// Example:
-        /// Unity -batchmode -quit -projectPath UnityProject \
-        ///   -executeMethod NovaStriker.EditorTools.PreBlenderValidationSuite.RunForCommandLine
-        /// </summary>
-        public static void RunForCommandLine()
-        {
-            bool completed = RunSuite(rebuildMechanicsLab: false);
-
-            if (Application.isBatchMode)
-                EditorApplication.Exit(completed ? 0 : 1);
-        }
-
-        private static bool RunSuite(bool rebuildMechanicsLab)
+        private static void RunSuite(bool rebuildMechanicsLab)
         {
             string unityVersion = Application.unityVersion;
             DateTime startedUtc = DateTime.UtcNow;
@@ -93,8 +75,6 @@ namespace NovaStriker.EditorTools
                     "Unity-validated. Manual 1-4 player Play Mode, controller, " +
                     "save/commerce, and profiler passes are still required."
                 );
-
-                return true;
             }
             catch (Exception exception)
             {
@@ -103,7 +83,6 @@ namespace NovaStriker.EditorTools
                     Prefix +
                     "Validation suite aborted before all layers completed."
                 );
-                return false;
             }
         }
     }
