@@ -14,13 +14,21 @@ namespace NovaStriker.Commerce
         [SerializeField] private CommerceCatalog catalog;
         [SerializeField] private SaveGameService saveService;
         [SerializeField] private bool useMockProviderInEditor = true;
+        [SerializeField] private bool reconcileOnInitialize = true;
+        [SerializeField] private bool requireReconciliationBeforeUse;
 
         private ICommerceProvider provider;
+        private ICommerceEntitlementReconciliationProvider reconciliationProvider;
+        private bool reconciled;
 
         public static EntitlementService Active { get; private set; }
 
         public event Action<string> EntitlementGranted;
+        public event Action<string> EntitlementRevoked;
         public event Action<string, string> PurchaseFailed;
+        public event Action RestoreCompleted;
+
+        public bool Reconciled => reconciled;
 
         private void Awake()
         {
@@ -47,13 +55,40 @@ namespace NovaStriker.Commerce
         {
             DetachProvider();
             provider = value;
+            reconciled = false;
 
             if (provider == null)
                 return;
 
             provider.PurchaseSucceeded += OnPurchaseSucceeded;
             provider.PurchaseFailed += OnPurchaseFailed;
+            provider.RestoreCompleted += OnRestoreCompleted;
+
+            reconciliationProvider =
+                provider as ICommerceEntitlementReconciliationProvider;
+
+            if (reconciliationProvider != null)
+            {
+                reconciliationProvider.ProductEntitlementConfirmed +=
+                    OnProductEntitlementConfirmed;
+
+                reconciliationProvider.ProductEntitlementRevoked +=
+                    OnProductEntitlementRevoked;
+            }
+
             provider.Initialize(catalog);
+
+            if (reconcileOnInitialize && provider.Ready)
+            {
+                if (reconciliationProvider != null)
+                    reconciliationProvider.RefreshEntitlements();
+                else
+                    provider.RestorePurchases();
+            }
+            else if (!reconcileOnInitialize)
+            {
+                reconciled = true;
+            }
         }
 
         public bool HasEntitlement(string entitlementId)
@@ -62,6 +97,15 @@ namespace NovaStriker.Commerce
                 string.IsNullOrEmpty(entitlementId) ||
                 !saveService ||
                 saveService.Current == null
+            )
+            {
+                return false;
+            }
+
+            if (
+                requireReconciliationBeforeUse &&
+                provider != null &&
+                !reconciled
             )
             {
                 return false;
@@ -113,7 +157,12 @@ namespace NovaStriker.Commerce
 
         public void RestorePurchases()
         {
-            provider?.RestorePurchases();
+            reconciled = false;
+
+            if (reconciliationProvider != null)
+                reconciliationProvider.RefreshEntitlements();
+            else
+                provider?.RestorePurchases();
         }
 
         public void GrantEntitlementForDevelopment(
@@ -128,6 +177,25 @@ namespace NovaStriker.Commerce
 
         private void OnPurchaseSucceeded(string productId)
         {
+            GrantProductEntitlement(
+                productId,
+                "Purchased product is not present in the local catalog."
+            );
+        }
+
+        private void OnProductEntitlementConfirmed(
+            string productId)
+        {
+            GrantProductEntitlement(
+                productId,
+                "Confirmed product is not present in the local catalog."
+            );
+        }
+
+        private void GrantProductEntitlement(
+            string productId,
+            string missingProductReason)
+        {
             CommerceProductDefinition product =
                 catalog ? catalog.Find(productId) : null;
 
@@ -135,7 +203,7 @@ namespace NovaStriker.Commerce
             {
                 PurchaseFailed?.Invoke(
                     productId,
-                    "Purchased product is not present in the local catalog."
+                    missingProductReason
                 );
                 return;
             }
@@ -144,6 +212,51 @@ namespace NovaStriker.Commerce
                 product.EntitlementId,
                 product.Type == CommerceProductType.Cosmetic
             );
+        }
+
+        private void OnProductEntitlementRevoked(
+            string productId)
+        {
+            CommerceProductDefinition product =
+                catalog ? catalog.Find(productId) : null;
+
+            if (
+                product == null ||
+                !saveService ||
+                saveService.Current == null
+            )
+            {
+                return;
+            }
+
+            bool changed =
+                saveService.Current.ownedEntitlements.Remove(
+                    product.EntitlementId
+                );
+
+            if (
+                product.Type == CommerceProductType.Cosmetic
+            )
+            {
+                changed |=
+                    saveService.Current.ownedCosmetics.Remove(
+                        product.EntitlementId
+                    );
+            }
+
+            if (!changed)
+                return;
+
+            saveService.Save();
+            EntitlementRevoked?.Invoke(
+                product.EntitlementId
+            );
+        }
+
+        private void OnRestoreCompleted()
+        {
+            reconciled = true;
+            RestoreCompleted?.Invoke();
         }
 
         private void GrantEntitlement(
@@ -159,6 +272,8 @@ namespace NovaStriker.Commerce
                 return;
             }
 
+            bool changed = false;
+
             if (
                 !saveService.Current.ownedEntitlements.Contains(
                     entitlementId
@@ -168,6 +283,7 @@ namespace NovaStriker.Commerce
                 saveService.Current.ownedEntitlements.Add(
                     entitlementId
                 );
+                changed = true;
             }
 
             if (
@@ -180,7 +296,11 @@ namespace NovaStriker.Commerce
                 saveService.Current.ownedCosmetics.Add(
                     entitlementId
                 );
+                changed = true;
             }
+
+            if (!changed)
+                return;
 
             saveService.Save();
             EntitlementGranted?.Invoke(entitlementId);
@@ -198,12 +318,25 @@ namespace NovaStriker.Commerce
 
         private void DetachProvider()
         {
+            if (reconciliationProvider != null)
+            {
+                reconciliationProvider.ProductEntitlementConfirmed -=
+                    OnProductEntitlementConfirmed;
+
+                reconciliationProvider.ProductEntitlementRevoked -=
+                    OnProductEntitlementRevoked;
+
+                reconciliationProvider = null;
+            }
+
             if (provider == null)
                 return;
 
             provider.PurchaseSucceeded -= OnPurchaseSucceeded;
             provider.PurchaseFailed -= OnPurchaseFailed;
+            provider.RestoreCompleted -= OnRestoreCompleted;
             provider = null;
+            reconciled = false;
         }
     }
 }
