@@ -35,6 +35,7 @@ namespace NovaStriker.Input
 
         public bool WeaponCyclePressed;
         public bool GuardianCyclePressed;
+        public bool GuardianActivatePressed;
         public bool SyncPressed;
 
         public static PlayerInputState Neutral => new()
