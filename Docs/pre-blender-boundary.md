@@ -1,0 +1,103 @@
+# Pre-Blender Gameplay Boundary
+
+Branch: `dev/gameplay-complete`
+
+This document defines the point at which Nova Striker gameplay engineering is considered code-complete enough to hand off into production modeling, rigging, animation, environment art, VFX, audio, and platform-specific SDK integration without allowing presentation assets to become gameplay authority.
+
+## Code-complete systems
+
+### Four-player architecture
+
+- one-to-four simultaneous local Striker slots
+- canonical Strike Team roles: Tank, Striker 0, Striker 1, Support
+- Striker 1 team-lead and Striker 0 second-in-command rules
+- isolated controller assignment and reconnect reservation
+- Player 1 keyboard support
+- mobile virtual-input bridge
+- one-screen multi-player camera framing
+- player/player collision suppression
+- four-player target acquisition, downed-state retention, revive contribution, Team Sync, and assist-chain systems
+- art-independent Tank/Support gameplay contracts without inventing final characters or production abilities
+
+### Nova and Echo
+
+- Nova remains the ranged Sentinel/protector Striker with Deflect, Bulwark Pulse, Sentinel Lock, Sentinel Screen, and Frontline Protocol hooks
+- Echo remains the aggressive Pursuit Protocol Striker with enemy grapple, traversal grapple, close counter, advancing throw, Pursuit Mark, Reel Strike, Staff Burst, and Pursuit Protocol hooks
+- gameplay timing and hit authority remain independent of animation, VFX, and final meshes
+
+### Combat and progression
+
+- health, shields, armor, Break/stagger, healing, revive, invulnerability, knockback
+- burn, shock chaining, cryo slow, marks, vulnerable/exposed states
+- projectile cancellation/reflection, charged fire, melee/aerial/traversal damage
+- per-player style meter
+- twelve weapon definitions and mastery progression
+- six Guardian abilities
+- six baseline skill/perk unlocks with runtime effects
+- shared Team Sync and cooperative assist-chain rewards
+
+### Enemies, encounters, campaign, and bosses
+
+- twelve named standard enemy archetypes
+- shared enemy role modules and squad coordination
+- eighteen campaign act gameplay compositions across six sectors
+- scalable one-to-four-player encounter waves
+- enemy and projectile pooling foundations
+- pickups, encounter rewards, secret challenges, hazards, and setpieces
+- four mini-boss identities
+- six Guardian boss identities with phase and weak-point systems
+- checkpoint, party-wipe, retry, and campaign progression authority
+- debug spawning and editor validation tooling
+
+### Platform, save, commerce, and DLC architecture
+
+- fixed 60 Hz gameplay simulation independent from render target
+- scalable render/presentation quality budgets
+- storefront-neutral platform runtime provider interface
+- replaceable local/cloud save backend contract
+- storefront-neutral commerce provider and reconciliation interfaces
+- persistent entitlements and cosmetic loadouts
+- entitlement-driven DLC gates
+- gameplay-stat purchases remain explicitly separable from cosmetic/content commerce
+
+## Validation state
+
+The branch is **code-integrated, not Unity-validated**.
+
+The earlier `dev/unity-gameplay` baseline was imported and Play Mode tested in Unity 6.6, including the corrected wall-slide behavior. The much larger `dev/gameplay-complete` branch still requires a fresh Unity 6.6 compile, generated Mechanics Lab rebuild, and Play Mode validation pass.
+
+Two editor validation layers are now available:
+
+- `Nova Striker/Validation/Run Gameplay Preflight` for scene/configuration checks
+- `Nova Striker/Validation/Run Structural Batch Validation` for scene-independent campaign, enemy, Strike Team, and skill/perk contract checks
+
+The structural validator can also be invoked with `-executeMethod NovaStriker.EditorTools.GameplayBatchValidator.RunForCommandLine` in a Unity batch-mode environment and exits non-zero on structural errors.
+
+## Remaining meaningful pre-Blender work
+
+These tasks do **not** require production Blender assets and should be completed or explicitly waived before declaring the gameplay branch fully validated:
+
+1. Fresh Unity 6.6 compile/error reconciliation for the current branch.
+2. Rebuild the generated Mechanics Lab and run both validation commands.
+3. Play Mode smoke test with one, two, three, and four local players.
+4. Exercise controller disconnect/reconnect and join/leave behavior.
+5. Exercise all twelve weapons, six Guardian abilities, six skill/perk effects, named enemies, mini-bosses, Guardians, pickups, challenge types, setpieces, party wipe, checkpoint retry, save/load, entitlement restore, and DLC gates.
+6. Run profiler/allocation captures on representative low/high density encounters and tune pool capacities or presentation budgets if needed.
+7. Connect native Steam/Xbox/PlayStation/Nintendo/mobile providers only where their SDKs and credentials are available; no gameplay code should depend directly on those SDKs.
+8. Freeze gameplay-facing presentation sockets, Animator parameter names, VFX/audio cue ids, and haptic event contracts after Play Mode validation.
+
+## Blender / production-asset dependency boundary
+
+The following work should not be simulated with additional gameplay code once the validation list above passes:
+
+- final Nova and Echo models
+- Strike Suit topology, materials, textures, and emissive treatment
+- production Tank/Support character designs and meshes
+- skeletons, skinning, facial rigs, authored animation, and animation polish
+- final enemy and Guardian meshes
+- final weapons and props
+- production environment meshes, modular kits, collision-derived art replacement, and authored set dressing
+- final VFX, lighting, particles, audio, music, voice, and haptics polish
+- production cinematics and presentation-specific transitions
+
+At that point the correct next step is production asset creation and Unity presentation integration, not expansion of the gameplay authority layer.
