@@ -106,7 +106,13 @@ namespace NovaStriker.EditorTools
                 new Color(0.85f, 0.96f, 1f)
             );
 
-            WeaponDefinition pulse = CreateOrLoadPulseWeapon();
+            WeaponDefinition[] weapons =
+                CreateOrLoadWeapons();
+
+            GuardianDefinition[] guardians =
+                CreateOrLoadGuardians();
+
+            WeaponDefinition pulse = weapons[0];
 
             Projectile2D projectilePrefab = CreateProjectilePrefab(
                 projectileMaterial,
@@ -117,6 +123,8 @@ namespace NovaStriker.EditorTools
                 novaMaterial,
                 echoMaterial,
                 pulse,
+                weapons,
+                guardians,
                 projectilePrefab,
                 worldLayer,
                 oneWayLayer,
@@ -545,42 +553,220 @@ namespace NovaStriker.EditorTools
             return material;
         }
 
-        private static WeaponDefinition CreateOrLoadPulseWeapon()
+        private static WeaponDefinition[] CreateOrLoadWeapons()
         {
-            WeaponDefinition pulse =
+            return new[]
+            {
+                CreateOrLoadWeapon(
+                    "pulse", "Pulse", WeaponBehavior.Standard,
+                    780f, new[] { 8f, 16f, 30f, 52f },
+                    new[] { 4f, 7f, 11f, 18f }, "#61dcff"
+                ),
+                CreateOrLoadWeapon(
+                    "arc", "Arc Fan", WeaponBehavior.Spread,
+                    700f, new[] { 6f, 11f, 20f, 35f },
+                    new[] { 4f, 5f, 7f, 11f }, "#b9f46f"
+                ),
+                CreateOrLoadWeapon(
+                    "rail", "Rail Lance", WeaponBehavior.Pierce,
+                    1120f, new[] { 12f, 23f, 42f, 72f },
+                    new[] { 3f, 4f, 6f, 9f }, "#e7fbff"
+                ),
+                CreateOrLoadWeapon(
+                    "volt", "Volt Disc", WeaponBehavior.Boomerang,
+                    590f, new[] { 8f, 16f, 29f, 49f },
+                    new[] { 7f, 10f, 14f, 20f }, "#ffe66f"
+                ),
+                CreateOrLoadWeapon(
+                    "cryo", "Cryo Burst", WeaponBehavior.Cryo,
+                    560f, new[] { 7f, 13f, 23f, 39f },
+                    new[] { 7f, 11f, 17f, 26f }, "#91ddff"
+                ),
+                CreateOrLoadWeapon(
+                    "nova", "Nova Beam", WeaponBehavior.Beam,
+                    1350f, new[] { 10f, 21f, 40f, 76f },
+                    new[] { 4f, 6f, 10f, 15f }, "#fff29a"
+                ),
+                CreateOrLoadWeapon(
+                    "spear", "Photon Spear", WeaponBehavior.Spear,
+                    970f, new[] { 13f, 24f, 43f, 70f },
+                    new[] { 3f, 5f, 8f, 12f }, "#dcf8ff"
+                ),
+                CreateOrLoadWeapon(
+                    "gravity", "Gravity Well", WeaponBehavior.Gravity,
+                    460f, new[] { 6f, 12f, 20f, 34f },
+                    new[] { 9f, 14f, 22f, 34f }, "#b477ff"
+                ),
+                CreateOrLoadWeapon(
+                    "magma", "Magma Talon", WeaponBehavior.Magma,
+                    620f, new[] { 9f, 18f, 32f, 57f },
+                    new[] { 6f, 9f, 14f, 21f }, "#ff7b43"
+                ),
+                CreateOrLoadWeapon(
+                    "cyclone", "Arc Cyclone", WeaponBehavior.Cyclone,
+                    640f, new[] { 7f, 14f, 25f, 44f },
+                    new[] { 6f, 9f, 14f, 23f }, "#a9fff2"
+                ),
+                CreateOrLoadWeapon(
+                    "mines", "Echo Mines", WeaponBehavior.Mine,
+                    410f, new[] { 11f, 21f, 37f, 65f },
+                    new[] { 8f, 12f, 18f, 28f }, "#ff9fe5"
+                ),
+                CreateOrLoadWeapon(
+                    "null", "Null Cannon", WeaponBehavior.Null,
+                    820f, new[] { 15f, 29f, 52f, 92f },
+                    new[] { 6f, 10f, 16f, 25f }, "#d1a0ff"
+                )
+            };
+        }
+
+        private static WeaponDefinition CreateOrLoadWeapon(
+            string id,
+            string displayName,
+            WeaponBehavior behavior,
+            float browserSpeed,
+            float[] damage,
+            float[] browserRadius,
+            string colorHex)
+        {
+            string path =
+                GeneratedRoot +
+                "/Weapon_" +
+                displayName.Replace(" ", string.Empty) +
+                ".asset";
+
+            WeaponDefinition weapon =
                 AssetDatabase.LoadAssetAtPath<WeaponDefinition>(
-                    PulseWeaponPath
+                    path
                 );
 
-            if (!pulse)
+            if (!weapon)
             {
-                pulse =
+                weapon =
                     ScriptableObject.CreateInstance<WeaponDefinition>();
 
                 AssetDatabase.CreateAsset(
-                    pulse,
-                    PulseWeaponPath
+                    weapon,
+                    path
                 );
             }
 
-            pulse.Id = "pulse";
-            pulse.DisplayName = "Pulse";
-            pulse.Behavior = WeaponBehavior.Standard;
-            pulse.ProjectileSpeed = 15.6f;
-            pulse.EnergyColor = new Color(0.38f, 0.86f, 1f);
+            weapon.Id = id;
+            weapon.DisplayName = displayName;
+            weapon.Behavior = behavior;
 
-            pulse.UnchargedDamage = 8f;
-            pulse.Tier1Damage = 16f;
-            pulse.Tier2Damage = 30f;
-            pulse.Tier3Damage = 52f;
+            // Browser gameplay authored speed/radius in canvas units.
+            // The established Unity conversion is 50 reference units = 1 m.
+            weapon.ProjectileSpeed = browserSpeed / 50f;
+            weapon.EnergyColor = ColorFromHex(colorHex);
 
-            pulse.UnchargedRadius = 0.08f;
-            pulse.Tier1Radius = 0.14f;
-            pulse.Tier2Radius = 0.22f;
-            pulse.Tier3Radius = 0.36f;
+            weapon.UnchargedDamage = damage[0];
+            weapon.Tier1Damage = damage[1];
+            weapon.Tier2Damage = damage[2];
+            weapon.Tier3Damage = damage[3];
 
-            EditorUtility.SetDirty(pulse);
-            return pulse;
+            weapon.UnchargedRadius = browserRadius[0] / 50f;
+            weapon.Tier1Radius = browserRadius[1] / 50f;
+            weapon.Tier2Radius = browserRadius[2] / 50f;
+            weapon.Tier3Radius = browserRadius[3] / 50f;
+
+            EditorUtility.SetDirty(weapon);
+            return weapon;
+        }
+
+        private static GuardianDefinition[] CreateOrLoadGuardians()
+        {
+            return new[]
+            {
+                CreateOrLoadGuardian(
+                    GuardianId.Aegis,
+                    "Aegis Guard",
+                    8f,
+                    "Defensive Guardian support."
+                ),
+                CreateOrLoadGuardian(
+                    GuardianId.Cinder,
+                    "Cinder Drive",
+                    7f,
+                    "Heat-driven offensive Guardian support."
+                ),
+                CreateOrLoadGuardian(
+                    GuardianId.Mycel,
+                    "Mycel Bloom",
+                    10f,
+                    "Regenerative and growth-oriented Guardian support."
+                ),
+                CreateOrLoadGuardian(
+                    GuardianId.Rime,
+                    "Rime Field",
+                    9f,
+                    "Cold-field control Guardian support."
+                ),
+                CreateOrLoadGuardian(
+                    GuardianId.Tempest,
+                    "Tempest Lift",
+                    7f,
+                    "Aerial and electrical Guardian support."
+                ),
+                CreateOrLoadGuardian(
+                    GuardianId.Null,
+                    "Null Overdrive",
+                    12f,
+                    "Spatial/gravity Guardian support."
+                )
+            };
+        }
+
+        private static GuardianDefinition CreateOrLoadGuardian(
+            GuardianId id,
+            string displayName,
+            float cooldown,
+            string description)
+        {
+            string path =
+                GeneratedRoot +
+                "/Guardian_" +
+                id +
+                ".asset";
+
+            GuardianDefinition guardian =
+                AssetDatabase.LoadAssetAtPath<GuardianDefinition>(
+                    path
+                );
+
+            if (!guardian)
+            {
+                guardian =
+                    ScriptableObject.CreateInstance<GuardianDefinition>();
+
+                AssetDatabase.CreateAsset(
+                    guardian,
+                    path
+                );
+            }
+
+            guardian.Id = id;
+            guardian.DisplayName = displayName;
+            guardian.CooldownSeconds = cooldown;
+            guardian.GameplayDescription = description;
+
+            EditorUtility.SetDirty(guardian);
+            return guardian;
+        }
+
+        private static Color ColorFromHex(string value)
+        {
+            if (
+                ColorUtility.TryParseHtmlString(
+                    value,
+                    out Color color
+                )
+            )
+            {
+                return color;
+            }
+
+            return Color.white;
         }
 
         private static Projectile2D CreateProjectilePrefab(
@@ -655,6 +841,8 @@ namespace NovaStriker.EditorTools
             Material novaMaterial,
             Material echoMaterial,
             WeaponDefinition pulse,
+            WeaponDefinition[] weapons,
+            GuardianDefinition[] guardians,
             Projectile2D projectilePrefab,
             int worldLayer,
             int oneWayLayer,
@@ -742,6 +930,9 @@ namespace NovaStriker.EditorTools
 
             StrikeSuitAbilityController suitAbilities =
                 root.AddComponent<StrikeSuitAbilityController>();
+
+            StrikerLoadoutController loadout =
+                root.AddComponent<StrikerLoadoutController>();
 
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
@@ -908,6 +1099,11 @@ namespace NovaStriker.EditorTools
                 "suitAbilities",
                 suitAbilities
             );
+            SetObjectReference(
+                gameplay,
+                "loadout",
+                loadout
+            );
 
             SetObjectReference(
                 identity,
@@ -987,6 +1183,16 @@ namespace NovaStriker.EditorTools
                 "worldMask",
                 (1 << worldLayer) |
                 (1 << oneWayLayer)
+            );
+
+            SetObjectReference(
+                loadout,
+                "combat",
+                combat
+            );
+            loadout.Configure(
+                weapons,
+                guardians
             );
 
             SetObjectReference(
