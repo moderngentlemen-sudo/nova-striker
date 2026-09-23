@@ -57,7 +57,7 @@ The scene contains:
 - three ordinary overhead traversal beams on the normal World layer
 - a light damage dummy
 - a heavy damage dummy
-- generic Skirmisher, Flanker, and Artillery enemies used to validate the modular enemy framework
+- generic Skirmisher, Flanker, Artillery, Hover-Aerial, and Orbit-Aerial enemies used to validate the modular enemy framework
 - a hostile projectile emitter
 - periodic perfect-parry opportunities
 - orthographic camera
@@ -183,8 +183,10 @@ The regenerated scene now includes three generic AI test enemies:
 - `Enemy_Skirmisher` — mid-range spacing and single parryable shots.
 - `Enemy_Flanker` — faster pressure, short reposition bursts, and quick close/mid-range shots.
 - `Enemy_Artillery` — larger preferred range and slower three-shot parryable salvos.
+- `Enemy_Aerial_HoverTest` — remains airborne, follows above/offset from the player, and adds a Drone-like bob.
+- `Enemy_Aerial_OrbitTest` — remains airborne and adds Orbiter-like circular X/Y motion.
 
-All three should stop firing through World/OneWay geometry and stop autonomous behavior when defeated.
+All active role tests should stop firing through World/OneWay geometry and stop autonomous behavior when defeated.
 
 Also confirm that damaging the enemy does not cause the player's presentation bridge to receive Hurt/Defeated cues; `Damageable2D` now emits those cues for the receiving actor ID.
 
