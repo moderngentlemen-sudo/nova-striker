@@ -14,7 +14,7 @@ This document describes the current playable-mechanics code on `dev/unity-gamepl
    `Assets/Greybox/Scenes/NovaMechanicsGreybox.unity`
 7. Press Play.
 
-The builder creates six project layers used by the mechanics lab: World, OneWay, Player, Enemy, PlayerProjectile, and EnemyProjectile.
+The builder creates the gameplay layers used by the mechanics lab: World, OneWay, Player, Enemy, PlayerProjectile, EnemyProjectile, and an optional GrapplePoint layer for designer-authored anchor overrides.
 
 The generated assets are disposable test assets. Source mechanics remain under `Assets/Scripts`.
 
@@ -28,6 +28,7 @@ The branch now contains:
   - jump + one air jump
   - wall probe / wall slide / wall jump
   - wall regrab lockout
+  - 0.10 s wall-jump steering lock so the launch is not immediately cancelled by held wall input
   - charged multidirectional dash
   - Quick / Burst / Velocity Break tiers
   - Powerslide with tier-specific speed and duration
@@ -42,12 +43,14 @@ The branch now contains:
   - two-step aerial melee sequence
   - downward dive melee
   - browser-reference melee active window
-  - Circle / I contextual Counter system
-  - close Reversal counter within 1.15 Unity units
-  - mid-range Intercept counter within 2.40 Unity units
-  - far/no-target Deflect counter
-  - all counter modes preserve the projectile deflect window
-  - perfect-deflect timing and projectile reflection
+  - character-specific Circle / I contextual Counter system
+  - shared close Dodge + Counter
+  - advancing Throw when moving toward an enemy
+  - Nova distance Deflect with perfect projectile reflection
+  - Echo distance Grapple with aim-biased soft lock
+  - Echo enemy grapple pulls targets inward
+  - Echo traversal grapple can attach to ordinary solid World / OneWay surfaces above him
+  - optional GrapplePoint2D anchors remain available only for designer overrides
   - damage/knockback handoff
 
 - `NovaTraversalDamage`
@@ -135,18 +138,21 @@ Echo's distance Grapple now uses **soft-lock acquisition**. On the same Circle /
 Valid Echo grapple candidates are:
 
 - **Enemy targets:** soft-lock and pull the enemy toward Echo.
-- **Traversal GrapplePoints:** soft-lock and pull Echo toward the anchor for movement through the level.
+- **Ordinary solid surfaces above Echo:** any collider on the configured World / OneWay grapple-surface mask can be acquired for traversal.
+- **Optional GrapplePoint2D overrides:** used only when a designer needs a precise anchor position, custom arrival distance, availability toggle, or special ID.
 
 Current greybox ranges:
 
 - enemy grapple: ≤ 4.25 Unity units
-- traversal GrapplePoint acquisition: ≤ 5.75 Unity units
+- solid-surface traversal acquisition: ≤ 5.75 Unity units
+- the surface must be at least 0.30 Unity units above Echo
+- traversal acquisition uses 21 small CircleCast probes across the upper hemisphere for forgiving surface selection
 
 Right-stick / arrow-key aim biases which candidate is selected. Without explicit aim, Echo uses his current facing/aim direction.
 
 A `CounterGrappleLock` cue is emitted as soon as a candidate is acquired so the final UI can display a lock reticle/tether preview before the grapple resolves. The current greybox executes the grapple on the same button press after the Counter startup window; it does not require a second Circle press.
 
-If no valid enemy or GrapplePoint is available, Echo still performs a grapple-whiff action cue so animation/VFX can play.
+If no valid enemy, solid traversal surface, or optional GrapplePoint override is available, Echo still performs a grapple-whiff action cue so animation/VFX can play.
 
 Nova's distance Deflect retains the defensive projectile-reflection timing:
 
@@ -193,7 +199,7 @@ Create at least:
 - `Enemy`
 - `PlayerProjectile`
 - `EnemyProjectile`
-- `GrapplePoint`
+- `GrapplePoint` — optional designer-authored override anchors; not required for normal Echo traversal
 
 The exact layer numbers are not authoritative; the serialized LayerMasks on components are.
 
@@ -294,11 +300,9 @@ This branch now contains an openable Unity project baseline and a one-click mech
 
 Still required:
 
-- first Unity Editor import/package resolution
 - generation and commit of Unity-created `.meta` files after the initial import
-- execution of the greybox builder inside Unity
-- compiler-error review after the first real import
-- Play Mode validation
+- broader Play Mode validation beyond the current user-confirmed smoke pass
+- tuning of wall jump, dash/Powerslide, Counter ranges, and Echo surface-grapple feel
 - physical DualShock/DualSense validation
 - enemy attack-state awareness so close Dodge Counters can eventually require/grade actual incoming melee or rush attacks rather than relying only on proximity
 - final Input System gamepad/touch adapters
@@ -310,4 +314,4 @@ Still required:
 - checkpoints/save migration
 - enemy AI and all Guardian behavior trees
 
-No Unity compile or physical-controller test should be claimed until those are actually run.
+Unity 6.6 compilation and a Play Mode smoke pass are now user-confirmed, including the corrected wall-slide behavior. Physical DualShock/DualSense validation is still outstanding.
