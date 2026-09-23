@@ -63,6 +63,10 @@ namespace NovaStriker.Player
             latest.MeleePressed |= state.MeleePressed;
             latest.CounterPressed |= state.CounterPressed;
             latest.AbilityPressed |= state.AbilityPressed;
+            latest.Ability1Pressed |= state.Ability1Pressed;
+            latest.Ability2Pressed |= state.Ability2Pressed;
+            latest.Ability3Pressed |= state.Ability3Pressed;
+            latest.UltimatePressed |= state.UltimatePressed;
             latest.WeaponCyclePressed |= state.WeaponCyclePressed;
             latest.GuardianCyclePressed |= state.GuardianCyclePressed;
             latest.SyncPressed |= state.SyncPressed;
@@ -110,6 +114,10 @@ namespace NovaStriker.Player
             latest.MeleePressed = false;
             latest.CounterPressed = false;
             latest.AbilityPressed = false;
+            latest.Ability1Pressed = false;
+            latest.Ability2Pressed = false;
+            latest.Ability3Pressed = false;
+            latest.UltimatePressed = false;
             latest.WeaponCyclePressed = false;
             latest.GuardianCyclePressed = false;
             latest.SyncPressed = false;
