@@ -679,7 +679,7 @@ namespace NovaStriker.Bosses
             bool perfectOpportunity)
         {
             Projectile2D projectile =
-                Instantiate(
+                ProjectilePool2D.Spawn(
                     projectilePrefab,
                     transform.position,
                     Quaternion.identity
