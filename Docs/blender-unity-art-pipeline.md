@@ -98,6 +98,20 @@ Animations:
 - `ANIM_Nova_Dash_T3`
 - `ANIM_Aegis_ShieldRush`
 
+## Character runtime presentation contract
+
+Unity now provides a `StrikerPresentationBridge` and separate `NovaVisualRoot` / `EchoVisualRoot` attachment points on the player prefab. Production character exports should be integrated under those roots rather than replacing the gameplay root.
+
+The bridge:
+
+- swaps the active Nova/Echo visual root from `NovaCombatController.Character`,
+- forwards movement/combat state to optional Animator parameters,
+- converts `GameplayEventHub` cues into optional Animator triggers,
+- rotates the visual root for left/right facing,
+- does not own physics, hitboxes, Counter windows, dash timing, or damage.
+
+See `Docs/character-presentation-integration.md` for the full Animator parameter/trigger contract and integration checklist.
+
 ## Character modeling
 
 Nova and Echo should be production 3D designs that preserve the gameplay silhouettes established in the HTML reference.
