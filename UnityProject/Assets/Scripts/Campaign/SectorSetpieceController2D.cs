@@ -42,6 +42,7 @@ namespace NovaStriker.Campaign
         private float phase;
 
         public bool Active { get; private set; }
+        public SetpieceId SetpieceId => setpieceId;
 
         public event Action Started;
         public event Action Ended;
