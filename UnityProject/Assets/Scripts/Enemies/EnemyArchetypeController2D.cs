@@ -10,6 +10,7 @@ namespace NovaStriker.Enemies
     /// shared role modules. It intentionally handles only behaviors the
     /// preserved reference actually establishes.
     /// </summary>
+    [DefaultExecutionOrder(20)]
     [DisallowMultipleComponent]
     public sealed class EnemyArchetypeController2D : MonoBehaviour
     {
@@ -26,6 +27,15 @@ namespace NovaStriker.Enemies
         [SerializeField] private float dodgeSpeed = 6.6f;
         [SerializeField] private float dodgeDuration = 0.18f;
 
+        [Header("Named Movement")]
+        [SerializeField] private float walkerPursuitSpeed = 2.65f;
+        [SerializeField] private float heavyPursuitSpeed = 1.45f;
+        [SerializeField] private float namedMovementAcceleration = 18f;
+        [SerializeField] private float wallHunterVerticalSpeed = 4.1f;
+        [SerializeField] private float wallHunterVerticalAcceleration = 22f;
+        [SerializeField] private float interceptorLeadSeconds = 0.35f;
+        [SerializeField] private float interceptorLeadClamp = 3.0f;
+
         [Header("Guard Counter")]
         [SerializeField] private float guardCounterRange = 1.9f;
         [SerializeField] private float guardCounterDamage = 16f;
@@ -39,6 +49,8 @@ namespace NovaStriker.Enemies
         private float reactionCooldown;
         private float guardCounterTimer;
         private float contactCooldown;
+        private float defaultGravityScale;
+        private bool gravityCaptured;
 
         public EnemyArchetype Archetype => archetype;
         public EnemyArchetypeReference Profile => profile;
@@ -65,6 +77,12 @@ namespace NovaStriker.Enemies
             if (!body)
                 body = GetComponent<Rigidbody2D>();
 
+            if (body)
+            {
+                defaultGravityScale = body.gravityScale;
+                gravityCaptured = true;
+            }
+
             profile =
                 EnemyArchetypeCatalog.Get(archetype);
 
@@ -75,6 +93,20 @@ namespace NovaStriker.Enemies
                 useTriggers = true
             };
             projectileFilter.SetLayerMask(playerProjectileMask);
+        }
+
+        private void OnEnable()
+        {
+            ResetRuntimeTimers();
+            ConfigureGravityForArchetype();
+        }
+
+        private void OnDisable()
+        {
+            brain?.ClearArchetypeTargetOffset();
+
+            if (body && gravityCaptured)
+                body.gravityScale = defaultGravityScale;
         }
 
         private void FixedUpdate()
@@ -100,6 +132,8 @@ namespace NovaStriker.Enemies
                 return;
             }
 
+            UpdateNamedMovement(dt);
+
             if (archetype == EnemyArchetype.Guard)
                 UpdateGuardMeleeCounter();
 
@@ -123,6 +157,140 @@ namespace NovaStriker.Enemies
                 EnemyArchetypeCatalog.Get(archetype);
 
             ApplyReferenceProfile();
+            ConfigureGravityForArchetype();
+        }
+
+        public void PrepareForPoolSpawn()
+        {
+            profile =
+                EnemyArchetypeCatalog.Get(archetype);
+
+            ResetRuntimeTimers();
+            ApplyReferenceProfile();
+            ConfigureGravityForArchetype();
+            brain?.ClearArchetypeTargetOffset();
+        }
+
+        private void ResetRuntimeTimers()
+        {
+            reactionScanTimer = 0f;
+            reactionCooldown = 0f;
+            guardCounterTimer = 0f;
+            contactCooldown = 0f;
+        }
+
+        private void ConfigureGravityForArchetype()
+        {
+            if (!body)
+                return;
+
+            if (!gravityCaptured)
+            {
+                defaultGravityScale = body.gravityScale;
+                gravityCaptured = true;
+            }
+
+            body.gravityScale =
+                archetype == EnemyArchetype.WallHunter
+                    ? 0f
+                    : defaultGravityScale;
+        }
+
+        private void UpdateNamedMovement(float dt)
+        {
+            if (!brain)
+                return;
+
+            if (
+                brain.State != EnemyBrainState.Engage ||
+                !brain.Target
+            )
+            {
+                brain.ClearArchetypeTargetOffset();
+                return;
+            }
+
+            if (archetype == EnemyArchetype.Interceptor)
+            {
+                float lead =
+                    Mathf.Clamp(
+                        brain.TargetVelocity.x *
+                        interceptorLeadSeconds,
+                        -interceptorLeadClamp,
+                        interceptorLeadClamp
+                    );
+
+                brain.SetArchetypeTargetOffset(
+                    Vector2.right * lead
+                );
+            }
+            else
+            {
+                brain.ClearArchetypeTargetOffset();
+            }
+
+            switch (archetype)
+            {
+                case EnemyArchetype.Walker:
+                {
+                    float x =
+                        brain.DirectionToTacticalTarget.x;
+
+                    if (Mathf.Abs(x) <= 0.05f)
+                        brain.StopHorizontal(namedMovementAcceleration);
+                    else
+                        brain.MoveHorizontal(
+                            Mathf.Sign(x) * walkerPursuitSpeed,
+                            namedMovementAcceleration,
+                            dt
+                        );
+
+                    break;
+                }
+
+                case EnemyArchetype.Turret:
+                    brain.StopHorizontal(1000f);
+                    break;
+
+                case EnemyArchetype.Heavy:
+                {
+                    float x =
+                        brain.TacticalTargetPosition.x -
+                        transform.position.x;
+
+                    if (Mathf.Abs(x) <= 1.25f)
+                        brain.StopHorizontal(namedMovementAcceleration);
+                    else
+                        brain.MoveHorizontal(
+                            Mathf.Sign(x) * heavyPursuitSpeed,
+                            namedMovementAcceleration,
+                            dt
+                        );
+
+                    break;
+                }
+
+                case EnemyArchetype.WallHunter:
+                {
+                    float y =
+                        brain.TargetPosition.y -
+                        transform.position.y;
+
+                    float desired =
+                        Mathf.Abs(y) <= 0.18f
+                            ? 0f
+                            : Mathf.Sign(y) *
+                              wallHunterVerticalSpeed;
+
+                    brain.MoveVertical(
+                        desired,
+                        wallHunterVerticalAcceleration,
+                        dt
+                    );
+
+                    break;
+                }
+            }
         }
 
         private void ApplyReferenceProfile()
