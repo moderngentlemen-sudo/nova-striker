@@ -19,6 +19,8 @@ namespace NovaStriker.Campaign
         private bool active;
         private readonly System.Collections.Generic.Dictionary<int, float>
             actorCooldowns = new();
+        private readonly System.Collections.Generic.List<int>
+            cooldownKeys = new(8);
 
         public bool Active => active;
 
@@ -120,14 +122,14 @@ namespace NovaStriker.Campaign
             if (actorCooldowns.Count == 0)
                 return;
 
-            int[] keys =
-                new int[actorCooldowns.Count];
+            cooldownKeys.Clear();
 
-            actorCooldowns.Keys.CopyTo(keys, 0);
+            foreach (int key in actorCooldowns.Keys)
+                cooldownKeys.Add(key);
 
-            for (int i = 0; i < keys.Length; i++)
+            for (int i = 0; i < cooldownKeys.Count; i++)
             {
-                int key = keys[i];
+                int key = cooldownKeys[i];
 
                 actorCooldowns[key] =
                     Mathf.Max(
