@@ -1,4 +1,5 @@
 using System.IO;
+using NovaStriker.CameraSystem;
 using NovaStriker.Combat;
 using NovaStriker.Data;
 using NovaStriker.Debugging;
@@ -400,6 +401,8 @@ namespace NovaStriker.EditorTools
             GameObject hudObject = new("Greybox_HUD");
             GreyboxHUD hud = hudObject.AddComponent<GreyboxHUD>();
             hud.Configure(motor, combat, playerHealth);
+
+            hudObject.AddComponent<StrikeTeamDebugHUD>();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -956,6 +959,8 @@ namespace NovaStriker.EditorTools
 
             Camera camera =
                 root.AddComponent<Camera>();
+
+            root.AddComponent<StrikeTeamCamera2D>();
 
             camera.orthographic = true;
             camera.orthographicSize = 5.8f;
