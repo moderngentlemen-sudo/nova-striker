@@ -47,6 +47,14 @@ namespace NovaStriker.Campaign
         public event Action Started;
         public event Action Ended;
 
+        public void ConfigureSetpiece(SetpieceId value)
+        {
+            if (Active)
+                StopSetpiece();
+
+            setpieceId = value;
+        }
+
         private void Awake()
         {
             CacheInitialState();
