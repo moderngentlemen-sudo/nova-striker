@@ -41,6 +41,9 @@ This document defines the point at which Nova Striker gameplay engineering is co
 - twelve named standard enemy archetypes
 - shared enemy role modules and squad coordination
 - eighteen campaign act gameplay compositions across six sectors
+- eighteen-act level-variety matrix spanning topology, traversal emphasis, objective style, route choice, hazard rhythm, and climax
+- modular level-variation bindings that let greybox and production geometry consume stable gameplay tags
+- reusable act-objective authority and Zone/Node/Goal triggers with solo-safe sequential completion and optional co-op parallelism
 - scalable one-to-four-player encounter waves
 - enemy and projectile pooling foundations
 - pickups, encounter rewards, secret challenges, hazards, and setpieces
@@ -70,9 +73,7 @@ This document defines the point at which Nova Striker gameplay engineering is co
 
 ## Validation state
 
-The branch is **code-integrated, not Unity-validated**.
-
-The earlier `dev/unity-gameplay` baseline was imported and Play Mode tested in Unity 6.6, including the corrected wall-slide behavior. The much larger `dev/gameplay-complete` branch still requires a fresh Unity 6.6 compile, generated Mechanics Lab rebuild, and Play Mode validation pass.
+The branch has reached an **initial Unity 6000.6.2f1 compile and Play Mode milestone**, including a user-confirmed playable Mechanics Lab after live compatibility reconciliation. It is not yet comprehensively Unity-validated. Full aggregate validation, 1–4 player coverage, persistence/commerce checks, level-variety scene validation, and profiling remain.
 
 Three editor validation layers are now available:
 
@@ -91,9 +92,10 @@ These tasks do **not** require production Blender assets and should be completed
 3. Play Mode smoke test with one, two, three, and four local players.
 4. Exercise controller disconnect/reconnect and join/leave behavior.
 5. Exercise all twelve weapons, six Guardian abilities, six skill/perk effects, named enemies, mini-bosses, Guardians, pickups, challenge types, setpieces, party wipe, checkpoint retry, save/load, entitlement restore, and DLC gates.
-6. Run profiler/allocation captures on representative low/high density encounters and tune pool capacities or presentation budgets if needed.
-7. Connect native Steam/Xbox/PlayStation/Nintendo/mobile providers only where their SDKs and credentials are available; no gameplay code should depend directly on those SDKs.
-8. Validate production Animator Controllers, VFX/audio event tables, and haptic adapters against the frozen `GameplayPresentationContract`. The identifier/socket design itself is now code-complete; production asset implementation is not.
+6. Realize representative greybox layouts from the 18-act level-variety matrix and verify that route choice, objective triggers, hazard staggering, and optional co-op splits remain solo-safe and shared-camera compatible.
+7. Run profiler/allocation captures on representative low/high density encounters and tune pool capacities or presentation budgets if needed.
+8. Connect native Steam/Xbox/PlayStation/Nintendo/mobile providers only where their SDKs and credentials are available; no gameplay code should depend directly on those SDKs.
+9. Validate production Animator Controllers, VFX/audio event tables, and haptic adapters against the frozen `GameplayPresentationContract`. The identifier/socket design itself is now code-complete; production asset implementation is not.
 
 ## Blender / production-asset dependency boundary
 
