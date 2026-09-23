@@ -223,8 +223,7 @@ namespace NovaStriker.Campaign
         {
             EncounterController2D[] encounters =
                 FindObjectsByType<EncounterController2D>(
-                    FindObjectsInactive.Exclude,
-                    FindObjectsSortMode.None
+                    FindObjectsInactive.Exclude
                 );
 
             for (int i = 0; i < encounters.Length; i++)
@@ -240,8 +239,7 @@ namespace NovaStriker.Campaign
 
             CampaignCheckpoint2D[] checkpoints =
                 FindObjectsByType<CampaignCheckpoint2D>(
-                    FindObjectsInactive.Exclude,
-                    FindObjectsSortMode.None
+                    FindObjectsInactive.Exclude
                 );
 
             CampaignCheckpoint2D fallback = null;
@@ -362,7 +360,7 @@ namespace NovaStriker.Campaign
             if (!progression)
             {
                 progression =
-                    FindFirstObjectByType<CampaignProgressionController>();
+                    FindAnyObjectByType<CampaignProgressionController>();
             }
         }
 
