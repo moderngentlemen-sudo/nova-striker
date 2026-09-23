@@ -126,7 +126,7 @@ namespace NovaStriker.Campaign
             public readonly Stack<PooledEncounterEnemy2D> Inactive = new();
         }
 
-        private static readonly Dictionary<int, Bucket> Buckets = new();
+        private static readonly Dictionary<EntityId, Bucket> Buckets = new();
         private static Transform poolRoot;
 
         public static int InactiveCount
@@ -269,7 +269,7 @@ namespace NovaStriker.Campaign
 
         private static Bucket GetBucket(GameObject prefab)
         {
-            int key = prefab.GetInstanceID();
+            EntityId key = prefab.GetEntityId();
 
             if (!Buckets.TryGetValue(key, out Bucket bucket))
             {
