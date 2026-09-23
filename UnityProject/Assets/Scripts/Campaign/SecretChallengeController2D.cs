@@ -38,6 +38,22 @@ namespace NovaStriker.Campaign
         public event Action OpenedEvent;
         public event Action ClearedEvent;
 
+        public SecretChallengeKind Kind => kind;
+        public string SecretId => secretId;
+
+        public void ConfigureIdentity(
+            string id,
+            SecretChallengeKind challengeKind)
+        {
+            if (!string.IsNullOrEmpty(id))
+                secretId = id;
+
+            kind = challengeKind;
+            Opened = false;
+            Cleared = false;
+            timer = 0f;
+        }
+
         private void OnEnable()
         {
             if (combatEncounter)
