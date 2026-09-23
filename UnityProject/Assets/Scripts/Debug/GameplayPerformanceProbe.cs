@@ -54,7 +54,7 @@ namespace NovaStriker.Debugging
             if (scene.name != MechanicsLabSceneName)
                 return;
 
-            if (Object.FindFirstObjectByType<GameplayPerformanceProbe>())
+            if (Object.FindAnyObjectByType<GameplayPerformanceProbe>())
                 return;
 
             GameObject root = new("__GameplayPerformanceProbe");
@@ -190,7 +190,6 @@ namespace NovaStriker.Debugging
                 text,
                 body
             );
-#endif
         }
 
         private void EnsureStyles()
