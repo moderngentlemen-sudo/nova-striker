@@ -50,6 +50,7 @@ namespace NovaStriker.Player
             latest.JumpHeld = state.JumpHeld;
             latest.FireHeld = state.FireHeld;
             latest.DashHeld = state.DashHeld;
+            latest.AbilityHeld = state.AbilityHeld;
 
             latest.JumpPressed |= state.JumpPressed;
             latest.FireReleased |= state.FireReleased;
