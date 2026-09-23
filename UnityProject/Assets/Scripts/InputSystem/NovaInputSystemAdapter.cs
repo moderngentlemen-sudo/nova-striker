@@ -191,6 +191,7 @@ namespace NovaStriker.InputSystemIntegration
 
             state.MeleePressed |= keyboard.uKey.wasPressedThisFrame;
             state.CounterPressed |= keyboard.iKey.wasPressedThisFrame;
+            state.AbilityHeld |= keyboard.fKey.isPressed;
             state.AbilityPressed |= keyboard.fKey.wasPressedThisFrame;
 
             state.WeaponCyclePressed |= keyboard.qKey.wasPressedThisFrame;
@@ -235,6 +236,8 @@ namespace NovaStriker.InputSystemIntegration
             state.CounterPressed |=
                 gamepad.buttonEast.wasPressedThisFrame;
 
+            state.AbilityHeld |=
+                gamepad.leftShoulder.isPressed;
             state.AbilityPressed |=
                 gamepad.leftShoulder.wasPressedThisFrame;
 
