@@ -934,6 +934,9 @@ namespace NovaStriker.EditorTools
             StrikerLoadoutController loadout =
                 root.AddComponent<StrikerLoadoutController>();
 
+            GuardianAbilityController guardianAbilities =
+                root.AddComponent<GuardianAbilityController>();
+
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
 
@@ -1104,6 +1107,11 @@ namespace NovaStriker.EditorTools
                 "loadout",
                 loadout
             );
+            SetObjectReference(
+                gameplay,
+                "guardianAbilities",
+                guardianAbilities
+            );
 
             SetObjectReference(
                 identity,
@@ -1193,6 +1201,27 @@ namespace NovaStriker.EditorTools
             loadout.Configure(
                 weapons,
                 guardians
+            );
+
+            SetObjectReference(
+                guardianAbilities,
+                "identity",
+                identity
+            );
+            SetObjectReference(
+                guardianAbilities,
+                "loadout",
+                loadout
+            );
+            SetObjectReference(
+                guardianAbilities,
+                "damageable",
+                health
+            );
+            SetLayerMask(
+                guardianAbilities,
+                "damageableMask",
+                1 << enemyLayer
             );
 
             SetObjectReference(
