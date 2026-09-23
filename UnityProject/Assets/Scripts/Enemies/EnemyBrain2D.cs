@@ -39,6 +39,7 @@ namespace NovaStriker.Enemies
         [Header("References")]
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private Damageable2D damageable;
+        [SerializeField] private CombatState2D combatState;
         [SerializeField] private Transform target;
 
         [Header("Perception")]
@@ -85,6 +86,7 @@ namespace NovaStriker.Enemies
         {
             body = GetComponent<Rigidbody2D>();
             damageable = GetComponent<Damageable2D>();
+            combatState = GetComponent<CombatState2D>();
         }
 
         private void Awake()
@@ -94,6 +96,9 @@ namespace NovaStriker.Enemies
 
             if (!damageable)
                 damageable = GetComponent<Damageable2D>();
+
+            if (!combatState)
+                combatState = GetComponent<CombatState2D>();
 
             ResolveModules();
         }
@@ -128,6 +133,13 @@ namespace NovaStriker.Enemies
             {
                 State = EnemyBrainState.Defeated;
                 StopHorizontal();
+                return;
+            }
+
+            if (combatState && combatState.IsStaggered)
+            {
+                State = EnemyBrainState.Recover;
+                StopHorizontal(1000f);
                 return;
             }
 
@@ -224,10 +236,15 @@ namespace NovaStriker.Enemies
             if (!body)
                 return;
 
+            float movementMultiplier =
+                combatState
+                    ? combatState.MovementMultiplier
+                    : 1f;
+
             body.linearVelocity =
                 Vector2.MoveTowards(
                     body.linearVelocity,
-                    desiredVelocity,
+                    desiredVelocity * movementMultiplier,
                     Mathf.Max(0f, acceleration) * dt
                 );
         }
@@ -240,9 +257,14 @@ namespace NovaStriker.Enemies
             if (!body)
                 return;
 
+            float movementMultiplier =
+                combatState
+                    ? combatState.MovementMultiplier
+                    : 1f;
+
             float nextX = Mathf.MoveTowards(
                 body.linearVelocity.x,
-                desiredVelocity,
+                desiredVelocity * movementMultiplier,
                 Mathf.Max(0f, acceleration) * dt
             );
 
