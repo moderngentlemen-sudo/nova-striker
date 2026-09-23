@@ -311,6 +311,10 @@ namespace NovaStriker.EditorTools
                     teamSession
                 );
 
+                player
+                    .GetComponent<CosmeticLoadoutController>()
+                    ?.ConfigurePlayerSlot(i);
+
                 input.ConfigureSlot(
                     i,
                     i == 0
@@ -1035,6 +1039,9 @@ namespace NovaStriker.EditorTools
 
             StrikerLoadoutController loadout =
                 root.AddComponent<StrikerLoadoutController>();
+
+            CosmeticLoadoutController cosmeticLoadout =
+                root.AddComponent<CosmeticLoadoutController>();
 
             GuardianAbilityController guardianAbilities =
                 root.AddComponent<GuardianAbilityController>();
