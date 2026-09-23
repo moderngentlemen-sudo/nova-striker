@@ -194,6 +194,11 @@ namespace NovaStriker.InputSystemIntegration
             state.AbilityHeld |= keyboard.fKey.isPressed;
             state.AbilityPressed |= keyboard.fKey.wasPressedThisFrame;
 
+            state.Ability1Pressed |= keyboard.digit1Key.wasPressedThisFrame;
+            state.Ability2Pressed |= keyboard.digit2Key.wasPressedThisFrame;
+            state.Ability3Pressed |= keyboard.digit3Key.wasPressedThisFrame;
+            state.UltimatePressed |= keyboard.digit4Key.wasPressedThisFrame;
+
             state.WeaponCyclePressed |= keyboard.qKey.wasPressedThisFrame;
             state.GuardianCyclePressed |= keyboard.rKey.wasPressedThisFrame;
             state.SyncPressed |= keyboard.gKey.wasPressedThisFrame;
@@ -215,10 +220,43 @@ namespace NovaStriker.InputSystemIntegration
             if (aim.sqrMagnitude >= state.Aim.sqrMagnitude)
                 state.Aim = aim;
 
-            state.JumpHeld |=
-                gamepad.buttonSouth.isPressed;
-            state.JumpPressed |=
-                gamepad.buttonSouth.wasPressedThisFrame;
+            bool suitModifier =
+                gamepad.leftShoulder.isPressed;
+
+            state.AbilityHeld |= suitModifier;
+            state.AbilityPressed |=
+                gamepad.leftShoulder.wasPressedThisFrame;
+
+            if (suitModifier)
+            {
+                state.Ability1Pressed |=
+                    gamepad.buttonWest.wasPressedThisFrame;
+
+                state.Ability2Pressed |=
+                    gamepad.buttonSouth.wasPressedThisFrame;
+
+                state.Ability3Pressed |=
+                    gamepad.buttonEast.wasPressedThisFrame;
+
+                state.UltimatePressed |=
+                    gamepad.buttonNorth.wasPressedThisFrame;
+            }
+            else
+            {
+                state.JumpHeld |=
+                    gamepad.buttonSouth.isPressed;
+                state.JumpPressed |=
+                    gamepad.buttonSouth.wasPressedThisFrame;
+
+                state.MeleePressed |=
+                    gamepad.buttonWest.wasPressedThisFrame;
+
+                state.CounterPressed |=
+                    gamepad.buttonEast.wasPressedThisFrame;
+
+                state.WeaponCyclePressed |=
+                    gamepad.buttonNorth.wasPressedThisFrame;
+            }
 
             state.FireHeld |=
                 gamepad.rightTrigger.isPressed;
@@ -230,20 +268,8 @@ namespace NovaStriker.InputSystemIntegration
             state.DashReleased |=
                 gamepad.leftTrigger.wasReleasedThisFrame;
 
-            state.MeleePressed |=
-                gamepad.buttonWest.wasPressedThisFrame;
-
-            state.CounterPressed |=
-                gamepad.buttonEast.wasPressedThisFrame;
-
-            state.AbilityHeld |=
-                gamepad.leftShoulder.isPressed;
-            state.AbilityPressed |=
-                gamepad.leftShoulder.wasPressedThisFrame;
-
             state.WeaponCyclePressed |=
-                gamepad.rightShoulder.wasPressedThisFrame ||
-                gamepad.buttonNorth.wasPressedThisFrame;
+                gamepad.rightShoulder.wasPressedThisFrame;
 
             state.GuardianCyclePressed |=
                 gamepad.leftStickButton.wasPressedThisFrame ||
