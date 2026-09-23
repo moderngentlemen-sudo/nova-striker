@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NovaStriker.Core;
 using UnityEngine;
 
@@ -30,6 +31,17 @@ namespace NovaStriker.Combat
         [Header("Statuses")]
         [SerializeField, Range(0f, 1f)] private float cryoSlowMultiplier = 0.55f;
 
+        [Header("Shock Chain")]
+        [SerializeField, Min(0f)] private float shockChainRadius = 3.2f;
+        [SerializeField, Range(0, 4)] private int shockChainMaxTargets = 2;
+        [SerializeField, Min(0f)] private float shockChainBaseDamage = 5f;
+        [SerializeField, Min(0f)] private float shockChainDamagePerTier = 2.5f;
+        [SerializeField, Min(0f)] private float shockChainCooldown = 0.18f;
+
+        private static readonly List<CombatState2D> ActiveStates = new(64);
+
+        private readonly List<CombatState2D> shockChainScratch = new(4);
+
         private float shieldRechargeTimer;
         private float burnTimer;
         private float burnDamagePerSecond;
@@ -38,6 +50,7 @@ namespace NovaStriker.Combat
         private float vulnerableTimer;
         private float exposedTimer;
         private float shockTimer;
+        private float shockChainTimer;
         private float staggerTimer;
 
         public float Shield { get; private set; }
@@ -66,9 +79,26 @@ namespace NovaStriker.Combat
                 ? cryoSlowMultiplier
                 : 1f;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveStates.Clear();
+        }
+
         private void Reset()
         {
             damageable = GetComponent<Damageable2D>();
+        }
+
+        private void OnEnable()
+        {
+            if (!ActiveStates.Contains(this))
+                ActiveStates.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            ActiveStates.Remove(this);
         }
 
         private void Awake()
@@ -87,6 +117,7 @@ namespace NovaStriker.Combat
             vulnerableTimer = Mathf.Max(0f, vulnerableTimer - dt);
             exposedTimer = Mathf.Max(0f, exposedTimer - dt);
             shockTimer = Mathf.Max(0f, shockTimer - dt);
+            shockChainTimer = Mathf.Max(0f, shockChainTimer - dt);
             cryoSlowTimer = Mathf.Max(0f, cryoSlowTimer - dt);
 
             if (markTimer > 0f)
@@ -257,7 +288,9 @@ namespace NovaStriker.Combat
 
         public void ApplyWeaponStatus(
             string weaponId,
-            int tier)
+            int tier,
+            int sourcePlayerId = -1,
+            CombatFaction sourceFaction = CombatFaction.Neutral)
         {
             if (string.IsNullOrEmpty(weaponId))
                 return;
@@ -355,6 +388,19 @@ namespace NovaStriker.Combat
                     break;
             }
 
+            if (
+                (weaponId == "arc" || weaponId == "volt") &&
+                IsShocked &&
+                shockChainTimer <= 0f
+            )
+            {
+                TryChainShock(
+                    tier,
+                    sourcePlayerId,
+                    sourceFaction
+                );
+            }
+
             GameplayEventHub.Raise(
                 new GameplayCue(
                     GameplayCueType.StatusApplied,
@@ -364,6 +410,145 @@ namespace NovaStriker.Combat
                     tier,
                     0f,
                     weaponId
+                )
+            );
+        }
+
+        private void TryChainShock(
+            int tier,
+            int sourcePlayerId,
+            CombatFaction sourceFaction)
+        {
+            if (
+                shockChainMaxTargets <= 0 ||
+                shockChainRadius <= 0f ||
+                !damageable ||
+                damageable.IsDefeated
+            )
+            {
+                return;
+            }
+
+            shockChainScratch.Clear();
+
+            int desiredTargets =
+                Mathf.Clamp(
+                    1 + tier / 2,
+                    1,
+                    shockChainMaxTargets
+                );
+
+            float radiusSq =
+                shockChainRadius * shockChainRadius;
+
+            for (int slot = 0; slot < desiredTargets; slot++)
+            {
+                CombatState2D best = null;
+                float bestDistanceSq = float.PositiveInfinity;
+
+                for (int i = 0; i < ActiveStates.Count; i++)
+                {
+                    CombatState2D candidate =
+                        ActiveStates[i];
+
+                    if (
+                        !candidate ||
+                        candidate == this ||
+                        shockChainScratch.Contains(candidate) ||
+                        !candidate.damageable ||
+                        candidate.damageable.IsDefeated ||
+                        candidate.damageable.Faction != damageable.Faction
+                    )
+                    {
+                        continue;
+                    }
+
+                    float distanceSq =
+                        (
+                            candidate.transform.position -
+                            transform.position
+                        ).sqrMagnitude;
+
+                    if (
+                        distanceSq > radiusSq ||
+                        distanceSq >= bestDistanceSq
+                    )
+                    {
+                        continue;
+                    }
+
+                    bestDistanceSq = distanceSq;
+                    best = candidate;
+                }
+
+                if (!best)
+                    break;
+
+                shockChainScratch.Add(best);
+                best.ApplyChainedShock(
+                    transform.position,
+                    tier,
+                    sourcePlayerId,
+                    sourceFaction,
+                    shockChainBaseDamage +
+                    shockChainDamagePerTier * tier
+                );
+            }
+
+            if (shockChainScratch.Count > 0)
+                shockChainTimer = shockChainCooldown;
+        }
+
+        private void ApplyChainedShock(
+            Vector3 sourcePosition,
+            int tier,
+            int sourcePlayerId,
+            CombatFaction sourceFaction,
+            float damage)
+        {
+            shockTimer =
+                Mathf.Max(
+                    shockTimer,
+                    1.0f + tier * 0.20f
+                );
+
+            Vector2 direction =
+                (
+                    (Vector2)transform.position -
+                    (Vector2)sourcePosition
+                );
+
+            if (direction.sqrMagnitude > 0.0001f)
+                direction.Normalize();
+
+            if (
+                damageable &&
+                !damageable.IsDefeated &&
+                damage > 0f
+            )
+            {
+                damageable.ApplyDamage(
+                    new DamagePacket(
+                        damage,
+                        direction * (0.6f + tier * 0.2f),
+                        transform.position,
+                        sourceFaction,
+                        sourcePlayerId,
+                        tier,
+                        "status-shock-chain"
+                    )
+                );
+            }
+
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    GameplayCueType.StatusApplied,
+                    damageable ? damageable.ActorId : -1,
+                    transform.position,
+                    direction,
+                    tier,
+                    damage,
+                    "shock-chain"
                 )
             );
         }
@@ -528,6 +713,7 @@ namespace NovaStriker.Combat
             vulnerableTimer = 0f;
             exposedTimer = 0f;
             shockTimer = 0f;
+            shockChainTimer = 0f;
             staggerTimer = 0f;
             cryoSlowTimer = 0f;
         }
