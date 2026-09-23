@@ -33,6 +33,8 @@ namespace NovaStriker.Bosses
         [SerializeField] private float attackInterval = 1.2f;
 
         private float attackTimer;
+        private int attackIndex;
+        private bool multiplayerScalingApplied;
         private StrikerPlayerIdentity target;
 
         public MiniBossId MiniBossId => miniBossId;
@@ -43,6 +45,8 @@ namespace NovaStriker.Bosses
             miniBossId = value;
             target = null;
             attackTimer = initialAttackDelay;
+            attackIndex = 0;
+            multiplayerScalingApplied = false;
             ConfigureProfile();
         }
 
@@ -66,6 +70,8 @@ namespace NovaStriker.Bosses
 
             ConfigureProfile();
             attackTimer = initialAttackDelay;
+            attackIndex = 0;
+            multiplayerScalingApplied = false;
         }
 
         private void FixedUpdate()
@@ -76,6 +82,7 @@ namespace NovaStriker.Bosses
             if (!session)
                 session = StrikeTeamSession.Active;
 
+            ApplyMultiplayerScalingOnce();
             AcquireTarget();
 
             if (!target)
@@ -222,48 +229,173 @@ namespace NovaStriker.Bosses
             if (!projectilePrefab || !target)
                 return;
 
+            Rigidbody2D targetBody =
+                target.GetComponent<Rigidbody2D>();
+
+            Vector2 targetPosition =
+                target.transform.position;
+
+            if (targetBody)
+            {
+                float leadSeconds =
+                    miniBossId == MiniBossId.VectorHound
+                        ? 0.40f
+                        : miniBossId == MiniBossId.RailSentinel
+                            ? 0.18f
+                            : 0.12f;
+
+                targetPosition +=
+                    targetBody.linearVelocity *
+                    leadSeconds;
+            }
+
             Vector2 direction =
                 (
-                    (Vector2)target.transform.position -
+                    targetPosition -
                     (Vector2)transform.position
                 ).normalized;
 
-            float speed;
-            float damage;
-            bool perfectOpportunity;
             string weaponId;
+            float cueDamage;
 
             switch (miniBossId)
             {
                 case MiniBossId.Bulwark:
-                    speed = 7.8f;
-                    damage = 18f;
-                    perfectOpportunity = false;
+                {
                     weaponId = "mini-bulwark";
-                    break;
+                    cueDamage = 18f;
 
-                case MiniBossId.RailSentinel:
-                    speed = 11.4f;
-                    damage = 16f;
-                    perfectOpportunity = true;
-                    weaponId = "mini-rail-sentinel";
+                    if (attackIndex % 3 == 2)
+                    {
+                        for (int i = 0; i < 6; i++)
+                        {
+                            float angle =
+                                Mathf.PI * 2f * i / 6f;
+
+                            SpawnShot(
+                                new Vector2(
+                                    Mathf.Cos(angle),
+                                    Mathf.Sin(angle)
+                                ),
+                                6.4f,
+                                14f,
+                                false,
+                                "mini-bulwark-burst"
+                            );
+                        }
+                    }
+                    else
+                    {
+                        SpawnShot(
+                            direction,
+                            7.8f,
+                            cueDamage,
+                            false,
+                            weaponId
+                        );
+                    }
+
                     break;
+                }
 
                 case MiniBossId.VectorHound:
-                    speed = 8.2f;
-                    damage = 15f;
-                    perfectOpportunity = false;
+                {
                     weaponId = "mini-vector-hound";
+                    cueDamage = 15f;
+                    float angle =
+                        Mathf.Atan2(
+                            direction.y,
+                            direction.x
+                        );
+
+                    for (int i = -1; i <= 1; i += 2)
+                    {
+                        float offset =
+                            attackIndex % 2 == 0
+                                ? i * 0.07f
+                                : 0f;
+
+                        SpawnShot(
+                            new Vector2(
+                                Mathf.Cos(angle + offset),
+                                Mathf.Sin(angle + offset)
+                            ),
+                            9.0f,
+                            cueDamage,
+                            false,
+                            weaponId
+                        );
+
+                        if (offset == 0f)
+                            break;
+                    }
+
                     break;
+                }
+
+                case MiniBossId.CliffStalker:
+                {
+                    weaponId = "mini-cliff-stalker";
+                    cueDamage = 15f;
+                    float angle =
+                        Mathf.Atan2(
+                            direction.y,
+                            direction.x
+                        );
+
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        SpawnShot(
+                            new Vector2(
+                                Mathf.Cos(angle + i * 0.11f),
+                                Mathf.Sin(angle + i * 0.11f)
+                            ),
+                            7.8f,
+                            cueDamage,
+                            false,
+                            weaponId
+                        );
+                    }
+
+                    break;
+                }
 
                 default:
-                    speed = 7.8f;
-                    damage = 15f;
-                    perfectOpportunity = false;
-                    weaponId = "mini-cliff-stalker";
+                    weaponId = "mini-rail-sentinel";
+                    cueDamage = 17f;
+
+                    SpawnShot(
+                        direction,
+                        12.2f,
+                        cueDamage,
+                        true,
+                        weaponId
+                    );
                     break;
             }
 
+            attackIndex++;
+
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    GameplayCueType.BossAttackStarted,
+                    damageable ? damageable.ActorId : -1,
+                    transform.position,
+                    direction,
+                    (int)miniBossId,
+                    cueDamage,
+                    weaponId
+                )
+            );
+        }
+
+        private void SpawnShot(
+            Vector2 direction,
+            float speed,
+            float damage,
+            bool perfectOpportunity,
+            string weaponId)
+        {
             Projectile2D shot =
                 ProjectilePool2D.Spawn(
                     projectilePrefab,
@@ -276,7 +408,9 @@ namespace NovaStriker.Bosses
                 CombatFaction.Enemy,
                 weaponId,
                 WeaponBehavior.Standard,
-                direction,
+                direction.sqrMagnitude > 0.001f
+                    ? direction.normalized
+                    : Vector2.left,
                 speed,
                 0,
                 damage,
@@ -284,18 +418,45 @@ namespace NovaStriker.Bosses
                 true,
                 perfectOpportunity
             );
+        }
 
-            GameplayEventHub.Raise(
-                new GameplayCue(
-                    GameplayCueType.BossAttackStarted,
-                    damageable ? damageable.ActorId : -1,
-                    transform.position,
-                    direction,
-                    (int)miniBossId,
-                    damage,
-                    weaponId
-                )
+        private void ApplyMultiplayerScalingOnce()
+        {
+            if (
+                multiplayerScalingApplied ||
+                !session ||
+                !damageable
+            )
+            {
+                return;
+            }
+
+            int players =
+                session.ParticipatingPlayerCount;
+
+            if (players <= 0)
+                return;
+
+            float baseHealth =
+                miniBossId switch
+                {
+                    MiniBossId.Bulwark => 360f,
+                    MiniBossId.VectorHound => 300f,
+                    MiniBossId.CliffStalker => 310f,
+                    _ => 285f
+                };
+
+            float scale =
+                1f +
+                Mathf.Max(0, players - 1) *
+                0.28f;
+
+            damageable.ConfigureMaxHealth(
+                baseHealth * scale,
+                true
             );
+
+            multiplayerScalingApplied = true;
         }
 
         private float AttackIntervalForProfile()
