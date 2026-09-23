@@ -156,6 +156,11 @@ namespace NovaStriker.Combat
             return true;
         }
 
+        public void SetDestroyOnDefeat(bool value)
+        {
+            destroyOnDefeat = value;
+        }
+
         public void ConfigureMaxHealth(
             float value,
             bool refill = true)
