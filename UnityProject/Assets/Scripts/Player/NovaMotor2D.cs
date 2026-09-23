@@ -76,6 +76,7 @@ namespace NovaStriker.Player
         private bool grounded;
         private Collider2D groundCollider;
         private int wallDirection;
+        private bool wallSliding;
         private bool crouching;
 
         private float wallLockout;
@@ -104,6 +105,8 @@ namespace NovaStriker.Player
         public Vector2 AimDirection { get; private set; } = Vector2.right;
         public int Facing => facing;
         public bool Grounded => grounded;
+        public int WallDirection => wallDirection;
+        public bool IsWallSliding => wallSliding;
         public bool IsCrouching => crouching;
         public bool IsDashing => dashTimer > 0f;
         public bool IsSliding => slideTimer > 0f;
@@ -223,6 +226,7 @@ namespace NovaStriker.Player
             {
                 remainingAirJumps = airJumps;
                 remainingAirDashes = 1;
+                wallSliding = false;
             }
 
             if (grappleTraversalTimer > 0f)
@@ -314,9 +318,30 @@ namespace NovaStriker.Player
 
             Vector2 center = bounds.center;
 
+            // Probe from the capsule's actual side edges. The previous probes
+            // started at the body's center, so a short cast could never reach
+            // a wall outside a ~0.72-unit-wide player collider.
+            Vector2 leftOrigin = new(
+                bounds.min.x + 0.01f,
+                center.y
+            );
+
+            Vector2 rightOrigin = new(
+                bounds.max.x - 0.01f,
+                center.y
+            );
+
+            Vector2 effectiveWallProbeSize = new(
+                Mathf.Max(0.04f, wallProbeSize.x),
+                Mathf.Min(
+                    Mathf.Max(0.20f, wallProbeSize.y),
+                    bounds.size.y * 0.82f
+                )
+            );
+
             bool left = Physics2D.BoxCast(
-                center,
-                wallProbeSize,
+                leftOrigin,
+                effectiveWallProbeSize,
                 0f,
                 Vector2.left,
                 wallProbeDistance,
@@ -324,8 +349,8 @@ namespace NovaStriker.Player
             ).collider != null;
 
             bool right = Physics2D.BoxCast(
-                center,
-                wallProbeSize,
+                rightOrigin,
+                effectiveWallProbeSize,
                 0f,
                 Vector2.right,
                 wallProbeDistance,
@@ -698,15 +723,17 @@ namespace NovaStriker.Player
 
         private void UpdateWallSlide()
         {
-            if (
-                grounded ||
-                wallDirection == 0 ||
-                Mathf.Sign(input.Move.x) != wallDirection ||
-                body.linearVelocity.y >= 0f
-            )
-            {
+            bool wantsWallSlide =
+                !grounded &&
+                wallDirection != 0 &&
+                Mathf.Abs(input.Move.x) > 0.18f &&
+                Mathf.Sign(input.Move.x) == wallDirection &&
+                body.linearVelocity.y < 0f;
+
+            wallSliding = wantsWallSlide;
+
+            if (!wallSliding)
                 return;
-            }
 
             if (body.linearVelocity.y < -wallSlideSpeed)
             {
@@ -807,13 +834,29 @@ namespace NovaStriker.Player
             );
 
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(
-                (Vector2)bounds.center + Vector2.left * wallProbeDistance,
-                wallProbeSize
+
+            Vector2 effectiveWallProbeSize = new(
+                Mathf.Max(0.04f, wallProbeSize.x),
+                Mathf.Min(
+                    Mathf.Max(0.20f, wallProbeSize.y),
+                    bounds.size.y * 0.82f
+                )
             );
+
             Gizmos.DrawWireCube(
-                (Vector2)bounds.center + Vector2.right * wallProbeDistance,
-                wallProbeSize
+                new Vector2(
+                    bounds.min.x - wallProbeDistance * 0.5f,
+                    bounds.center.y
+                ),
+                effectiveWallProbeSize
+            );
+
+            Gizmos.DrawWireCube(
+                new Vector2(
+                    bounds.max.x + wallProbeDistance * 0.5f,
+                    bounds.center.y
+                ),
+                effectiveWallProbeSize
             );
         }
 #endif
