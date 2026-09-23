@@ -49,6 +49,7 @@ namespace NovaStriker.Campaign
         [SerializeField] private List<EncounterWave> waves = new();
         [SerializeField] private int maxScaledCountPerSpawnEntry = 8;
         [SerializeField] private float betweenWaveDelay = 0.75f;
+        [SerializeField] private bool useSpawnPooling = true;
 
         [Header("Arena")]
         [SerializeField] private bool lockCamera;
@@ -60,6 +61,7 @@ namespace NovaStriker.Campaign
         [SerializeField] private float completionSynergy = 8f;
 
         private readonly HashSet<Damageable2D> activeEnemies = new();
+        private readonly List<Damageable2D> defeatedScratch = new(16);
 
         private StrikeTeamSession session;
         private Coroutine sequence;
@@ -282,11 +284,17 @@ namespace NovaStriker.Campaign
                         );
 
                     GameObject instance =
-                        Instantiate(
-                            entry.EnemyPrefab,
-                            position,
-                            Quaternion.identity
-                        );
+                        useSpawnPooling
+                            ? EncounterEnemyPool2D.Spawn(
+                                entry.EnemyPrefab,
+                                position,
+                                Quaternion.identity
+                            )
+                            : Instantiate(
+                                entry.EnemyPrefab,
+                                position,
+                                Quaternion.identity
+                            );
 
                     RegisterEnemy(
                         instance
@@ -351,29 +359,31 @@ namespace NovaStriker.Campaign
 
         private void RemoveDefeatedEntries()
         {
-            List<Damageable2D> remove = null;
+            defeatedScratch.Clear();
 
             foreach (Damageable2D enemy in activeEnemies)
             {
                 if (enemy && !enemy.IsDefeated)
                     continue;
 
-                remove ??= new List<Damageable2D>();
-                remove.Add(enemy);
+                defeatedScratch.Add(enemy);
             }
 
-            if (remove == null)
-                return;
-
-            for (int i = 0; i < remove.Count; i++)
+            for (int i = 0; i < defeatedScratch.Count; i++)
             {
-                Damageable2D enemy = remove[i];
+                Damageable2D enemy =
+                    defeatedScratch[i];
 
                 if (enemy)
                     enemy.Defeated -= OnEnemyDefeated;
 
                 activeEnemies.Remove(enemy);
+
+                if (useSpawnPooling && enemy)
+                    EncounterEnemyPool2D.TryRelease(enemy);
             }
+
+            defeatedScratch.Clear();
         }
 
         private void CompleteEncounter()
