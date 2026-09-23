@@ -17,17 +17,28 @@ This runbook is the execution checklist for converting the current **code-integr
 
 ## 2. Rebuild and source/scene validation
 
-Use:
+Interactive editor use:
 
 `Nova Striker > Validation > Rebuild Mechanics Lab + Run Full Validation`
 
-The command rebuilds generated greybox assets and then invokes, in order:
+The command rebuilds generated greybox assets, refreshes the AssetDatabase, and then invokes, in order:
 
 1. Gameplay Preflight
 2. Structural Batch Validation
 3. Asset + Presentation Contract Validation
 
-The unified command is intentionally interactive-only until every validator exposes aggregate pass/fail state. For headless structural validation, the existing supported entry points remain:
+The unified suite now also exposes aggregate headless entry points:
+
+- `NovaStriker.EditorTools.PreBlenderValidationSuite.RunForCommandLine`
+- `NovaStriker.EditorTools.PreBlenderValidationSuite.RebuildAndRunForCommandLine`
+
+A command-line run exits Unity with code `0` only when every invoked source-side validation step completes without error logs or exceptions; otherwise it exits with code `1`. The suite also writes a machine-readable result to:
+
+`UnityProject/Library/NovaStrikerValidation/pre-blender-validation.json`
+
+The report explicitly leaves `playModeValidated` and `productionAssetsValidated` false. A passing aggregate source report is therefore evidence of editor/source-contract health only; it is not a substitute for the Play Mode, controller, persistence, profiler, platform-SDK, or production-asset passes below.
+
+The individual headless validators remain available for narrower diagnostics:
 
 - `NovaStriker.EditorTools.GameplayBatchValidator.RunForCommandLine`
 - `NovaStriker.EditorTools.GameplayAssetContractValidator.RunForCommandLine`
