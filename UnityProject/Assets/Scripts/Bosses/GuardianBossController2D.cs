@@ -53,6 +53,18 @@ namespace NovaStriker.Bosses
         public bool WeakPointOpen => weakPointTimer > 0f;
         public string WeakPointId => WeakPointName();
 
+        public void ConfigureIdentity(GuardianId value)
+        {
+            guardianId = value;
+            Phase = GuardianBossPhase.Phase1;
+            attackTimer = 0.8f;
+            actionTimer = 0f;
+            weakPointTimer = 0f;
+            actionIndex = 0;
+            target = null;
+            ConfigureGuardianProfile();
+        }
+
         private void Reset()
         {
             damageable = GetComponent<Damageable2D>();
