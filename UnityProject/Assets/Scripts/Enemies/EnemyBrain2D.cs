@@ -54,6 +54,8 @@ namespace NovaStriker.Enemies
         private float reactionOverrideTimer;
         private Vector2 reactionOverrideVelocity;
         private Vector2 tacticalTargetOffset;
+        private Vector2 archetypeTargetOffset;
+        private bool wasDisabled;
 
         public int ActorId => actorId;
         public EnemyRole Role => role;
@@ -69,10 +71,10 @@ namespace NovaStriker.Enemies
             target ? (Vector2)target.position : (Vector2)transform.position;
 
         public Vector2 TacticalTargetOffset =>
-            tacticalTargetOffset;
+            tacticalTargetOffset + archetypeTargetOffset;
 
         public Vector2 TacticalTargetPosition =>
-            TargetPosition + tacticalTargetOffset;
+            TargetPosition + TacticalTargetOffset;
 
         public Vector2 DirectionToTarget
         {
@@ -160,6 +162,12 @@ namespace NovaStriker.Enemies
                 damageable.Damaged += OnDamaged;
                 damageable.Defeated += OnDefeated;
             }
+
+            if (wasDisabled)
+            {
+                activeModule?.OnRoleEnter(this);
+                wasDisabled = false;
+            }
         }
 
         private void OnDisable()
@@ -173,6 +181,7 @@ namespace NovaStriker.Enemies
             }
 
             activeModule?.OnRoleExit(this);
+            wasDisabled = true;
         }
 
         private void FixedUpdate()
@@ -285,6 +294,35 @@ namespace NovaStriker.Enemies
             tacticalTargetOffset = Vector2.zero;
         }
 
+        public void SetArchetypeTargetOffset(
+            Vector2 offset)
+        {
+            archetypeTargetOffset = offset;
+        }
+
+        public void ClearArchetypeTargetOffset()
+        {
+            archetypeTargetOffset = Vector2.zero;
+        }
+
+        public void PrepareForPoolSpawn()
+        {
+            State = EnemyBrainState.Idle;
+            target = null;
+            retargetTimer = 0f;
+            reactionOverrideTimer = 0f;
+            reactionOverrideVelocity = Vector2.zero;
+            tacticalTargetOffset = Vector2.zero;
+            archetypeTargetOffset = Vector2.zero;
+            Facing = 1;
+
+            if (body)
+            {
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
+        }
+
         public void SetTarget(Transform value)
         {
             target = value;
@@ -375,6 +413,31 @@ namespace NovaStriker.Enemies
             body.linearVelocity = new Vector2(
                 nextX,
                 body.linearVelocity.y
+            );
+        }
+
+        public void MoveVertical(
+            float desiredVelocity,
+            float acceleration,
+            float dt)
+        {
+            if (!body)
+                return;
+
+            float movementMultiplier =
+                combatState
+                    ? combatState.MovementMultiplier
+                    : 1f;
+
+            float nextY = Mathf.MoveTowards(
+                body.linearVelocity.y,
+                desiredVelocity * movementMultiplier,
+                Mathf.Max(0f, acceleration) * dt
+            );
+
+            body.linearVelocity = new Vector2(
+                body.linearVelocity.x,
+                nextY
             );
         }
 
