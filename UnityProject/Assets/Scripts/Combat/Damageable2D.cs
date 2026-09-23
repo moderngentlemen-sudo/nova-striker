@@ -19,6 +19,7 @@ namespace NovaStriker.Combat
 
         public event Action<DamagePacket> Damaged;
         public event Action<DamagePacket> Defeated;
+        public event Action Revived;
 
         public int ActorId => actorId;
         public CombatFaction Faction => faction;
@@ -121,6 +122,61 @@ namespace NovaStriker.Combat
         {
             if (body)
                 body.linearVelocity += velocity;
+        }
+
+        public float Heal(float amount)
+        {
+            if (IsDefeated || amount <= 0f)
+                return 0f;
+
+            float before = Health;
+
+            Health =
+                Mathf.Clamp(
+                    Health + amount,
+                    0f,
+                    maxHealth
+                );
+
+            return Health - before;
+        }
+
+        public bool Revive(
+            float healthFraction = 0.45f,
+            float invulnerabilitySeconds = 1.0f)
+        {
+            if (!IsDefeated)
+                return false;
+
+            Health =
+                Mathf.Clamp(
+                    maxHealth *
+                    Mathf.Clamp01(healthFraction),
+                    1f,
+                    maxHealth
+                );
+
+            invulnerabilityRemaining =
+                Mathf.Max(
+                    invulnerabilityRemaining,
+                    Mathf.Max(0f, invulnerabilitySeconds)
+                );
+
+            Revived?.Invoke();
+
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    GameplayCueType.Revived,
+                    actorId,
+                    transform.position,
+                    Vector2.up,
+                    0,
+                    Health,
+                    "revive"
+                )
+            );
+
+            return true;
         }
 
         public void RestoreFullHealth()
