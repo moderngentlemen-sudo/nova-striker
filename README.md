@@ -47,3 +47,8 @@ The first milestone remains a greybox gameplay room with Nova's complete movemen
 - `Production/asset-manifest.json` — machine-readable production source of truth
 
 - `Docs/gameplay-complete-run.md` — comprehensive status and remaining pre-Blender scope
+
+
+## Gameplay-complete status
+
+- `Docs/gameplay-complete-status.md` — current implementation status, remaining pre-Blender engineering, and validation boundary
