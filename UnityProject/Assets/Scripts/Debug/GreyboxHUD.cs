@@ -87,11 +87,17 @@ namespace NovaStriker.Debugging
                     )
                     : 0f;
 
+            string cueId =
+                hasLastPlayerCue &&
+                !string.IsNullOrEmpty(lastPlayerCue.Id)
+                    ? " / " + lastPlayerCue.Id
+                    : string.Empty;
+
             string lastCue =
                 hasLastPlayerCue
-                    ? $"{lastPlayerCue.Type}" +
-                      $"{(string.IsNullOrEmpty(lastPlayerCue.Id) ? "" : $" / {lastPlayerCue.Id}")}" +
-                      $"  T{lastPlayerCue.Tier}  V:{lastPlayerCue.Value:0.##}"
+                    ? $"{lastPlayerCue.Type}{cueId}  " +
+                      $"T{lastPlayerCue.Tier}  " +
+                      $"V:{lastPlayerCue.Value:0.##}"
                     : "-";
 
             string character =
