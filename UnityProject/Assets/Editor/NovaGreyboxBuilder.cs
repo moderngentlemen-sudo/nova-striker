@@ -1046,6 +1046,9 @@ namespace NovaStriker.EditorTools
             GuardianAbilityController guardianAbilities =
                 root.AddComponent<GuardianAbilityController>();
 
+            MobileVirtualInputSource mobileInput =
+                root.AddComponent<MobileVirtualInputSource>();
+
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
 
@@ -1344,6 +1347,11 @@ namespace NovaStriker.EditorTools
                 "player",
                 gameplay
             );
+            SetObjectReference(
+                input,
+                "mobileInput",
+                mobileInput
+            );
 
             SetObjectReference(
                 visualizer,
@@ -1406,6 +1414,8 @@ namespace NovaStriker.EditorTools
             EntitlementService entitlements =
                 root.AddComponent<EntitlementService>();
 
+            root.AddComponent<CosmeticLoadoutService>();
+
             SetObjectReference(
                 progression,
                 "saveService",
@@ -1437,6 +1447,7 @@ namespace NovaStriker.EditorTools
                 root.AddComponent<StrikeTeamSession>();
 
             root.AddComponent<LocalStrikeTeamInputCoordinator>();
+            root.AddComponent<EnemySquadCoordinator2D>();
 
             TeamSyncResolver syncResolver =
                 root.AddComponent<TeamSyncResolver>();
