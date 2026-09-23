@@ -23,8 +23,8 @@ Implementation status on `dev/unity-gameplay`:
 10. ✅ Character-specific Circle Counter:
    - Nova distance Deflect
    - Echo distance Grapple:
-     - Circle without Up pulls an enemy
-     - Up / Up-Left / Up-Right + Circle attaches to an eligible solid surface above
+     - Circle without Up pulls an enemy from long range (current greybox: 14.0 units)
+     - Up / Up-Left / Up-Right + Circle attaches to an eligible solid surface above (current greybox: 8.5 units)
      - GrapplePoint2D remains optional
    - shared close Dodge + Counter
    - advancing Throw
