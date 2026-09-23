@@ -12,6 +12,19 @@ namespace NovaStriker.Progression
         void Delete(string key);
     }
 
+    /// <summary>
+    /// Optional extension for cloud-backed adapters that maintain a local
+    /// synchronous cache while synchronizing with a native platform service.
+    /// </summary>
+    public interface ISynchronizedSaveBackend : ISaveBackend
+    {
+        bool Ready { get; }
+        event Action RemoteDataChanged;
+        event Action<string> SyncFailed;
+        void Initialize();
+        void RequestSync(string key);
+    }
+
     public sealed class LocalFileSaveBackend : ISaveBackend
     {
         private readonly string root;
@@ -73,12 +86,15 @@ namespace NovaStriker.Progression
         [SerializeField] private bool loadOnAwake = true;
 
         private ISaveBackend backend;
+        private ISynchronizedSaveBackend synchronizedBackend;
 
         public static SaveGameService Active { get; private set; }
         public NovaSaveData Current { get; private set; }
 
         public event Action<NovaSaveData> Loaded;
         public event Action<NovaSaveData> Saved;
+        public event Action<NovaSaveData> RemoteSaveApplied;
+        public event Action<string> CloudSyncFailed;
 
         private void Awake()
         {
@@ -96,12 +112,16 @@ namespace NovaStriker.Progression
                     Application.persistentDataPath
                 );
 
+            AttachSynchronizedBackend();
+
             if (loadOnAwake)
                 Load();
         }
 
         private void OnDestroy()
         {
+            DetachSynchronizedBackend();
+
             if (Active == this)
                 Active = null;
         }
@@ -113,10 +133,16 @@ namespace NovaStriker.Progression
             if (replacement == null)
                 return;
 
+            DetachSynchronizedBackend();
             backend = replacement;
+            AttachSynchronizedBackend();
 
             if (reload)
                 Load();
+
+            synchronizedBackend?.RequestSync(
+                saveKey
+            );
         }
 
         public NovaSaveData Load()
@@ -188,6 +214,11 @@ namespace NovaStriker.Progression
                 );
 
                 Saved?.Invoke(Current);
+
+                synchronizedBackend?.RequestSync(
+                    saveKey
+                );
+
                 return true;
             }
             catch (Exception exception)
@@ -214,6 +245,50 @@ namespace NovaStriker.Progression
             backend?.Delete(saveKey);
             Current = NovaSaveData.CreateDefault();
             Loaded?.Invoke(Current);
+        }
+
+        private void AttachSynchronizedBackend()
+        {
+            synchronizedBackend =
+                backend as ISynchronizedSaveBackend;
+
+            if (synchronizedBackend == null)
+                return;
+
+            synchronizedBackend.RemoteDataChanged +=
+                OnRemoteDataChanged;
+
+            synchronizedBackend.SyncFailed +=
+                OnCloudSyncFailed;
+
+            synchronizedBackend.Initialize();
+        }
+
+        private void DetachSynchronizedBackend()
+        {
+            if (synchronizedBackend == null)
+                return;
+
+            synchronizedBackend.RemoteDataChanged -=
+                OnRemoteDataChanged;
+
+            synchronizedBackend.SyncFailed -=
+                OnCloudSyncFailed;
+
+            synchronizedBackend = null;
+        }
+
+        private void OnRemoteDataChanged()
+        {
+            NovaSaveData applied = Load();
+            RemoteSaveApplied?.Invoke(applied);
+        }
+
+        private void OnCloudSyncFailed(string reason)
+        {
+            CloudSyncFailed?.Invoke(
+                reason ?? "Cloud save synchronization failed."
+            );
         }
 
         private static NovaSaveData MigrateAndNormalize(
