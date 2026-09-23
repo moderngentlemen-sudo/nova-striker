@@ -1,11 +1,13 @@
 using System.IO;
 using NovaStriker.CameraSystem;
 using NovaStriker.Combat;
+using NovaStriker.Commerce;
 using NovaStriker.Data;
 using NovaStriker.Debugging;
 using NovaStriker.Enemies;
 using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
+using NovaStriker.Platform;
 using NovaStriker.Presentation;
 using NovaStriker.Progression;
 using NovaStriker.Session;
@@ -62,6 +64,9 @@ namespace NovaStriker.EditorTools
         private const string ProjectileMaterialPath =
             GeneratedRoot + "/MAT_Greybox_Projectile.mat";
 
+        private const string CommerceCatalogPath =
+            GeneratedRoot + "/CommerceCatalog.asset";
+
         [MenuItem(
             "Nova Striker/Greybox/Build / Refresh Mechanics Lab",
             priority = 1)]
@@ -107,6 +112,9 @@ namespace NovaStriker.EditorTools
                 new Color(0.85f, 0.96f, 1f)
             );
 
+            CommerceCatalog commerceCatalog =
+                CreateOrLoadCommerceCatalog();
+
             WeaponDefinition[] weapons =
                 CreateOrLoadWeapons();
 
@@ -138,6 +146,10 @@ namespace NovaStriker.EditorTools
             Scene scene = EditorSceneManager.NewScene(
                 NewSceneSetup.EmptyScene,
                 NewSceneMode.Single
+            );
+
+            CreatePersistentServices(
+                commerceCatalog
             );
 
             GameObject sessionRoot =
@@ -524,6 +536,90 @@ namespace NovaStriker.EditorTools
                 "No free user layer is available for " +
                 layerName
             );
+        }
+
+        private static CommerceCatalog CreateOrLoadCommerceCatalog()
+        {
+            CommerceCatalog catalog =
+                AssetDatabase.LoadAssetAtPath<CommerceCatalog>(
+                    CommerceCatalogPath
+                );
+
+            if (!catalog)
+            {
+                catalog =
+                    ScriptableObject.CreateInstance<CommerceCatalog>();
+
+                AssetDatabase.CreateAsset(
+                    catalog,
+                    CommerceCatalogPath
+                );
+            }
+
+            catalog.Products.Clear();
+
+            catalog.Products.Add(
+                new CommerceProductDefinition
+                {
+                    ProductId = "cosmetic.nova.sentinel-obsidian",
+                    EntitlementId = "cosmetic.suit.nova.sentinel-obsidian",
+                    DisplayName = "Sentinel Obsidian Suit",
+                    Type = CommerceProductType.Cosmetic,
+                    Restorable = true,
+                    GameplayStatPurchase = false
+                }
+            );
+
+            catalog.Products.Add(
+                new CommerceProductDefinition
+                {
+                    ProductId = "cosmetic.echo.pursuit-amberglass",
+                    EntitlementId = "cosmetic.suit.echo.pursuit-amberglass",
+                    DisplayName = "Pursuit Amberglass Suit",
+                    Type = CommerceProductType.Cosmetic,
+                    Restorable = true,
+                    GameplayStatPurchase = false
+                }
+            );
+
+            catalog.Products.Add(
+                new CommerceProductDefinition
+                {
+                    ProductId = "cosmetic.team.prismatic-trail",
+                    EntitlementId = "cosmetic.trail.team.prismatic",
+                    DisplayName = "Prismatic Strike Trail",
+                    Type = CommerceProductType.Cosmetic,
+                    Restorable = true,
+                    GameplayStatPurchase = false
+                }
+            );
+
+            catalog.Products.Add(
+                new CommerceProductDefinition
+                {
+                    ProductId = "cosmetic.weapon.energy-chrome",
+                    EntitlementId = "cosmetic.weapon.energy-chrome",
+                    DisplayName = "Energy Chrome Weapon Finish",
+                    Type = CommerceProductType.Cosmetic,
+                    Restorable = true,
+                    GameplayStatPurchase = false
+                }
+            );
+
+            catalog.Products.Add(
+                new CommerceProductDefinition
+                {
+                    ProductId = "dlc.expansion.01",
+                    EntitlementId = "dlc.expansion.01",
+                    DisplayName = "Expansion Slot 01",
+                    Type = CommerceProductType.Dlc,
+                    Restorable = true,
+                    GameplayStatPurchase = false
+                }
+            );
+
+            EditorUtility.SetDirty(catalog);
+            return catalog;
         }
 
         private static Material CreateOrLoadMaterial(
@@ -1286,6 +1382,42 @@ namespace NovaStriker.EditorTools
             );
         }
 
+        private static void CreatePersistentServices(
+            CommerceCatalog commerceCatalog)
+        {
+            GameObject root =
+                new("Greybox_PersistentServices");
+
+            root.AddComponent<RuntimeScalabilityManager>();
+
+            SaveGameService save =
+                root.AddComponent<SaveGameService>();
+
+            CampaignProgressionController progression =
+                root.AddComponent<CampaignProgressionController>();
+
+            EntitlementService entitlements =
+                root.AddComponent<EntitlementService>();
+
+            SetObjectReference(
+                progression,
+                "saveService",
+                save
+            );
+
+            SetObjectReference(
+                entitlements,
+                "catalog",
+                commerceCatalog
+            );
+
+            SetObjectReference(
+                entitlements,
+                "saveService",
+                save
+            );
+        }
+
         private static GameObject CreateSessionBootstrap(
             int enemyLayer)
         {
@@ -1302,8 +1434,17 @@ namespace NovaStriker.EditorTools
             TeamSyncResolver syncResolver =
                 root.AddComponent<TeamSyncResolver>();
 
+            WeaponMasteryService mastery =
+                root.AddComponent<WeaponMasteryService>();
+
             SetObjectReference(
                 syncResolver,
+                "session",
+                session
+            );
+
+            SetObjectReference(
+                mastery,
                 "session",
                 session
             );
