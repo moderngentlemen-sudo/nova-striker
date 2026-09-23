@@ -4,7 +4,7 @@ This document describes the current playable-mechanics code on `dev/unity-gamepl
 
 ## First run
 
-1. Install/open Unity **6.3 LTS**. The project currently records editor version `6000.3.15f1`.
+1. Open Unity **6.6**. The project currently records editor version `6000.6.2f1`.
 2. Open the repository's `UnityProject/` folder in Unity Hub.
 3. Allow Package Manager to resolve `com.unity.inputsystem`.
 4. If Unity asks to activate the new Input System backend, accept and let the Editor restart. If no prompt appears, use **Project Settings → Player → Active Input Handling** and select **Input System Package (New)** or **Both**.
