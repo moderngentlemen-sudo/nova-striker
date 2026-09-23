@@ -40,11 +40,16 @@ namespace NovaStriker.Bosses
         [SerializeField] private float phase2Interval = 1.25f;
         [SerializeField] private float phase3Interval = 0.95f;
         [SerializeField] private float weakPointWindow = 0.9f;
+        [SerializeField] private float multiplayerRetargetInterval = 1.45f;
+        [SerializeField] private float healthScalePerAdditionalPlayer = 0.32f;
 
         private float attackTimer = 0.8f;
         private float actionTimer;
         private float weakPointTimer;
         private int actionIndex;
+        private float targetRetargetTimer;
+        private int targetSlotCursor;
+        private bool multiplayerScalingApplied;
         private StrikerPlayerIdentity target;
 
         public GuardianId GuardianId => guardianId;
@@ -61,6 +66,9 @@ namespace NovaStriker.Bosses
             actionTimer = 0f;
             weakPointTimer = 0f;
             actionIndex = 0;
+            targetRetargetTimer = 0f;
+            targetSlotCursor = 0;
+            multiplayerScalingApplied = false;
             target = null;
             ConfigureGuardianProfile();
         }
@@ -84,6 +92,7 @@ namespace NovaStriker.Bosses
                 session = StrikeTeamSession.Active;
 
             ConfigureGuardianProfile();
+            multiplayerScalingApplied = false;
         }
 
         private void FixedUpdate()
@@ -96,9 +105,10 @@ namespace NovaStriker.Bosses
             if (!session)
                 session = StrikeTeamSession.Active;
 
+            ApplyMultiplayerScalingOnce();
             UpdatePhase();
             UpdateWeakPoint(dt);
-            AcquireTarget();
+            AcquireTarget(dt);
 
             if (!target)
                 return;
@@ -187,14 +197,110 @@ namespace NovaStriker.Bosses
             }
         }
 
-        private void AcquireTarget()
+        private void AcquireTarget(float dt)
         {
+            targetRetargetTimer =
+                Mathf.Max(
+                    0f,
+                    targetRetargetTimer - dt
+                );
+
+            if (
+                target &&
+                target.IsCombatReady &&
+                targetRetargetTimer > 0f
+            )
+            {
+                return;
+            }
+
             target = null;
 
-            session?.TryGetNearestCombatReadyPlayer(
-                transform.position,
-                out target
+            if (!session)
+                return;
+
+            if (session.ParticipatingPlayerCount > 1)
+            {
+                for (
+                    int offset = 0;
+                    offset < StrikeTeamSession.MaxPlayers;
+                    offset++
+                )
+                {
+                    int slot =
+                        (
+                            targetSlotCursor + offset
+                        ) %
+                        StrikeTeamSession.MaxPlayers;
+
+                    StrikerPlayerIdentity candidate =
+                        session.GetPlayer(slot);
+
+                    if (
+                        !candidate ||
+                        !candidate.IsCombatReady
+                    )
+                    {
+                        continue;
+                    }
+
+                    target = candidate;
+                    targetSlotCursor =
+                        (slot + 1) %
+                        StrikeTeamSession.MaxPlayers;
+                    break;
+                }
+            }
+            else
+            {
+                session.TryGetNearestCombatReadyPlayer(
+                    transform.position,
+                    out target
+                );
+            }
+
+            targetRetargetTimer =
+                target
+                    ? multiplayerRetargetInterval
+                    : 0.20f;
+        }
+
+        private void ApplyMultiplayerScalingOnce()
+        {
+            if (
+                multiplayerScalingApplied ||
+                !session ||
+                !damageable
+            )
+            {
+                return;
+            }
+
+            int players =
+                session.ParticipatingPlayerCount;
+
+            if (players <= 0)
+                return;
+
+            float baseHealth =
+                guardianId == GuardianId.Null
+                    ? 1250f
+                    : 1100f;
+
+            float scale =
+                1f +
+                Mathf.Max(0, players - 1) *
+                Mathf.Max(
+                    0f,
+                    healthScalePerAdditionalPlayer
+                );
+
+            damageable.ConfigureMaxHealth(
+                baseHealth * scale,
+                true
             );
+
+            multiplayerScalingApplied = true;
         }
 
         private void UpdatePhase()
@@ -226,6 +332,12 @@ namespace NovaStriker.Bosses
                     ratio,
                     guardianId.ToString()
                 )
+            );
+
+            OpenWeakPoint(
+                Phase == GuardianBossPhase.Phase3
+                    ? 1.35f
+                    : 1.05f
             );
         }
 
@@ -647,12 +759,16 @@ namespace NovaStriker.Bosses
                         t
                     );
 
+                bool perfectOpportunity =
+                    i == count / 2 &&
+                    IsPerfectOpportunityAttack(id);
+
                 SpawnProjectile(
                     baseAngle + offset,
                     speed,
                     damage,
                     id,
-                    false
+                    perfectOpportunity
                 );
             }
         }
@@ -794,6 +910,22 @@ namespace NovaStriker.Bosses
                     phase2Interval,
                 _ =>
                     phase1Interval
+            };
+        }
+
+        private bool IsPerfectOpportunityAttack(
+            string attackId)
+        {
+            return attackId switch
+            {
+                "rime-lance" => true,
+                "aegis-volley" =>
+                    Phase >= GuardianBossPhase.Phase2,
+                "tempest-fan" =>
+                    Phase == GuardianBossPhase.Phase3,
+                "null-gravity" =>
+                    Phase == GuardianBossPhase.Phase3,
+                _ => false
             };
         }
 
