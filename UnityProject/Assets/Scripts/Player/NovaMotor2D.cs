@@ -42,6 +42,8 @@ namespace NovaStriker.Player
         [SerializeField] private float wallSlideSpeed = 1.85f;
         [SerializeField] private Vector2 wallJumpVelocity = new(7.2f, 11.8f);
         [SerializeField] private float wallRegrabLockout = 0.12f;
+        [Tooltip("Briefly preserves the wall-jump horizontal launch before normal air steering resumes.")]
+        [SerializeField] private float wallJumpControlLockout = 0.10f;
 
         [Header("Dash")]
         [SerializeField] private float quickDashSpeed = 14.4f;
@@ -80,6 +82,7 @@ namespace NovaStriker.Player
         private bool crouching;
 
         private float wallLockout;
+        private float wallJumpControlTimer;
         private float oneWayDropTimer;
 
         private float dashCharge;
@@ -107,6 +110,7 @@ namespace NovaStriker.Player
         public bool Grounded => grounded;
         public int WallDirection => wallDirection;
         public bool IsWallSliding => wallSliding;
+        public bool IsWallJumpControlLocked => wallJumpControlTimer > 0f;
         public bool IsCrouching => crouching;
         public bool IsDashing => dashTimer > 0f;
         public bool IsSliding => slideTimer > 0f;
@@ -221,6 +225,8 @@ namespace NovaStriker.Player
             UpdateProbes();
 
             wallLockout = Mathf.Max(0f, wallLockout - dt);
+            wallJumpControlTimer =
+                Mathf.Max(0f, wallJumpControlTimer - dt);
 
             if (grounded)
             {
@@ -536,6 +542,7 @@ namespace NovaStriker.Player
                 facing = -wallDirection;
                 AimDirection = new Vector2(facing, 0f);
                 wallLockout = wallRegrabLockout;
+                wallJumpControlTimer = wallJumpControlLockout;
                 remainingAirDashes = 1;
 
                 GameplayEventHub.Raise(new GameplayCue(
@@ -797,6 +804,9 @@ namespace NovaStriker.Player
 
         private void UpdateRun(float dt)
         {
+            if (wallJumpControlTimer > 0f)
+                return;
+
             float speed = crouching ? crouchSpeed : runSpeed;
             float desired = input.Move.x * speed;
             float acceleration = grounded
