@@ -37,6 +37,7 @@ namespace NovaStriker.Core
         GuardianAbilityResolved,
         TeamSyncStarted,
         TeamSyncResolved,
+        StyleRankChanged,
         CampaignCompleted,
         ParryStarted,
         ParrySuccess,
