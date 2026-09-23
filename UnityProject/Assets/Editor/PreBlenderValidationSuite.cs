@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,13 +11,42 @@ namespace NovaStriker.EditorTools
     /// before production Blender assets become the primary dependency.
     ///
     /// This suite deliberately does not claim Play Mode, profiler, controller,
-    /// platform-SDK, or production-asset validation. It rebuilds the generated
-    /// Mechanics Lab when requested, then invokes every currently available
-    /// editor validation layer in a deterministic order.
+    /// platform-SDK, or production-asset validation. It can optionally rebuild
+    /// the generated Mechanics Lab, then invokes every current editor validation
+    /// layer in a deterministic order and records an aggregate pass/fail result.
     /// </summary>
     public static class PreBlenderValidationSuite
     {
         private const string Prefix = "[Pre-Blender Validation Suite] ";
+        private const string ReportRelativePath =
+            "Library/NovaStrikerValidation/pre-blender-validation.json";
+
+        [Serializable]
+        private sealed class ValidationStepResult
+        {
+            public string name;
+            public bool passed;
+            public int errorLogs;
+            public int warningLogs;
+            public double elapsedSeconds;
+            public string exception;
+        }
+
+        [Serializable]
+        private sealed class ValidationReport
+        {
+            public string unityVersion;
+            public string startedUtc;
+            public string finishedUtc;
+            public bool rebuiltMechanicsLab;
+            public bool sourceValidationPassed;
+            public bool playModeValidated;
+            public bool productionAssetsValidated;
+            public string validationScope;
+            public string boundaryNote;
+            public List<ValidationStepResult> steps =
+                new List<ValidationStepResult>();
+        }
 
         [MenuItem(
             "Nova Striker/Validation/Run Full Pre-Blender Validation",
@@ -33,55 +64,248 @@ namespace NovaStriker.EditorTools
             RunSuite(rebuildMechanicsLab: true);
         }
 
-        private static void RunSuite(bool rebuildMechanicsLab)
+        /// <summary>
+        /// Headless entry point for source-side validation without regenerating
+        /// greybox assets. Exits Unity with code 0 on success and 1 on failure.
+        /// This is not a substitute for Play Mode or profiler validation.
+        /// </summary>
+        public static void RunForCommandLine()
         {
-            string unityVersion = Application.unityVersion;
+            RunCommandLine(rebuildMechanicsLab: false);
+        }
+
+        /// <summary>
+        /// Headless entry point that regenerates the Mechanics Lab before running
+        /// all source-side validators. Exits Unity with code 0 on success and 1
+        /// on failure.
+        /// </summary>
+        public static void RebuildAndRunForCommandLine()
+        {
+            RunCommandLine(rebuildMechanicsLab: true);
+        }
+
+        private static void RunCommandLine(bool rebuildMechanicsLab)
+        {
+            bool passed = RunSuite(rebuildMechanicsLab);
+
+            if (Application.isBatchMode)
+                EditorApplication.Exit(passed ? 0 : 1);
+        }
+
+        private static bool RunSuite(bool rebuildMechanicsLab)
+        {
             DateTime startedUtc = DateTime.UtcNow;
+            ValidationReport report = new ValidationReport
+            {
+                unityVersion = Application.unityVersion,
+                startedUtc = startedUtc.ToString("O"),
+                rebuiltMechanicsLab = rebuildMechanicsLab,
+                playModeValidated = false,
+                productionAssetsValidated = false,
+                validationScope =
+                    "Unity editor compile-time/source-contract validation",
+                boundaryNote =
+                    "A passing report does not mark 1-4 player Play Mode, " +
+                    "controller, save/commerce, profiler, platform SDK, or " +
+                    "production Blender/presentation validation complete."
+            };
 
             Debug.Log(
                 Prefix +
                 "Starting source-side validation on Unity " +
-                unityVersion + ". " +
-                "This run does not constitute Play Mode or production-asset QA."
+                Application.unityVersion + ". " +
+                "A passing run does not constitute Play Mode, profiler, " +
+                "controller, platform-SDK, or production-asset QA."
             );
+
+            bool allPassed = true;
+
+            if (rebuildMechanicsLab)
+            {
+                allPassed &=
+                    ExecuteStep(
+                        "Mechanics Lab rebuild",
+                        NovaGreyboxBuilder.BuildGreybox,
+                        report
+                    );
+            }
+
+            allPassed &=
+                ExecuteStep(
+                    "Asset database refresh",
+                    () => AssetDatabase.Refresh(),
+                    report
+                );
+
+            allPassed &=
+                ExecuteStep(
+                    "Gameplay preflight",
+                    GameplayPreflightValidator.Run,
+                    report
+                );
+
+            allPassed &=
+                ExecuteStep(
+                    "Structural batch validation",
+                    GameplayBatchValidator.RunInteractive,
+                    report
+                );
+
+            allPassed &=
+                ExecuteStep(
+                    "Asset + presentation contract validation",
+                    GameplayAssetContractValidator.RunInteractive,
+                    report
+                );
+
+            report.sourceValidationPassed = allPassed;
+            report.finishedUtc = DateTime.UtcNow.ToString("O");
+
+            WriteReport(report);
+
+            double elapsedSeconds =
+                (DateTime.UtcNow - startedUtc).TotalSeconds;
+
+            string summary =
+                Prefix +
+                (allPassed ? "PASS" : "FAIL") +
+                ": source-side validation finished in " +
+                elapsedSeconds.ToString("0.00") +
+                "s. Report: " +
+                ReportRelativePath +
+                ". Manual 1-4 player Play Mode, controller, save/commerce, " +
+                "profiler, and production-asset passes remain separate.";
+
+            if (allPassed)
+                Debug.Log(summary);
+            else
+                Debug.LogError(summary);
+
+            return allPassed;
+        }
+
+        private static bool ExecuteStep(
+            string name,
+            Action action,
+            ValidationReport report)
+        {
+            int errorLogs = 0;
+            int warningLogs = 0;
+            string exceptionSummary = string.Empty;
+            DateTime startedUtc = DateTime.UtcNow;
+
+            Application.LogCallback capture =
+                (condition, stackTrace, type) =>
+                {
+                    if (
+                        type == LogType.Error ||
+                        type == LogType.Exception ||
+                        type == LogType.Assert
+                    )
+                    {
+                        errorLogs++;
+                    }
+                    else if (type == LogType.Warning)
+                    {
+                        warningLogs++;
+                    }
+                };
+
+            Application.logMessageReceived += capture;
 
             try
             {
-                if (rebuildMechanicsLab)
+                Debug.Log(Prefix + "Running: " + name + "...");
+                action();
+            }
+            catch (Exception exception)
+            {
+                exceptionSummary =
+                    exception.GetType().Name +
+                    ": " +
+                    exception.Message;
+
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                Application.logMessageReceived -= capture;
+            }
+
+            bool passed =
+                errorLogs == 0 &&
+                string.IsNullOrEmpty(exceptionSummary);
+
+            ValidationStepResult result =
+                new ValidationStepResult
                 {
-                    Debug.Log(Prefix + "Rebuilding generated Mechanics Lab...");
-                    NovaGreyboxBuilder.BuildGreybox();
-                }
+                    name = name,
+                    passed = passed,
+                    errorLogs = errorLogs,
+                    warningLogs = warningLogs,
+                    elapsedSeconds =
+                        (DateTime.UtcNow - startedUtc).TotalSeconds,
+                    exception = exceptionSummary
+                };
 
-                AssetDatabase.Refresh();
+            report.steps.Add(result);
 
-                Debug.Log(Prefix + "1/3 Gameplay preflight...");
-                GameplayPreflightValidator.Run();
+            string stepSummary =
+                Prefix +
+                name +
+                ": " +
+                (passed ? "PASS" : "FAIL") +
+                " (" +
+                errorLogs +
+                " error log(s), " +
+                warningLogs +
+                " warning log(s), " +
+                result.elapsedSeconds.ToString("0.00") +
+                "s).";
 
-                Debug.Log(Prefix + "2/3 Structural batch validation...");
-                GameplayBatchValidator.RunInteractive();
+            if (passed)
+                Debug.Log(stepSummary);
+            else
+                Debug.LogError(stepSummary);
 
-                Debug.Log(Prefix + "3/3 Asset + presentation contract validation...");
-                GameplayAssetContractValidator.RunInteractive();
+            return passed;
+        }
 
-                double elapsedSeconds =
-                    (DateTime.UtcNow - startedUtc).TotalSeconds;
+        private static void WriteReport(ValidationReport report)
+        {
+            try
+            {
+                string projectRoot =
+                    Path.GetFullPath(
+                        Path.Combine(
+                            Application.dataPath,
+                            ".."
+                        )
+                    );
 
-                Debug.Log(
-                    Prefix +
-                    "All validation layers were invoked in " +
-                    elapsedSeconds.ToString("0.00") +
-                    "s. Review Console errors/warnings before marking any item " +
-                    "Unity-validated. Manual 1-4 player Play Mode, controller, " +
-                    "save/commerce, and profiler passes are still required."
+                string reportPath =
+                    Path.Combine(
+                        projectRoot,
+                        ReportRelativePath
+                    );
+
+                string directory =
+                    Path.GetDirectoryName(reportPath);
+
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(
+                    reportPath,
+                    JsonUtility.ToJson(report, true)
                 );
             }
             catch (Exception exception)
             {
-                Debug.LogException(exception);
-                Debug.LogError(
+                Debug.LogWarning(
                     Prefix +
-                    "Validation suite aborted before all layers completed."
+                    "Unable to write machine-readable validation report: " +
+                    exception.Message
                 );
             }
         }
