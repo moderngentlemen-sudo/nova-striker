@@ -368,6 +368,42 @@ namespace NovaStriker.Combat
             );
         }
 
+        public void ApplyVulnerable(float seconds)
+        {
+            vulnerableTimer =
+                Mathf.Max(
+                    vulnerableTimer,
+                    Mathf.Max(0f, seconds)
+                );
+        }
+
+        public void ApplyExposed(float seconds)
+        {
+            exposedTimer =
+                Mathf.Max(
+                    exposedTimer,
+                    Mathf.Max(0f, seconds)
+                );
+        }
+
+        public void ApplyStagger(float seconds)
+        {
+            staggerTimer =
+                Mathf.Max(
+                    staggerTimer,
+                    Mathf.Max(0f, seconds)
+                );
+        }
+
+        public void ApplySlow(float seconds)
+        {
+            cryoSlowTimer =
+                Mathf.Max(
+                    cryoSlowTimer,
+                    Mathf.Max(0f, seconds)
+                );
+        }
+
         public void AddBreak(
             float amount,
             DamagePacket source)
