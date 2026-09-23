@@ -38,6 +38,14 @@ namespace NovaStriker.Bosses
         public MiniBossId MiniBossId => miniBossId;
         public StrikerPlayerIdentity Target => target;
 
+        public void ConfigureIdentity(MiniBossId value)
+        {
+            miniBossId = value;
+            target = null;
+            attackTimer = initialAttackDelay;
+            ConfigureProfile();
+        }
+
         private void Reset()
         {
             damageable = GetComponent<Damageable2D>();
