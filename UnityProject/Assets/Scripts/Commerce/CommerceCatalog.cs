@@ -66,18 +66,35 @@ namespace NovaStriker.Commerce
     }
 
     /// <summary>
+    /// Optional provider extension for receipt/storefront reconciliation.
+    /// Native adapters can confirm or revoke product ownership after querying
+    /// the platform account without changing gameplay entitlement APIs.
+    /// </summary>
+    public interface ICommerceEntitlementReconciliationProvider
+    {
+        event Action<string> ProductEntitlementConfirmed;
+        event Action<string> ProductEntitlementRevoked;
+        void RefreshEntitlements();
+    }
+
+    /// <summary>
     /// Editor/offline commerce provider for end-to-end entitlement testing.
     /// Native console/mobile/Steam providers implement the same interface.
     /// </summary>
-    public sealed class MockCommerceProvider : ICommerceProvider
+    public sealed class MockCommerceProvider :
+        ICommerceProvider,
+        ICommerceEntitlementReconciliationProvider
     {
         private CommerceCatalog catalog;
+        private readonly HashSet<string> purchasedProducts = new();
 
         public bool Ready { get; private set; }
 
         public event Action<string> PurchaseSucceeded;
         public event Action<string, string> PurchaseFailed;
         public event Action RestoreCompleted;
+        public event Action<string> ProductEntitlementConfirmed;
+        public event Action<string> ProductEntitlementRevoked;
 
         public void Initialize(CommerceCatalog value)
         {
@@ -108,12 +125,35 @@ namespace NovaStriker.Commerce
                 return;
             }
 
+            purchasedProducts.Add(productId);
+            ProductEntitlementConfirmed?.Invoke(productId);
             PurchaseSucceeded?.Invoke(productId);
         }
 
         public void RestorePurchases()
         {
+            RefreshEntitlements();
+        }
+
+        public void RefreshEntitlements()
+        {
+            foreach (string productId in purchasedProducts)
+            {
+                ProductEntitlementConfirmed?.Invoke(
+                    productId
+                );
+            }
+
             RestoreCompleted?.Invoke();
+        }
+
+        public void RevokeForDevelopment(
+            string productId)
+        {
+            if (!purchasedProducts.Remove(productId))
+                return;
+
+            ProductEntitlementRevoked?.Invoke(productId);
         }
     }
 }
