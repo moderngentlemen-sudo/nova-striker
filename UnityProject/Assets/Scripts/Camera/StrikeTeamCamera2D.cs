@@ -124,7 +124,7 @@ namespace NovaStriker.CameraSystem
                 StrikerPlayerIdentity player =
                     session.GetPlayer(i);
 
-                if (!player || !player.IsCombatReady)
+                if (!player || !player.isActiveAndEnabled)
                     continue;
 
                 Vector3 position =
