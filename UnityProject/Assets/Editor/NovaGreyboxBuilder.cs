@@ -6,6 +6,7 @@ using NovaStriker.Enemies;
 using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
 using NovaStriker.Presentation;
+using NovaStriker.Session;
 using NovaStriker.Traversal;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -129,7 +130,15 @@ namespace NovaStriker.EditorTools
                 NewSceneMode.Single
             );
 
-            CreateSessionBootstrap();
+            GameObject sessionRoot =
+                CreateSessionBootstrap();
+
+            StrikeTeamSession teamSession =
+                sessionRoot.GetComponent<StrikeTeamSession>();
+
+            LocalStrikeTeamInputCoordinator inputCoordinator =
+                sessionRoot.GetComponent<LocalStrikeTeamInputCoordinator>();
+
             CreateCamera();
             CreateLight();
 
@@ -208,12 +217,87 @@ namespace NovaStriker.EditorTools
                 worldLayer
             );
 
-            GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(
-                playerPrefab
-            );
+            GameObject[] players = new GameObject[4];
+            NovaInputSystemAdapter[] playerInputs =
+                new NovaInputSystemAdapter[4];
 
-            player.name = "Nova_Player1";
-            player.transform.position = new Vector3(-7.2f, -2.55f, 0f);
+            Vector3[] playerPositions =
+            {
+                new(-7.4f, -2.55f, 0f),
+                new(-6.5f, -2.55f, 0f),
+                new(-5.6f, -2.55f, 0f),
+                new(-4.7f, -2.55f, 0f)
+            };
+
+            StrikeTeamRole[] labRoles =
+            {
+                StrikeTeamRole.Striker1,
+                StrikeTeamRole.Striker0,
+                StrikeTeamRole.Tank,
+                StrikeTeamRole.Support
+            };
+
+            StrikerCharacter[] labCharacters =
+            {
+                StrikerCharacter.Nova,
+                StrikerCharacter.Echo,
+                StrikerCharacter.Nova,
+                StrikerCharacter.Echo
+            };
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                GameObject player =
+                    (GameObject)PrefabUtility.InstantiatePrefab(
+                        playerPrefab
+                    );
+
+                players[i] = player;
+                player.name = $"Striker_Player{i + 1}";
+                player.transform.position =
+                    playerPositions[i];
+
+                Damageable2D health =
+                    player.GetComponent<Damageable2D>();
+
+                NovaMotor2D motor =
+                    player.GetComponent<NovaMotor2D>();
+
+                NovaCombatController combat =
+                    player.GetComponent<NovaCombatController>();
+
+                StrikerPlayerIdentity identity =
+                    player.GetComponent<StrikerPlayerIdentity>();
+
+                NovaInputSystemAdapter input =
+                    player.GetComponent<NovaInputSystemAdapter>();
+
+                SetInt(health, "actorId", i);
+                SetInt(motor, "playerId", i);
+                SetInt(combat, "playerId", i);
+                SetEnum(
+                    combat,
+                    "character",
+                    (int)labCharacters[i]
+                );
+
+                identity.Configure(
+                    i,
+                    labRoles[i],
+                    teamSession
+                );
+
+                input.ConfigureSlot(
+                    i,
+                    i == 0
+                );
+
+                playerInputs[i] = input;
+            }
+
+            inputCoordinator.Configure(playerInputs);
+
+            GameObject player = players[0];
 
             CreateDamageDummy(
                 "Target_Light",
@@ -636,6 +720,9 @@ namespace NovaStriker.EditorTools
             NovaPlayerGameplay gameplay =
                 root.AddComponent<NovaPlayerGameplay>();
 
+            StrikerPlayerIdentity identity =
+                root.AddComponent<StrikerPlayerIdentity>();
+
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
 
@@ -781,6 +868,22 @@ namespace NovaStriker.EditorTools
                 "combat",
                 combat
             );
+            SetObjectReference(
+                gameplay,
+                "identity",
+                identity
+            );
+
+            SetObjectReference(
+                identity,
+                "damageable",
+                health
+            );
+            SetObjectReference(
+                identity,
+                "combat",
+                combat
+            );
 
             SetObjectReference(
                 input,
@@ -832,12 +935,16 @@ namespace NovaStriker.EditorTools
             );
         }
 
-        private static void CreateSessionBootstrap()
+        private static GameObject CreateSessionBootstrap()
         {
             GameObject root =
                 new("Greybox_Session");
 
             root.AddComponent<GreyboxSessionBootstrap>();
+            root.AddComponent<StrikeTeamSession>();
+            root.AddComponent<LocalStrikeTeamInputCoordinator>();
+
+            return root;
         }
 
         private static void CreateCamera()
