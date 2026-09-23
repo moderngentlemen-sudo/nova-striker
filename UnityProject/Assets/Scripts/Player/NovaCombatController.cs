@@ -1206,7 +1206,7 @@ namespace NovaStriker.Player
                 if (!target)
                     continue;
 
-                int instanceId = target.GetInstanceID();
+                int instanceId = target.GetEntityId();
 
                 if (!meleeTargets.Add(instanceId))
                     continue;
