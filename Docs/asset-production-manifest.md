@@ -58,7 +58,7 @@ Nova and Echo now both have active Unity gameplay work plus a scaffolded present
 
 ### Enemy archetypes
 
-Unity now also contains a **generic modular enemy-runtime framework** (`EnemyBrain2D`, Anchor role, and Skirmisher role) plus one mechanics-lab Skirmisher test enemy. This does not advance any named production enemy below beyond `reference_only`; it validates shared AI/combat architecture before a specific archetype is selected for production.
+Unity now also contains a **generic modular enemy-runtime framework** (`EnemyBrain2D`, Anchor, Skirmisher, Flanker, and Artillery roles) plus mechanics-lab test enemies for the three active combat roles. This does not advance any named production enemy below beyond `reference_only`; it validates shared AI/combat architecture before a specific archetype is selected for production.
 
 The current browser reference contains 12 enemy archetypes:
 
