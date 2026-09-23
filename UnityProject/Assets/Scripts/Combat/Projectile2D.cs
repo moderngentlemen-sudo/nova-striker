@@ -41,6 +41,76 @@ namespace NovaStriker.Combat
 
         public Vector2 Velocity => body ? body.linearVelocity : Vector2.zero;
 
+        internal Projectile2D PoolSourcePrefab { get; private set; }
+
+        internal void MarkPooledSource(
+            Projectile2D sourcePrefab)
+        {
+            PoolSourcePrefab = sourcePrefab;
+        }
+
+        internal void PrepareForPoolSpawn(
+            Projectile2D sourcePrefab,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            PoolSourcePrefab = sourcePrefab;
+
+            transform.SetParent(null, false);
+            transform.SetPositionAndRotation(
+                position,
+                rotation
+            );
+
+            if (sourcePrefab)
+            {
+                transform.localScale =
+                    sourcePrefab.transform.localScale;
+            }
+
+            if (hitCollider)
+                hitCollider.enabled = true;
+
+            initialized = false;
+            behaviorTargets.Clear();
+            behaviorHits.Clear();
+            gameObject.SetActive(true);
+        }
+
+        internal void PrepareForPoolRelease()
+        {
+            initialized = false;
+            lifeRemaining = 0f;
+            behaviorElapsed = 0f;
+            behaviorTickTimer = 0f;
+            boomerangReturning = false;
+            mineArmed = false;
+            Faction = CombatFaction.Neutral;
+            OwnerPlayerId = -1;
+            Tier = 0;
+            Damage = 0f;
+            WeaponId = null;
+            Behavior = WeaponBehavior.Standard;
+            Piercing = false;
+            Parryable = false;
+            PerfectOpportunity = false;
+            behaviorTargets.Clear();
+            behaviorHits.Clear();
+
+            if (body)
+            {
+                body.linearVelocity = Vector2.zero;
+                body.angularVelocity = 0f;
+            }
+
+            gameObject.SetActive(false);
+        }
+
+        private void Despawn()
+        {
+            ProjectilePool2D.Release(this);
+        }
+
         private void Reset()
         {
             body = GetComponent<Rigidbody2D>();
@@ -123,7 +193,7 @@ namespace NovaStriker.Combat
             UpdateBehavior(dt);
 
             if (lifeRemaining <= 0f)
-                Destroy(gameObject);
+                Despawn();
         }
 
         private void UpdateBehavior(float dt)
@@ -182,7 +252,7 @@ namespace NovaStriker.Combat
 
             if (delta.sqrMagnitude <= 0.20f * 0.20f)
             {
-                Destroy(gameObject);
+                Despawn();
                 return;
             }
 
@@ -339,7 +409,7 @@ namespace NovaStriker.Combat
                     );
             }
 
-            Destroy(gameObject);
+            Despawn();
         }
 
         public bool TryCancel(
@@ -372,7 +442,7 @@ namespace NovaStriker.Combat
                 )
             );
 
-            Destroy(gameObject);
+            Despawn();
             return true;
         }
 
@@ -541,7 +611,7 @@ namespace NovaStriker.Combat
                 Behavior != WeaponBehavior.Gravity
             )
             {
-                Destroy(gameObject);
+                Despawn();
             }
         }
 
@@ -581,7 +651,7 @@ namespace NovaStriker.Combat
                     break;
 
                 default:
-                    Destroy(gameObject);
+                    Despawn();
                     break;
             }
         }
@@ -606,7 +676,7 @@ namespace NovaStriker.Combat
                     WeaponId
                 ));
 
-                Destroy(other.gameObject);
+                ProjectilePool2D.Release(other);
             }
         }
     }
