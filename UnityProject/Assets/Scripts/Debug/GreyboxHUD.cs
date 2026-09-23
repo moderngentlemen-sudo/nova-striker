@@ -62,7 +62,6 @@ namespace NovaStriker.Debugging
                 $"Grounded: {(motor && motor.Grounded)}    " +
                 $"Wall slide: {(motor && motor.IsWallSliding)}    " +
                 $"Wall: {(motor ? motor.WallDirection : 0)}\n" +
-                $"Wall-jump lock: {(motor && motor.IsWallJumpControlLocked)}    " +
                 $"Grapple travel: {(motor && motor.IsGrapplingTraversal)}\n" +
                 $"Crouch: {(motor && motor.IsCrouching)}    " +
                 $"Dash: {(motor && motor.IsDashing)} / {dashTier}\n" +
