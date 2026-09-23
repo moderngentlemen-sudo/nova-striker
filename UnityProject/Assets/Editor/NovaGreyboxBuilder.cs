@@ -726,6 +726,12 @@ namespace NovaStriker.EditorTools
             StrikerPlayerIdentity identity =
                 root.AddComponent<StrikerPlayerIdentity>();
 
+            StrikerDownedState downed =
+                root.AddComponent<StrikerDownedState>();
+
+            StrikerReviveInteractor reviveInteractor =
+                root.AddComponent<StrikerReviveInteractor>();
+
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
 
@@ -876,6 +882,11 @@ namespace NovaStriker.EditorTools
                 "identity",
                 identity
             );
+            SetObjectReference(
+                gameplay,
+                "reviveInteractor",
+                reviveInteractor
+            );
 
             SetObjectReference(
                 identity,
@@ -886,6 +897,33 @@ namespace NovaStriker.EditorTools
                 identity,
                 "combat",
                 combat
+            );
+
+            SetObjectReference(
+                downed,
+                "damageable",
+                health
+            );
+            SetObjectReference(
+                downed,
+                "motor",
+                motor
+            );
+            SetObjectReference(
+                downed,
+                "combat",
+                combat
+            );
+            SetObjectReference(
+                downed,
+                "body",
+                body
+            );
+
+            SetObjectReference(
+                reviveInteractor,
+                "identity",
+                identity
             );
 
             SetObjectReference(
