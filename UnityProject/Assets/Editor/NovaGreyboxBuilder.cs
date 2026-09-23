@@ -740,6 +740,9 @@ namespace NovaStriker.EditorTools
             StrikerReviveInteractor reviveInteractor =
                 root.AddComponent<StrikerReviveInteractor>();
 
+            StrikeSuitAbilityController suitAbilities =
+                root.AddComponent<StrikeSuitAbilityController>();
+
             NovaInputSystemAdapter input =
                 root.AddComponent<NovaInputSystemAdapter>();
 
@@ -824,6 +827,11 @@ namespace NovaStriker.EditorTools
             );
             SetObjectReference(
                 combat,
+                "suitAbilities",
+                suitAbilities
+            );
+            SetObjectReference(
+                combat,
                 "muzzleSocket",
                 muzzle.transform
             );
@@ -895,6 +903,11 @@ namespace NovaStriker.EditorTools
                 "reviveInteractor",
                 reviveInteractor
             );
+            SetObjectReference(
+                gameplay,
+                "suitAbilities",
+                suitAbilities
+            );
 
             SetObjectReference(
                 identity,
@@ -932,6 +945,48 @@ namespace NovaStriker.EditorTools
                 reviveInteractor,
                 "identity",
                 identity
+            );
+
+            SetObjectReference(
+                suitAbilities,
+                "identity",
+                identity
+            );
+            SetObjectReference(
+                suitAbilities,
+                "motor",
+                motor
+            );
+            SetObjectReference(
+                suitAbilities,
+                "combat",
+                combat
+            );
+            SetObjectReference(
+                suitAbilities,
+                "damageable",
+                health
+            );
+            SetObjectReference(
+                suitAbilities,
+                "reviveInteractor",
+                reviveInteractor
+            );
+            SetLayerMask(
+                suitAbilities,
+                "damageableMask",
+                1 << enemyLayer
+            );
+            SetLayerMask(
+                suitAbilities,
+                "projectileMask",
+                1 << enemyProjectileLayer
+            );
+            SetLayerMask(
+                suitAbilities,
+                "worldMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
             );
 
             SetObjectReference(
