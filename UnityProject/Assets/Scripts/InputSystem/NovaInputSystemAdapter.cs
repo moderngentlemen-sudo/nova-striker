@@ -111,8 +111,7 @@ namespace NovaStriker.InputSystemIntegration
 
             move = map.AddAction(
                 "Move",
-                InputActionType.Value,
-                expectedControlType: "Vector2"
+                InputActionType.Value
             );
 
             move.AddCompositeBinding("2DVector")
@@ -125,8 +124,7 @@ namespace NovaStriker.InputSystemIntegration
 
             aim = map.AddAction(
                 "Aim",
-                InputActionType.Value,
-                expectedControlType: "Vector2"
+                InputActionType.Value
             );
 
             aim.AddCompositeBinding("2DVector")
@@ -201,8 +199,7 @@ namespace NovaStriker.InputSystemIntegration
         {
             InputAction action = map.AddAction(
                 name,
-                InputActionType.Button,
-                expectedControlType: "Button"
+                InputActionType.Button
             );
 
             action.AddBinding(keyboardBinding);
