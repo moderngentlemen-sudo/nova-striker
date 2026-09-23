@@ -34,6 +34,10 @@ namespace NovaStriker.Core
         ParrySuccess,
         PerfectParry,
         DamageTaken,
+        ShieldBroken,
+        ArmorBroken,
+        GuardBroken,
+        StatusApplied,
         Defeated,
         Revived
     }
