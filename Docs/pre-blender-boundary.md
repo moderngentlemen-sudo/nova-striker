@@ -60,31 +60,40 @@ This document defines the point at which Nova Striker gameplay engineering is co
 - entitlement-driven DLC gates
 - gameplay-stat purchases remain explicitly separable from cosmetic/content commerce
 
+### Production-facing presentation contract
+
+- `GameplayPresentationContract` version `1.0.0-preblender` freezes gameplay-facing Animator parameter names
+- generic production rig/socket names are defined centrally for camera focus, head/chest/back, hands, weapon/muzzle, ability origin, and feet
+- every `GameplayCueType` receives stable gameplay/VFX/audio event-id namespaces
+- semantic haptic routes are defined for movement, impact, counter, ability, Team Sync, boss, damage/break, defeat, and revive events
+- production assets consume these identifiers; they do not own hit timing, damage, movement authority, cooldowns, or encounter progression
+
 ## Validation state
 
 The branch is **code-integrated, not Unity-validated**.
 
 The earlier `dev/unity-gameplay` baseline was imported and Play Mode tested in Unity 6.6, including the corrected wall-slide behavior. The much larger `dev/gameplay-complete` branch still requires a fresh Unity 6.6 compile, generated Mechanics Lab rebuild, and Play Mode validation pass.
 
-Two editor validation layers are now available:
+Three editor validation layers are now available:
 
 - `Nova Striker/Validation/Run Gameplay Preflight` for scene/configuration checks
 - `Nova Striker/Validation/Run Structural Batch Validation` for scene-independent campaign, enemy, Strike Team, and skill/perk contract checks
+- `Nova Striker/Validation/Run Asset + Presentation Contract Validation` for weapon/Guardian/generated-asset integrity, commerce definitions, presentation identifiers, gameplay-cue routing, and scalability-tier contracts
 
-The structural validator can also be invoked with `-executeMethod NovaStriker.EditorTools.GameplayBatchValidator.RunForCommandLine` in a Unity batch-mode environment and exits non-zero on structural errors.
+The structural validator can also be invoked with `-executeMethod NovaStriker.EditorTools.GameplayBatchValidator.RunForCommandLine` in a Unity batch-mode environment and exits non-zero on structural errors. The asset/presentation validator exposes the equivalent `NovaStriker.EditorTools.GameplayAssetContractValidator.RunForCommandLine` entry point. Generated greybox assets that have not yet been rebuilt are reported as warnings rather than source-only failures.
 
 ## Remaining meaningful pre-Blender work
 
 These tasks do **not** require production Blender assets and should be completed or explicitly waived before declaring the gameplay branch fully validated:
 
 1. Fresh Unity 6.6 compile/error reconciliation for the current branch.
-2. Rebuild the generated Mechanics Lab and run both validation commands.
+2. Rebuild the generated Mechanics Lab and run all three validation commands.
 3. Play Mode smoke test with one, two, three, and four local players.
 4. Exercise controller disconnect/reconnect and join/leave behavior.
 5. Exercise all twelve weapons, six Guardian abilities, six skill/perk effects, named enemies, mini-bosses, Guardians, pickups, challenge types, setpieces, party wipe, checkpoint retry, save/load, entitlement restore, and DLC gates.
 6. Run profiler/allocation captures on representative low/high density encounters and tune pool capacities or presentation budgets if needed.
 7. Connect native Steam/Xbox/PlayStation/Nintendo/mobile providers only where their SDKs and credentials are available; no gameplay code should depend directly on those SDKs.
-8. Freeze gameplay-facing presentation sockets, Animator parameter names, VFX/audio cue ids, and haptic event contracts after Play Mode validation.
+8. Validate production Animator Controllers, VFX/audio event tables, and haptic adapters against the frozen `GameplayPresentationContract`. The identifier/socket design itself is now code-complete; production asset implementation is not.
 
 ## Blender / production-asset dependency boundary
 
