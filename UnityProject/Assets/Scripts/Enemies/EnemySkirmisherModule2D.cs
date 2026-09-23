@@ -42,8 +42,9 @@ namespace NovaStriker.Enemies
 
         public override void TickEngage(EnemyBrain2D brain, float dt)
         {
-            float distance = brain.TargetDistance;
-            Vector2 direction = brain.DirectionToTarget;
+            float distance = brain.TacticalTargetDistance;
+            float targetDistance = brain.TargetDistance;
+            Vector2 direction = brain.DirectionToTacticalTarget;
 
             if (distance > preferredMaxRange)
             {
@@ -70,7 +71,7 @@ namespace NovaStriker.Enemies
 
             if (
                 fireTimer > 0f ||
-                distance > fireRange ||
+                targetDistance > fireRange ||
                 !brain.HasClearLineToTarget()
             )
             {
