@@ -54,9 +54,12 @@ namespace NovaStriker.Player
 
         private bool activationPressed;
         private float cooldown;
+        private float externalCooldownRecoveryMultiplier = 1f;
 
         public float CooldownRemaining => cooldown;
         public bool Ready => cooldown <= 0f;
+        public float CooldownRecoveryMultiplier =>
+            externalCooldownRecoveryMultiplier;
 
         private void Reset()
         {
@@ -92,12 +95,21 @@ namespace NovaStriker.Player
                 input.GuardianActivatePressed;
         }
 
+        public void SetCooldownRecoveryMultiplier(
+            float value)
+        {
+            externalCooldownRecoveryMultiplier =
+                Mathf.Clamp(value, 0.25f, 3f);
+        }
+
         private void FixedUpdate()
         {
             cooldown =
                 Mathf.Max(
                     0f,
-                    cooldown - Time.fixedDeltaTime
+                    cooldown -
+                    Time.fixedDeltaTime *
+                    externalCooldownRecoveryMultiplier
                 );
 
             if (!session)
