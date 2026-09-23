@@ -29,6 +29,7 @@ namespace NovaStriker.Core
         CounterGrappleTraversal,
         CounterDodge,
         CounterThrow,
+        TeamSyncStarted,
         ParryStarted,
         ParrySuccess,
         PerfectParry,
