@@ -140,7 +140,9 @@ namespace NovaStriker.EditorTools
             );
 
             GameObject sessionRoot =
-                CreateSessionBootstrap();
+                CreateSessionBootstrap(
+                    enemyLayer
+                );
 
             StrikeTeamSession teamSession =
                 sessionRoot.GetComponent<StrikeTeamSession>();
@@ -1274,14 +1276,32 @@ namespace NovaStriker.EditorTools
             );
         }
 
-        private static GameObject CreateSessionBootstrap()
+        private static GameObject CreateSessionBootstrap(
+            int enemyLayer)
         {
             GameObject root =
                 new("Greybox_Session");
 
             root.AddComponent<GreyboxSessionBootstrap>();
-            root.AddComponent<StrikeTeamSession>();
+
+            StrikeTeamSession session =
+                root.AddComponent<StrikeTeamSession>();
+
             root.AddComponent<LocalStrikeTeamInputCoordinator>();
+
+            TeamSyncResolver syncResolver =
+                root.AddComponent<TeamSyncResolver>();
+
+            SetObjectReference(
+                syncResolver,
+                "session",
+                session
+            );
+            SetLayerMask(
+                syncResolver,
+                "damageableMask",
+                1 << enemyLayer
+            );
 
             return root;
         }
