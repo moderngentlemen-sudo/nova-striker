@@ -1,0 +1,137 @@
+# Nova Striker Gameplay Migration Plan
+
+## Goal
+
+Rebuild Nova Striker's gameplay in Unity with presentation decoupled from mechanics. The HTML preview remains the behavioral reference while Unity becomes the long-term runtime and graphics platform.
+
+## Milestone 1 — Nova greybox controller
+
+Implementation status on `dev/unity-gameplay`:
+
+1. ✅ Run with acceleration/deceleration.
+2. ✅ Independent movement, facing, and 360-degree aim model.
+3. ✅ Jump and one air jump.
+4. ✅ Crouch and one-way platform drop.
+5. ✅ Wall contact, slide, wall jump, and regrab lockout.
+6. ✅ Dash charge:
+   - Quick
+   - Burst
+   - Velocity Break
+7. ✅ Directional air dash.
+8. ✅ Powerslide from crouch + dash.
+9. ✅ Ground and aerial melee state/hit logic.
+10. ✅ Character-specific Circle Counter:
+   - Nova distance Deflect
+   - Echo distance Grapple:
+     - Circle without Up pulls an enemy from long range (current greybox: 14.0 units)
+     - Up / Up-Left / Up-Right + Circle attaches to an eligible solid surface above (current greybox: 8.5 units)
+     - GrapplePoint2D remains optional
+   - shared close Dodge + Counter
+   - advancing Throw
+   - Nova perfect projectile deflection.
+11. ✅ Charged fire tiers and initial projectile patterns.
+
+Current validation status:
+
+- ✅ Unity 6.6 compile/import
+- ✅ greybox scene assembly and Play Mode launch
+- ✅ Input System adapter compiles
+- ✅ wall contact / wall-slide fix user-confirmed
+- ⏳ wall-jump feel tuning pass
+- ⏳ dash / Powerslide tier validation
+- ⏳ Nova/Echo Counter and Echo surface-grapple validation
+- ⏳ physical controller testing
+- ⏳ final tuning against the browser reference
+
+## Presentation handoff — in progress
+
+- ✅ separate Nova and Echo visual roots on the generated player prefab
+- ✅ runtime character visual switching
+- ✅ gameplay-cue → optional Animator trigger bridge
+- ✅ continuous movement/combat Animator parameter bridge
+- ✅ presentation remains non-authoritative for physics and combat timing
+- ⏳ production Nova model / rig / Animator
+- ⏳ production Echo model / rig / Animator
+- ⏳ authored animation clips and production VFX
+
+## Milestone 2 — Combat core
+
+- projectile ownership and cancellation
+- damage / stagger / launch / knockback
+- charge tiers
+- parry reflection
+- enemy armor / shields
+- Break gauge
+- Style meter
+- hit-stop and gameplay-facing events for VFX
+
+## Milestone 3 — Arsenal
+
+Move the 12 weapons to ScriptableObjects. Gameplay code should reference data assets rather than hard-coded switch statements wherever practical.
+
+## Milestone 4 — Enemy framework
+
+Phase 3 is now **in progress** on `dev/unity-gameplay`.
+
+Implemented:
+
+- `EnemyBrain2D` common runtime shell
+- receiver-side actor identity for correct damage/defeat presentation cues
+- role-module architecture
+- Anchor baseline module
+- Skirmisher active module
+- Flanker active module with reposition bursts
+- Artillery active module with long-range salvos
+- Aerial active module with HoverBob and Orbit motion families
+- source-derived `EnemyArchetypeCatalog` covering all 12 browser enemy archetypes
+- target detection and World/OneWay line-of-sight checks
+- representative Skirmisher, Flanker, Artillery, and two Aerial-motion test enemies in the mechanics lab
+
+Role vocabulary:
+
+- Anchor
+- Artillery
+- Flanker
+- Skirmisher
+- Aerial
+
+Still required:
+
+- archetype-specific reactions/defenses beyond the shared role baseline
+- encounter/spawn ownership
+- stagger/armor/Break integration
+- runtime named-archetype prefabs/data instantiated from the source-derived mapping
+- production art/animation integration
+- Play Mode and controller validation of the representative enemy roles
+
+The current role-test objects are generic framework-validation enemies, not claims that named browser archetypes have been fully ported. The 12-name role mapping is now source-derived from the preserved v0.10 browser reference; named enemies remain reference-only until their specific reactions, defenses, and movement details are ported and tested.
+
+## Milestone 5 — Guardians
+
+Port all six Guardian behavior trees separately:
+
+- Aegis
+- Cinder
+- Mycel
+- Rime
+- Tempest
+- Null
+
+Each Guardian keeps its bespoke weak-point condition and multi-phase behavior.
+
+## Milestone 6 — Co-op
+
+- independent Player 1 / Player 2 input
+- drop-in Echo
+- revive
+- independent loadouts
+- Synergy meter and team attacks
+
+## Architecture rules
+
+- Avoid graphics decisions in movement/combat code.
+- Emit gameplay events for animation, VFX, haptics, and audio.
+- Prefer ScriptableObjects for tunable content.
+- Preserve fixed gameplay timing independent of frame rate.
+- Keep input routing per-player; never use one global active-controller state.
+- Build mechanics in greybox before importing production art.
