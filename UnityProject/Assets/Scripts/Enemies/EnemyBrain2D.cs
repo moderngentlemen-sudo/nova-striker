@@ -50,6 +50,7 @@ namespace NovaStriker.Enemies
 
         private readonly List<EnemyRoleModule2D> modules = new();
         private EnemyRoleModule2D activeModule;
+        private Rigidbody2D targetBody;
         private float retargetTimer;
         private float reactionOverrideTimer;
         private Vector2 reactionOverrideVelocity;
@@ -116,21 +117,10 @@ namespace NovaStriker.Enemies
                 )
                 : float.PositiveInfinity;
 
-        public Vector2 TargetVelocity
-        {
-            get
-            {
-                if (!target)
-                    return Vector2.zero;
-
-                Rigidbody2D targetBody =
-                    target.GetComponent<Rigidbody2D>();
-
-                return targetBody
-                    ? targetBody.linearVelocity
-                    : Vector2.zero;
-            }
-        }
+        public Vector2 TargetVelocity =>
+            targetBody
+                ? targetBody.linearVelocity
+                : Vector2.zero;
 
         private void Reset()
         {
@@ -273,10 +263,13 @@ namespace NovaStriker.Enemies
             )
             {
                 target = nearest.transform;
+                targetBody =
+                    nearest.GetComponent<Rigidbody2D>();
             }
             else if (targetInvalid)
             {
                 target = null;
+                targetBody = null;
             }
 
             retargetTimer =
@@ -309,6 +302,7 @@ namespace NovaStriker.Enemies
         {
             State = EnemyBrainState.Idle;
             target = null;
+            targetBody = null;
             retargetTimer = 0f;
             reactionOverrideTimer = 0f;
             reactionOverrideVelocity = Vector2.zero;
@@ -326,6 +320,10 @@ namespace NovaStriker.Enemies
         public void SetTarget(Transform value)
         {
             target = value;
+            targetBody =
+                target
+                    ? target.GetComponent<Rigidbody2D>()
+                    : null;
         }
 
         public void SetRole(EnemyRole value)
