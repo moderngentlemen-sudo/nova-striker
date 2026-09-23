@@ -201,6 +201,7 @@ namespace NovaStriker.InputSystemIntegration
 
             state.WeaponCyclePressed |= keyboard.qKey.wasPressedThisFrame;
             state.GuardianCyclePressed |= keyboard.rKey.wasPressedThisFrame;
+            state.GuardianActivatePressed |= keyboard.eKey.wasPressedThisFrame;
             state.SyncPressed |= keyboard.gKey.wasPressedThisFrame;
         }
 
@@ -274,6 +275,9 @@ namespace NovaStriker.InputSystemIntegration
             state.GuardianCyclePressed |=
                 gamepad.leftStickButton.wasPressedThisFrame ||
                 gamepad.dpad.up.wasPressedThisFrame;
+
+            state.GuardianActivatePressed |=
+                gamepad.dpad.down.wasPressedThisFrame;
 
             state.SyncPressed |=
                 gamepad.rightStickButton.wasPressedThisFrame;
