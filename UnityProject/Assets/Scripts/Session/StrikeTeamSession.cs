@@ -50,6 +50,8 @@ namespace NovaStriker.Session
         public event Action<float, float> SynergyChanged;
         public event Action<TeamSyncTier, int> TeamSyncActivated;
 
+        public int LastSyncParticipantMask { get; private set; }
+
         public float Synergy => synergy;
         public float MaxSynergy => maxSynergy;
         public float SynergyNormalized =>
@@ -292,6 +294,19 @@ namespace NovaStriker.Session
             int participants =
                 CountRequestedSyncPlayers();
 
+            int participantMask = 0;
+
+            for (int i = 0; i < syncRequested.Length; i++)
+            {
+                if (
+                    syncRequested[i] &&
+                    IsCombatReady(players[i])
+                )
+                {
+                    participantMask |= 1 << i;
+                }
+            }
+
             Array.Clear(
                 syncRequested,
                 0,
@@ -345,6 +360,9 @@ namespace NovaStriker.Session
                     }
                 )
             );
+
+            LastSyncParticipantMask =
+                participantMask;
 
             TeamSyncActivated?.Invoke(
                 tier,
