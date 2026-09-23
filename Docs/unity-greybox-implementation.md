@@ -28,7 +28,6 @@ The branch now contains:
   - jump + one air jump
   - wall probe / wall slide / wall jump
   - wall regrab lockout
-  - 0.10 s wall-jump steering lock so the launch is not immediately cancelled by held wall input
   - charged multidirectional dash
   - Quick / Burst / Velocity Break tiers
   - Powerslide with tier-specific speed and duration
