@@ -37,6 +37,7 @@ namespace NovaStriker.Core
         GuardianAbilityResolved,
         TeamSyncStarted,
         TeamSyncResolved,
+        AssistChainAdvanced,
         StyleRankChanged,
         EncounterStarted,
         EncounterWaveStarted,
