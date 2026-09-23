@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace NovaStriker.Commerce
 {
-    public enum CosmeticSlot
-    {
-        Suit = 0,
-        Helmet = 1,
-        Weapon = 2,
-        Trail = 3
-    }
-
     /// <summary>
     /// Per-player cosmetic selection backed by save data and storefront-neutral
     /// entitlements. Cosmetic IDs are presentation data only and never alter
