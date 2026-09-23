@@ -134,7 +134,9 @@ This branch is the full pre-Blender gameplay-development run. The intent is to e
 - versioned `GameplayPresentationContract` now freezes production-facing Animator parameter names, generic rig/socket names, gameplay event IDs, VFX/audio IDs, and semantic haptic routes without transferring timing authority to production assets
 - Asset + Presentation Contract validator checks the 12-weapon/6-Guardian contracts, generated definitions when present, commerce integrity, presentation identifier uniqueness, gameplay-cue routing, and the four scalability tiers
 - generated greybox assets are warnings rather than source-only validation failures when they have not yet been rebuilt
-- unified interactive `PreBlenderValidationSuite` can rebuild the Mechanics Lab and invoke all three current validation layers in deterministic order without implying Play Mode success
+- unified `PreBlenderValidationSuite` can rebuild the Mechanics Lab and invoke all three current validation layers in deterministic order
+- the unified suite now exposes aggregate command-line pass/fail entry points, returns a non-zero process exit on source-validation failure, and writes a machine-readable report under `Library/NovaStrikerValidation`
+- aggregate source validation explicitly leaves Play Mode and production-asset validation unresolved rather than conflating code health with runtime QA
 - Mechanics Lab Editor/Development Build sessions auto-install `GameplayPerformanceProbe`, which exposes rolling frame-time and pool triage data while keeping the Unity Profiler authoritative
 - `Docs/pre-blender-validation-runbook.md` defines the compile, 1–4 player, character, content, campaign, save/commerce, scalability, and frozen-presentation-contract validation matrix
 
@@ -149,7 +151,7 @@ The expanded `dev/gameplay-complete` branch is **code-integrated but not yet fre
 The branch is now close to the pre-Blender boundary. The remaining material work is primarily validation, profiling, integration verification, and tuning rather than missing gameplay architecture:
 
 - fresh Unity 6.6 compile/error reconciliation
-- regenerate the Mechanics Lab and run all three validation layers, preferably through the unified pre-Blender validation command
+- regenerate the Mechanics Lab and run the aggregate pre-Blender validation suite, ideally through its command-line pass/fail entry point so the report is retained
 - one/two/three/four-player Play Mode smoke passes
 - join/leave and controller disconnect/reconnect validation
 - end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
