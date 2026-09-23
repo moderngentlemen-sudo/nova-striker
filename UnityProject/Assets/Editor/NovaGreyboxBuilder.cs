@@ -1,5 +1,6 @@
 using System.IO;
 using NovaStriker.CameraSystem;
+using NovaStriker.Campaign;
 using NovaStriker.Combat;
 using NovaStriker.Commerce;
 using NovaStriker.Data;
@@ -1404,6 +1405,7 @@ namespace NovaStriker.EditorTools
                 new("Greybox_PersistentServices");
 
             root.AddComponent<RuntimeScalabilityManager>();
+            root.AddComponent<PlatformRuntimeService>();
 
             SaveGameService save =
                 root.AddComponent<SaveGameService>();
@@ -1452,6 +1454,17 @@ namespace NovaStriker.EditorTools
             TeamSyncResolver syncResolver =
                 root.AddComponent<TeamSyncResolver>();
 
+            CoopAssistChainService assistChains =
+                root.AddComponent<CoopAssistChainService>();
+
+            SkillPerkService perks =
+                root.AddComponent<SkillPerkService>();
+
+            CampaignRetryController2D retry =
+                root.AddComponent<CampaignRetryController2D>();
+
+            root.AddComponent<GameplayDebugSpawner2D>();
+
             WeaponMasteryService mastery =
                 root.AddComponent<WeaponMasteryService>();
 
@@ -1463,6 +1476,21 @@ namespace NovaStriker.EditorTools
 
             SetObjectReference(
                 mastery,
+                "session",
+                session
+            );
+            SetObjectReference(
+                assistChains,
+                "session",
+                session
+            );
+            SetObjectReference(
+                perks,
+                "session",
+                session
+            );
+            SetObjectReference(
+                retry,
                 "session",
                 session
             );
