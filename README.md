@@ -1,8 +1,8 @@
-# Nova Striker — Unity Gameplay Branch
+# Nova Striker — Gameplay Complete Branch
 
-Branch: `dev/unity-gameplay`
+Branch: `dev/gameplay-complete`
 
-This branch is dedicated to migrating Nova Striker's gameplay systems into Unity while preserving the existing HTML build as a playable reference.
+This branch is the full pre-production-art gameplay run: complete as much of Nova Striker's one-to-four-player mechanics, combat, enemies, bosses, campaign, progression, commerce, and platform-scalability architecture as possible before Blender-authored production assets become the limiting dependency. The HTML build remains a behavioral reference rather than a ceiling.
 
 ## Preserved reference
 
@@ -45,3 +45,5 @@ The first milestone remains a greybox gameplay room with Nova's complete movemen
 - `UnityProject/Assets/Art/README.md` — Unity-facing art organization
 - `Docs/asset-production-manifest.md` — human-readable asset pipeline and current status
 - `Production/asset-manifest.json` — machine-readable production source of truth
+
+- `Docs/gameplay-complete-run.md` — comprehensive status and remaining pre-Blender scope
