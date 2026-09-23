@@ -101,7 +101,7 @@ namespace NovaStriker.Enemies
             fireTimer = Mathf.Max(0f, fireTimer - dt);
 
             Vector2 target =
-                brain.TargetPosition +
+                brain.TacticalTargetPosition +
                 new Vector2(
                     flankSide * horizontalOffset,
                     verticalOffset
