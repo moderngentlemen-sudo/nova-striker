@@ -26,6 +26,21 @@ namespace NovaStriker.Campaign
 
         private bool consumed;
 
+        public void Configure(
+            ActObjectiveController2D target,
+            ActObjectiveTriggerRole triggerRole,
+            string id = null,
+            bool useOnce = true)
+        {
+            objective = target;
+            role = triggerRole;
+            nodeId =
+                string.IsNullOrWhiteSpace(id)
+                    ? gameObject.name
+                    : id;
+            oneShot = useOnce;
+        }
+
         private void Reset()
         {
             Collider2D collider =
