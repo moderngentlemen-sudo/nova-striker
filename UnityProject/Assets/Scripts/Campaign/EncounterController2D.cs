@@ -114,7 +114,7 @@ namespace NovaStriker.Campaign
             session = StrikeTeamSession.Active;
 
             if (!teamCamera)
-                teamCamera = FindFirstObjectByType<StrikeTeamCamera2D>();
+                teamCamera = FindAnyObjectByType<StrikeTeamCamera2D>();
         }
 
         private void OnDisable()
@@ -161,7 +161,7 @@ namespace NovaStriker.Campaign
             if (lockCamera)
             {
                 if (!teamCamera)
-                    teamCamera = FindFirstObjectByType<StrikeTeamCamera2D>();
+                    teamCamera = FindAnyObjectByType<StrikeTeamCamera2D>();
 
                 teamCamera?.SetArenaBounds(cameraArenaBounds);
             }
