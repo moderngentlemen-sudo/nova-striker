@@ -28,8 +28,15 @@ namespace NovaStriker.Enemies
         [SerializeField] private bool parryable = true;
 
         private float fireTimer;
+        private EnemyArchetypeController2D archetypeController;
 
         public override EnemyRole Role => EnemyRole.Artillery;
+
+        private void Awake()
+        {
+            archetypeController =
+                GetComponent<EnemyArchetypeController2D>();
+        }
 
         public override void OnRoleEnter(EnemyBrain2D brain)
         {
@@ -83,7 +90,7 @@ namespace NovaStriker.Enemies
             }
 
             FireSalvo(brain);
-            fireTimer = fireInterval;
+            fireTimer = EffectiveFireInterval();
         }
 
         private void FireSalvo(EnemyBrain2D brain)
@@ -106,8 +113,50 @@ namespace NovaStriker.Enemies
                     baseDirection.x
                 ) * Mathf.Rad2Deg;
 
+            if (!archetypeController)
+            {
+                archetypeController =
+                    GetComponent<EnemyArchetypeController2D>();
+            }
+
+            bool sniper =
+                archetypeController &&
+                archetypeController.Archetype ==
+                EnemyArchetype.Sniper;
+
+            bool turret =
+                archetypeController &&
+                archetypeController.Archetype ==
+                EnemyArchetype.Turret;
+
             int count =
-                Mathf.Max(1, salvoCount);
+                sniper || turret
+                    ? 1
+                    : Mathf.Max(1, salvoCount);
+
+            float effectiveSpeed =
+                sniper
+                    ? projectileSpeed * 1.35f
+                    : projectileSpeed;
+
+            float effectiveDamage =
+                sniper
+                    ? projectileDamage * 1.15f
+                    : projectileDamage;
+
+            bool perfectOpportunity =
+                sniper ||
+                (
+                    archetypeController &&
+                    archetypeController.Profile.PerfectOpportunityShots
+                );
+
+            string weaponId =
+                sniper
+                    ? "enemy-sniper-perfect"
+                    : turret
+                        ? "enemy-turret-shot"
+                        : "enemy-artillery-salvo";
 
             for (int i = 0; i < count; i++)
             {
@@ -141,17 +190,45 @@ namespace NovaStriker.Enemies
                 projectile.Initialize(
                     -1,
                     CombatFaction.Enemy,
-                    "enemy-artillery-salvo",
+                    weaponId,
                     WeaponBehavior.Standard,
                     direction,
-                    projectileSpeed,
+                    effectiveSpeed,
                     0,
-                    projectileDamage,
+                    effectiveDamage,
                     false,
                     parryable,
-                    false
+                    perfectOpportunity
                 );
             }
+        }
+
+        private float EffectiveFireInterval()
+        {
+            if (!archetypeController)
+            {
+                archetypeController =
+                    GetComponent<EnemyArchetypeController2D>();
+            }
+
+            if (!archetypeController)
+                return fireInterval;
+
+            EnemyArchetype archetype =
+                archetypeController.Archetype;
+
+            if (
+                archetype == EnemyArchetype.Sniper ||
+                archetype == EnemyArchetype.Turret
+            )
+            {
+                return Mathf.Max(
+                    0.25f,
+                    archetypeController.Profile.FireInterval
+                );
+            }
+
+            return fireInterval;
         }
 
         private static float SafeHorizontalSign(float value)
