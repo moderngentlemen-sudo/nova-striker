@@ -1,5 +1,8 @@
 using NovaStriker.Core;
+using System.Collections.Generic;
 using NovaStriker.Data;
+using NovaStriker.Player;
+using NovaStriker.Session;
 using UnityEngine;
 
 namespace NovaStriker.Combat
@@ -16,7 +19,14 @@ namespace NovaStriker.Combat
         [SerializeField, Min(0.05f)] private float lifetime = 3f;
 
         private float lifeRemaining;
+        private float behaviorElapsed;
+        private float behaviorTickTimer;
         private bool initialized;
+        private bool boomerangReturning;
+        private bool mineArmed;
+
+        private readonly List<Collider2D> behaviorHits = new(24);
+        private ContactFilter2D enemyFilter;
 
         public CombatFaction Faction { get; private set; }
         public int OwnerPlayerId { get; private set; } = -1;
@@ -47,6 +57,17 @@ namespace NovaStriker.Combat
                 hitCollider = GetComponent<Collider2D>();
 
             lifeRemaining = lifetime;
+
+            enemyFilter = new ContactFilter2D
+            {
+                useTriggers = true
+            };
+
+            int enemyLayer =
+                LayerMask.NameToLayer("Enemy");
+
+            if (enemyLayer >= 0)
+                enemyFilter.SetLayerMask(1 << enemyLayer);
         }
 
         public void Initialize(
@@ -79,6 +100,10 @@ namespace NovaStriker.Combat
 
             body.linearVelocity = normalized * Mathf.Max(0f, speed);
             lifeRemaining = lifetime;
+            behaviorElapsed = 0f;
+            behaviorTickTimer = 0f;
+            boomerangReturning = false;
+            mineArmed = false;
             initialized = true;
         }
 
@@ -87,10 +112,233 @@ namespace NovaStriker.Combat
             if (!initialized)
                 return;
 
-            lifeRemaining -= Time.fixedDeltaTime;
+            float dt = Time.fixedDeltaTime;
+
+            lifeRemaining -= dt;
+            behaviorElapsed += dt;
+            behaviorTickTimer =
+                Mathf.Max(0f, behaviorTickTimer - dt);
+
+            UpdateBehavior(dt);
 
             if (lifeRemaining <= 0f)
                 Destroy(gameObject);
+        }
+
+        private void UpdateBehavior(float dt)
+        {
+            switch (Behavior)
+            {
+                case WeaponBehavior.Boomerang:
+                    UpdateBoomerang();
+                    break;
+
+                case WeaponBehavior.Gravity:
+                    UpdateGravityWell();
+                    break;
+
+                case WeaponBehavior.Mine:
+                    UpdateMine();
+                    break;
+            }
+        }
+
+        private void UpdateBoomerang()
+        {
+            if (!body)
+                return;
+
+            if (
+                !boomerangReturning &&
+                behaviorElapsed >= 0.38f
+            )
+            {
+                boomerangReturning = true;
+            }
+
+            if (!boomerangReturning)
+                return;
+
+            StrikeTeamSession session =
+                StrikeTeamSession.Active;
+
+            StrikerPlayerIdentity owner =
+                session
+                    ? session.GetPlayerByActorId(OwnerPlayerId)
+                    : null;
+
+            if (!owner)
+            {
+                body.linearVelocity =
+                    -body.linearVelocity;
+                boomerangReturning = false;
+                return;
+            }
+
+            Vector2 delta =
+                (Vector2)owner.transform.position -
+                body.position;
+
+            if (delta.sqrMagnitude <= 0.20f * 0.20f)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            float speed =
+                Mathf.Max(
+                    0.1f,
+                    body.linearVelocity.magnitude
+                );
+
+            Vector2 desired =
+                delta.normalized * speed;
+
+            body.linearVelocity =
+                Vector2.Lerp(
+                    body.linearVelocity,
+                    desired,
+                    0.24f
+                );
+        }
+
+        private void UpdateGravityWell()
+        {
+            if (!body)
+                return;
+
+            if (behaviorElapsed < 0.28f)
+            {
+                body.linearVelocity *= 0.92f;
+                return;
+            }
+
+            body.linearVelocity = Vector2.zero;
+
+            if (behaviorTickTimer > 0f)
+                return;
+
+            behaviorTickTimer = 0.12f;
+
+            float radius =
+                Mathf.Max(
+                    0.45f,
+                    transform.lossyScale.x * 1.55f
+                );
+
+            behaviorHits.Clear();
+
+            int count = Physics2D.OverlapCircle(
+                transform.position,
+                radius,
+                enemyFilter,
+                behaviorHits
+            );
+
+            for (int i = 0; i < count; i++)
+            {
+                Damageable2D target =
+                    behaviorHits[i].GetComponentInParent<Damageable2D>();
+
+                if (
+                    !target ||
+                    target.Faction != CombatFaction.Enemy ||
+                    target.IsDefeated
+                )
+                {
+                    continue;
+                }
+
+                Vector2 delta =
+                    (Vector2)transform.position -
+                    (Vector2)target.transform.position;
+
+                if (delta.sqrMagnitude <= 0.001f)
+                    continue;
+
+                target.AddExternalVelocity(
+                    delta.normalized *
+                    (2.0f + Tier * 0.75f)
+                );
+
+                target
+                    .GetComponent<CombatState2D>()
+                    ?.ApplyVulnerable(0.35f);
+            }
+        }
+
+        private void UpdateMine()
+        {
+            if (!body)
+                return;
+
+            if (!mineArmed && behaviorElapsed >= 0.22f)
+            {
+                mineArmed = true;
+                body.linearVelocity = Vector2.zero;
+            }
+        }
+
+        private void ExplodeMine()
+        {
+            float radius =
+                Mathf.Max(
+                    0.55f,
+                    transform.lossyScale.x * 1.65f
+                );
+
+            behaviorHits.Clear();
+
+            int count = Physics2D.OverlapCircle(
+                transform.position,
+                radius,
+                enemyFilter,
+                behaviorHits
+            );
+
+            HashSet<Damageable2D> hitTargets = new();
+
+            for (int i = 0; i < count; i++)
+            {
+                Damageable2D target =
+                    behaviorHits[i].GetComponentInParent<Damageable2D>();
+
+                if (
+                    !target ||
+                    target.Faction != CombatFaction.Enemy ||
+                    !hitTargets.Add(target)
+                )
+                {
+                    continue;
+                }
+
+                Vector2 direction =
+                    (
+                        (Vector2)target.transform.position -
+                        (Vector2)transform.position
+                    ).normalized;
+
+                target.ApplyDamage(
+                    new DamagePacket(
+                        Damage,
+                        direction * (2.5f + Tier),
+                        transform.position,
+                        Faction,
+                        OwnerPlayerId,
+                        Tier,
+                        WeaponId
+                    )
+                );
+
+                target
+                    .GetComponent<CombatState2D>()
+                    ?.ApplyWeaponStatus(
+                        WeaponId,
+                        Tier
+                    );
+            }
+
+            Destroy(gameObject);
         }
 
         public bool TryCancel(
@@ -210,6 +458,16 @@ namespace NovaStriker.Combat
                 Tier >= 2 ? 0.6f * Tier : 0f
             );
 
+            if (
+                Behavior == WeaponBehavior.Mine &&
+                mineArmed &&
+                Faction == CombatFaction.Player
+            )
+            {
+                ExplodeMine();
+                return;
+            }
+
             bool applied = damageable.ApplyDamage(new DamagePacket(
                 Damage,
                 knockback,
@@ -231,8 +489,15 @@ namespace NovaStriker.Combat
                 );
             }
 
-            if (applied && !Piercing)
+            if (
+                applied &&
+                !Piercing &&
+                Behavior != WeaponBehavior.Boomerang &&
+                Behavior != WeaponBehavior.Gravity
+            )
+            {
                 Destroy(gameObject);
+            }
         }
 
         private void HandleProjectileCollision(Projectile2D other)
