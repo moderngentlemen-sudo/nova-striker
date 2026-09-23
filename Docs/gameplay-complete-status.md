@@ -81,6 +81,10 @@ This branch is the full pre-Blender gameplay-development run. The intent is to e
 
 - six sectors / eighteen-act gameplay catalog
 - authored scalable combat compositions for all eighteen acts
+- eighteen-act level-variety contract covering topology, traversal emphasis, objective style, route choice, hazard rhythm, and climax identity
+- modular scene variation controller keyed by stable level-module tags
+- reusable art-independent objective authority for encounter-clear, advance, hold-zone, node, pursuit, survival, protected-asset, and multi-front objectives
+- solo-safe objective triggers: co-op teams can split/parallelize without making simultaneous multiplayer mandatory
 - sector hazards
 - setpiece runtime for Train Rush, Furnace Surge, Vine Bridge, Ice Collapse, Lightning Chase, Null Warp
 - scalable one-to-four-player encounter waves
@@ -144,7 +148,7 @@ This branch is the full pre-Blender gameplay-development run. The intent is to e
 
 The earlier `dev/unity-gameplay` baseline was imported/compiled in Unity 6.6 and received user Play Mode validation for multiple core mechanics, including the corrected wall slide.
 
-The expanded `dev/gameplay-complete` branch is **code-integrated but not yet freshly Unity-validated**. No code-complete claim in this branch should be interpreted as a successful Unity 6.6 compile, Play Mode QA pass, profiler pass, or platform certification result.
+The expanded `dev/gameplay-complete` branch has now reached an **initial Unity 6000.6.2f1 compile and Play Mode milestone** after resolving the first live editor compatibility issues, and the user has confirmed a playable Mechanics Lab build. It is not yet comprehensively Unity-validated: the aggregate validator, full 1–4 player matrix, content coverage, persistence/commerce checks, level-variety scene realization, and profiler pass still remain.
 
 ## Remaining meaningful pre-Blender work
 
@@ -155,6 +159,7 @@ The branch is now close to the pre-Blender boundary. The remaining material work
 - one/two/three/four-player Play Mode smoke passes
 - join/leave and controller disconnect/reconnect validation
 - end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
+- greybox realization and Play Mode validation of the 18-act level-variety matrix, including solo-safe route alternatives and optional co-op pair/team splits
 - representative profiler/allocation captures and pool/budget tuning, using `GameplayPerformanceProbe` only as a triage aid
 - instantiate production Animator/VFX/audio/haptic assets against the frozen presentation contract after gameplay validation; identifier design itself is no longer an open gameplay task
 - native provider adapters only where Steam/Xbox/PlayStation/Nintendo/mobile SDK access and credentials permit
