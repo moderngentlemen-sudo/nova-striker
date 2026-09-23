@@ -93,6 +93,40 @@ namespace NovaStriker.Combat
                 Destroy(gameObject);
         }
 
+        public bool TryCancel(
+            CombatFaction cancellingFaction,
+            int actorId,
+            string sourceId)
+        {
+            if (!initialized)
+                return false;
+
+            if (
+                cancellingFaction != CombatFaction.Neutral &&
+                Faction == cancellingFaction
+            )
+            {
+                return false;
+            }
+
+            GameplayEventHub.Raise(
+                new GameplayCue(
+                    GameplayCueType.ProjectileCancelled,
+                    actorId,
+                    transform.position,
+                    Velocity.sqrMagnitude > 0.0001f
+                        ? Velocity.normalized
+                        : Vector2.zero,
+                    Tier,
+                    Damage,
+                    sourceId
+                )
+            );
+
+            Destroy(gameObject);
+            return true;
+        }
+
         /// <summary>
         /// Reflect an enemy projectile using the timing/damage behavior from the
         /// browser reference. A perfect opportunity plus a perfect parry receives
