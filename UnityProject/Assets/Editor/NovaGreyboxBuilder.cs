@@ -2,6 +2,7 @@ using System.IO;
 using NovaStriker.Combat;
 using NovaStriker.Data;
 using NovaStriker.Debugging;
+using NovaStriker.Enemies;
 using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
 using NovaStriker.Presentation;
@@ -216,6 +217,7 @@ namespace NovaStriker.EditorTools
 
             CreateDamageDummy(
                 "Target_Light",
+                101,
                 new Vector3(2.9f, -2.8f, 0f),
                 100f,
                 enemyMaterial,
@@ -224,11 +226,24 @@ namespace NovaStriker.EditorTools
 
             CreateDamageDummy(
                 "Target_Heavy",
+                102,
                 new Vector3(6.1f, -2.65f, 0f),
                 240f,
                 enemyMaterial,
                 enemyLayer,
                 new Vector3(1.15f, 1.7f, 0.9f)
+            );
+
+            CreateSkirmisherEnemy(
+                "Enemy_Skirmisher",
+                110,
+                new Vector3(-0.8f, -2.75f, 0f),
+                player.transform,
+                projectilePrefab,
+                enemyMaterial,
+                enemyLayer,
+                worldLayer,
+                oneWayLayer
             );
 
             CreateHostileEmitter(
@@ -536,6 +551,7 @@ namespace NovaStriker.EditorTools
             Damageable2D health =
                 root.AddComponent<Damageable2D>();
 
+            SetInt(health, "actorId", 0);
             SetEnum(
                 health,
                 "faction",
@@ -904,6 +920,7 @@ namespace NovaStriker.EditorTools
 
         private static void CreateDamageDummy(
             string name,
+            int actorId,
             Vector3 position,
             float health,
             Material material,
@@ -939,6 +956,11 @@ namespace NovaStriker.EditorTools
             Damageable2D damageable =
                 root.AddComponent<Damageable2D>();
 
+            SetInt(
+                damageable,
+                "actorId",
+                actorId
+            );
             SetEnum(
                 damageable,
                 "faction",
@@ -953,6 +975,122 @@ namespace NovaStriker.EditorTools
                 damageable,
                 "body",
                 body
+            );
+
+            root.GetComponent<MeshRenderer>().
+                sharedMaterial = material;
+        }
+
+        private static void CreateSkirmisherEnemy(
+            string name,
+            int actorId,
+            Vector3 position,
+            Transform target,
+            Projectile2D projectilePrefab,
+            Material material,
+            int enemyLayer,
+            int worldLayer,
+            int oneWayLayer)
+        {
+            GameObject root =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Capsule
+                );
+
+            root.name = name;
+            root.layer = enemyLayer;
+            root.transform.position = position;
+            root.transform.localScale =
+                new Vector3(0.72f, 0.92f, 0.72f);
+
+            Object.DestroyImmediate(
+                root.GetComponent<CapsuleCollider>()
+            );
+
+            CapsuleCollider2D collider =
+                root.AddComponent<CapsuleCollider2D>();
+
+            collider.direction =
+                CapsuleDirection2D.Vertical;
+            collider.size =
+                new Vector2(0.82f, 1.45f);
+
+            Rigidbody2D body =
+                root.AddComponent<Rigidbody2D>();
+
+            body.gravityScale = 3.57f;
+            body.freezeRotation = true;
+            body.interpolation =
+                RigidbodyInterpolation2D.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode2D.Continuous;
+
+            Damageable2D damageable =
+                root.AddComponent<Damageable2D>();
+
+            SetInt(
+                damageable,
+                "actorId",
+                actorId
+            );
+            SetEnum(
+                damageable,
+                "faction",
+                (int)CombatFaction.Enemy
+            );
+            SetFloat(
+                damageable,
+                "maxHealth",
+                86f
+            );
+            SetObjectReference(
+                damageable,
+                "body",
+                body
+            );
+
+            EnemyBrain2D brain =
+                root.AddComponent<EnemyBrain2D>();
+
+            SetInt(
+                brain,
+                "actorId",
+                actorId
+            );
+            SetEnum(
+                brain,
+                "role",
+                (int)EnemyRole.Skirmisher
+            );
+            SetObjectReference(
+                brain,
+                "body",
+                body
+            );
+            SetObjectReference(
+                brain,
+                "damageable",
+                damageable
+            );
+            SetObjectReference(
+                brain,
+                "target",
+                target
+            );
+            SetLayerMask(
+                brain,
+                "lineOfSightMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
+            );
+
+            EnemySkirmisherModule2D skirmisher =
+                root.AddComponent<EnemySkirmisherModule2D>();
+
+            SetObjectReference(
+                skirmisher,
+                "projectilePrefab",
+                projectilePrefab
             );
 
             root.GetComponent<MeshRenderer>().
