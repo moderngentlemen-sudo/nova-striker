@@ -410,7 +410,7 @@ namespace NovaStriker.Campaign
             if (!progression)
             {
                 progression =
-                    FindFirstObjectByType<CampaignProgressionController>();
+                    FindAnyObjectByType<CampaignProgressionController>();
             }
         }
     }
