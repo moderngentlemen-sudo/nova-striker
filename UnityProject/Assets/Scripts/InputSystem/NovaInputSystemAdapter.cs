@@ -68,7 +68,7 @@ namespace NovaStriker.InputSystemIntegration
         {
             assignedGamepad = gamepad;
             assignedDeviceId =
-                gamepad ? gamepad.deviceId : -1;
+                gamepad != null ? gamepad.deviceId : -1;
         }
 
         public void ClearGamepadAssignment()
@@ -100,7 +100,7 @@ namespace NovaStriker.InputSystemIntegration
             Gamepad gamepad =
                 ResolveAssignedGamepad();
 
-            if (gamepad)
+            if (gamepad != null)
                 ReadGamepad(gamepad, ref state);
 
             if (mobileInput)
@@ -123,7 +123,7 @@ namespace NovaStriker.InputSystemIntegration
         private Gamepad ResolveAssignedGamepad()
         {
             if (
-                assignedGamepad &&
+                assignedGamepad != null &&
                 assignedGamepad.added &&
                 (
                     assignedDeviceId < 0 ||
@@ -144,7 +144,7 @@ namespace NovaStriker.InputSystemIntegration
                 Gamepad candidate = Gamepad.all[i];
 
                 if (
-                    candidate &&
+                    candidate != null &&
                     candidate.deviceId == assignedDeviceId
                 )
                 {
