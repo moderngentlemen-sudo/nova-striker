@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NovaStriker.Combat;
+using NovaStriker.Player;
 using NovaStriker.Session;
 using UnityEngine;
 
