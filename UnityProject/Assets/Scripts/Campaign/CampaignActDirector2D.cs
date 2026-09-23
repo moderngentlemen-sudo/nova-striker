@@ -37,6 +37,7 @@ namespace NovaStriker.Campaign
         [Header("Scene Slots")]
         [SerializeField] private ActEncounterSlot[] encounterSlots;
         [SerializeField] private SectorHazard2D[] hazards;
+        [SerializeField] private ActLevelVariationController2D levelVariation;
         [SerializeField] private SectorSetpieceController2D setpiece;
         [SerializeField] private SecretChallengeController2D secret;
         [SerializeField] private MiniBossController2D miniBoss;
@@ -51,12 +52,21 @@ namespace NovaStriker.Campaign
 
         public bool Configured { get; private set; }
         public ActGameplayReference CurrentAct { get; private set; }
+        public ActLevelVarietyReference CurrentVariety { get; private set; }
 
         public event Action<ActGameplayReference> ActConfigured;
 
         private void Awake()
         {
             ResolveProgression();
+
+            if (!levelVariation)
+            {
+                levelVariation =
+                    GetComponentInChildren<ActLevelVariationController2D>(
+                        true
+                    );
+            }
         }
 
         private void OnEnable()
@@ -102,6 +112,12 @@ namespace NovaStriker.Campaign
                     actIndex
                 );
 
+            CurrentVariety =
+                ActLevelVarietyCatalog.Get(
+                    sectorIndex,
+                    actIndex
+                );
+
             ConfigureEnvironment();
             ConfigureEncounterSlots();
             ConfigureBossEndpoint();
@@ -113,6 +129,9 @@ namespace NovaStriker.Campaign
 
         private void ConfigureEnvironment()
         {
+            if (levelVariation)
+                levelVariation.ConfigurePlan(CurrentVariety);
+
             if (hazards != null)
             {
                 for (int i = 0; i < hazards.Length; i++)
