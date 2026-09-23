@@ -54,9 +54,6 @@ namespace NovaStriker.EditorTools
         private const string ProjectileMaterialPath =
             GeneratedRoot + "/MAT_Greybox_Projectile.mat";
 
-        private const string GrapplePointMaterialPath =
-            GeneratedRoot + "/MAT_Greybox_GrapplePoint.mat";
-
         [MenuItem(
             "Nova Striker/Greybox/Build / Refresh Mechanics Lab",
             priority = 1)]
@@ -95,11 +92,6 @@ namespace NovaStriker.EditorTools
             Material projectileMaterial = CreateOrLoadMaterial(
                 ProjectileMaterialPath,
                 new Color(0.85f, 0.96f, 1f)
-            );
-
-            Material grapplePointMaterial = CreateOrLoadMaterial(
-                GrapplePointMaterialPath,
-                new Color(0.25f, 0.95f, 1f)
             );
 
             WeaponDefinition pulse = CreateOrLoadPulseWeapon();
@@ -178,28 +170,31 @@ namespace NovaStriker.EditorTools
                 oneWayLayer
             );
 
-            CreateGrapplePoint(
-                "GrapplePoint_A",
-                "greybox-grapple-a",
-                new Vector3(-1.8f, 3.15f, 0f),
-                grapplePointMaterial,
-                grapplePointLayer
+            // Echo traversal test geometry. These are normal World solids,
+            // not designated grapple markers: any eligible solid surface above
+            // Echo can be acquired by the grapple system.
+            CreateWorldBox(
+                "TraversalBeam_Left",
+                new Vector3(-4.8f, 2.9f, 0f),
+                new Vector3(3.0f, 0.35f, 1f),
+                worldMaterial,
+                worldLayer
             );
 
-            CreateGrapplePoint(
-                "GrapplePoint_B",
-                "greybox-grapple-b",
-                new Vector3(3.35f, 3.85f, 0f),
-                grapplePointMaterial,
-                grapplePointLayer
+            CreateWorldBox(
+                "TraversalBeam_Center",
+                new Vector3(0.3f, 4.0f, 0f),
+                new Vector3(3.2f, 0.35f, 1f),
+                worldMaterial,
+                worldLayer
             );
 
-            CreateGrapplePoint(
-                "GrapplePoint_C",
-                "greybox-grapple-c",
-                new Vector3(8.0f, 2.85f, 0f),
-                grapplePointMaterial,
-                grapplePointLayer
+            CreateWorldBox(
+                "TraversalBeam_Right",
+                new Vector3(6.4f, 3.45f, 0f),
+                new Vector3(3.2f, 0.35f, 1f),
+                worldMaterial,
+                worldLayer
             );
 
             GameObject player = (GameObject)PrefabUtility.InstantiatePrefab(
@@ -633,6 +628,12 @@ namespace NovaStriker.EditorTools
                 combat,
                 "grapplePointMask",
                 1 << grapplePointLayer
+            );
+            SetLayerMask(
+                combat,
+                "grappleSurfaceMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
             );
 
             SetObjectReference(
