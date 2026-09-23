@@ -127,7 +127,7 @@ Current greybox ranges:
 
 - close Dodge Counter: ≤ 1.15 Unity units
 - Throw assist range: ≤ 1.35 Unity units while movement points toward the target
-- Echo Grapple range: ≤ 4.25 Unity units
+- Echo enemy grapple range: ≤ 14.0 Unity units
 - Nova Deflect projectile radius: 0.72 Unity units
 
 Close Dodge Counter grants a short evasive movement and temporary damage invulnerability, then strikes the target.
@@ -146,12 +146,12 @@ Traversal candidates are:
 
 Current greybox ranges:
 
-- enemy grapple: ≤ 4.25 Unity units
-- solid-surface traversal acquisition: ≤ 5.75 Unity units
+- enemy grapple: ≤ 14.0 Unity units
+- solid-surface traversal acquisition: ≤ 8.5 Unity units
 - the surface must be at least 0.30 Unity units above Echo
 - traversal acquisition uses 21 small CircleCast probes across the upper hemisphere for forgiving surface selection
 
-For traversal, the movement input—not the right stick—is authoritative: Up means vertical acquisition, while Up-Left and Up-Right bias the grapple cone diagonally. For enemy grappling, right-stick / arrow-key aim still biases target selection.
+For traversal, the movement input—not the right stick—is authoritative: Up means vertical acquisition, while Up-Left and Up-Right bias the grapple cone diagonally. For enemy grappling, right-stick / arrow-key aim still biases target selection. The enemy grapple is intentionally much longer-range than traversal grappling so Echo can pull combatants from across large portions of the encounter space.
 
 A `CounterGrappleLock` cue is emitted as soon as a candidate is acquired so the final UI can display a lock reticle/tether preview before the grapple resolves. The current greybox executes the grapple on the same button press after the Counter startup window; it does not require a second Circle press.
 
