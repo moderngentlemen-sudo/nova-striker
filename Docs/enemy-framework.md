@@ -1,4 +1,4 @@
-# Enemy Framework — Phase 1
+# Enemy Framework — Phase 2
 
 This phase begins the Unity enemy-runtime architecture without claiming that any of the 12 production enemy archetypes has been ported.
 
@@ -28,26 +28,31 @@ The common role vocabulary is:
 
 Role behavior is composed through `EnemyRoleModule2D` components. A prefab can carry more than one role module and switch which role is active without replacing its health/collision/runtime shell.
 
-Phase 1 implements:
+Implemented role modules:
 
 - `EnemyAnchorModule2D` — stationary baseline role for validating the shell.
-- `EnemySkirmisherModule2D` — first active representative role. It approaches when too far away, retreats when too close, maintains a mid-range spacing band, checks line of sight, and fires parryable enemy pulse projectiles.
+- `EnemySkirmisherModule2D` — approaches when too far away, retreats when too close, maintains a mid-range spacing band, checks line of sight, and fires parryable pulse shots.
+- `EnemyArtilleryModule2D` — prefers a long-range firing band, retreats when pressured, and fires a slow, readable three-shot parryable salvo.
+- `EnemyFlankerModule2D` — closes aggressively, uses short lateral reposition bursts, retreats when overcrowded, and fires faster close-to-mid-range parryable shots.
 
-Artillery, Flanker, and Aerial role modules remain future work.
+The Aerial role remains future work.
 
 ## Mechanics-lab representative enemy
 
-After regenerating the mechanics lab, the scene includes `Enemy_Skirmisher`.
+After regenerating the mechanics lab, the scene includes three generic framework-validation enemies:
 
-Current greybox behavior:
+- `Enemy_Skirmisher` — mid-range spacing behavior.
+- `Enemy_Flanker` — faster pressure/reposition behavior.
+- `Enemy_Artillery` — long-range salvo behavior.
 
-- begins engaging the player inside its detection radius,
-- moves toward / away from the player to maintain preferred range,
-- uses World and OneWay geometry for line-of-sight occlusion,
-- fires standard enemy projectiles only with clear line of sight,
+All three:
+
+- begin engaging the player inside their configured detection radius,
+- use World and OneWay geometry for line-of-sight occlusion,
+- fire only with clear line of sight,
 - can be damaged, knocked back, defeated, thrown, and grappled through the shared combat interfaces.
 
-This object is a **generic gameplay test enemy**, not a final Walker/Interceptor/etc. production archetype.
+These are **generic gameplay test enemies**, not final Walker/Interceptor/etc. production archetypes.
 
 ## Actor IDs and presentation cue correctness
 
@@ -61,6 +66,8 @@ Greybox assignments:
 - Target Light: actor 101
 - Target Heavy: actor 102
 - Enemy Skirmisher: actor 110
+- Enemy Flanker: actor 111
+- Enemy Artillery: actor 112
 
 Production identity allocation can be formalized later when co-op, encounter spawning, and save/checkpoint systems are introduced.
 
@@ -70,17 +77,25 @@ After pulling this phase:
 
 1. Run **Nova Striker → Greybox → Build / Refresh Mechanics Lab**.
 2. Enter Play Mode.
-3. Verify `Enemy_Skirmisher` begins moving when the player is within detection range.
-4. At long range, it should approach.
-5. At very close range, it should back away.
-6. In its preferred spacing band, it should settle instead of oscillating continuously.
-7. Put a platform/wall between it and the player; it should stop firing through that geometry.
-8. Move back into clear line of sight; firing should resume.
-9. Confirm Nova can shoot/melee/Velocity Break/Powerslide the enemy.
-10. Confirm Echo can enemy-grapple it only with unobstructed line of sight.
-11. Defeat the enemy and confirm autonomous movement stops.
-12. Confirm damaging the enemy does not trigger the player's Hurt/Defeated Animator cues.
+3. Verify `Enemy_Skirmisher` approaches at long range, retreats at very close range, and settles into a mid-range spacing band.
+4. Verify `Enemy_Flanker` closes more aggressively and periodically performs a visibly faster lateral burst.
+5. Verify the Flanker backs away if it gets too close rather than remaining embedded in the player.
+6. Verify `Enemy_Artillery` tries to preserve a much larger spacing band than the other two enemies.
+7. Verify the Artillery fires a readable three-shot spread/salvo rather than the Skirmisher's single shot.
+8. Put World/OneWay geometry between each enemy and the player; none should fire through it.
+9. Move back into clear line of sight; firing should resume.
+10. Confirm Nova can shoot/melee/Velocity Break/Powerslide all three enemies.
+11. Confirm Echo can enemy-grapple them only with unobstructed line of sight.
+12. Defeat each enemy and confirm its autonomous movement/attacks stop.
+13. Confirm damaging enemies does not trigger the player's Hurt/Defeated Animator cues.
 
 ## Next enemy-framework step
 
-Once this representative shell is confirmed in Play Mode, the next engineering step is to add the Artillery and Flanker modules, then map the preserved browser enemy archetypes onto role + parameter combinations instead of creating 12 unrelated AI controllers.
+Once Skirmisher, Flanker, and Artillery are confirmed in Play Mode, the next engineering step is:
+
+1. add the Aerial role module,
+2. extract the preserved browser behavior of each named enemy archetype,
+3. map those archetypes onto role + parameter combinations where the reference supports it,
+4. create bespoke modules only where a named enemy genuinely requires behavior that the shared roles cannot express.
+
+This avoids inventing behavior from archetype names alone and prevents the project from drifting away from the preserved gameplay reference.
