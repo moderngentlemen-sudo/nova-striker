@@ -17,7 +17,7 @@ namespace NovaStriker.Player
         [SerializeField] private LayerMask damageableMask;
 
         private readonly List<Collider2D> overlaps = new(16);
-        private readonly HashSet<int> hitTargets = new();
+        private readonly HashSet<Damageable2D> hitTargets = new();
 
         private ContactFilter2D damageFilter;
         private bool wasDashing;
@@ -102,9 +102,7 @@ namespace NovaStriker.Player
                 if (!target)
                     continue;
 
-                int id = target.GetEntityId();
-
-                if (!hitTargets.Add(id))
+                if (!hitTargets.Add(target))
                     continue;
 
                 int numericTier = (int)tier;
