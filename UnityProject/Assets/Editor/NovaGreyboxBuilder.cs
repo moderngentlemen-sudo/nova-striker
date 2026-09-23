@@ -246,6 +246,30 @@ namespace NovaStriker.EditorTools
                 oneWayLayer
             );
 
+            CreateFlankerEnemy(
+                "Enemy_Flanker",
+                111,
+                new Vector3(-3.8f, -2.80f, 0f),
+                player.transform,
+                projectilePrefab,
+                enemyMaterial,
+                enemyLayer,
+                worldLayer,
+                oneWayLayer
+            );
+
+            CreateArtilleryEnemy(
+                "Enemy_Artillery",
+                112,
+                new Vector3(8.0f, -2.72f, 0f),
+                player.transform,
+                projectilePrefab,
+                enemyMaterial,
+                enemyLayer,
+                worldLayer,
+                oneWayLayer
+            );
+
             CreateHostileEmitter(
                 new Vector3(8.2f, 1.0f, 0f),
                 player.transform,
@@ -1089,6 +1113,206 @@ namespace NovaStriker.EditorTools
 
             SetObjectReference(
                 skirmisher,
+                "projectilePrefab",
+                projectilePrefab
+            );
+
+            root.GetComponent<MeshRenderer>().
+                sharedMaterial = material;
+        }
+
+        private static void CreateFlankerEnemy(
+            string name,
+            int actorId,
+            Vector3 position,
+            Transform target,
+            Projectile2D projectilePrefab,
+            Material material,
+            int enemyLayer,
+            int worldLayer,
+            int oneWayLayer)
+        {
+            GameObject root =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Capsule
+                );
+
+            root.name = name;
+            root.layer = enemyLayer;
+            root.transform.position = position;
+            root.transform.localScale =
+                new Vector3(0.62f, 0.82f, 0.62f);
+
+            Object.DestroyImmediate(
+                root.GetComponent<CapsuleCollider>()
+            );
+
+            CapsuleCollider2D collider =
+                root.AddComponent<CapsuleCollider2D>();
+
+            collider.direction =
+                CapsuleDirection2D.Vertical;
+            collider.size =
+                new Vector2(0.76f, 1.30f);
+
+            Rigidbody2D body =
+                root.AddComponent<Rigidbody2D>();
+
+            body.gravityScale = 3.57f;
+            body.freezeRotation = true;
+            body.interpolation =
+                RigidbodyInterpolation2D.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode2D.Continuous;
+
+            Damageable2D damageable =
+                root.AddComponent<Damageable2D>();
+
+            SetInt(damageable, "actorId", actorId);
+            SetEnum(
+                damageable,
+                "faction",
+                (int)CombatFaction.Enemy
+            );
+            SetFloat(damageable, "maxHealth", 72f);
+            SetObjectReference(
+                damageable,
+                "body",
+                body
+            );
+
+            EnemyBrain2D brain =
+                root.AddComponent<EnemyBrain2D>();
+
+            SetInt(brain, "actorId", actorId);
+            SetEnum(
+                brain,
+                "role",
+                (int)EnemyRole.Flanker
+            );
+            SetFloat(brain, "detectionRange", 12f);
+            SetObjectReference(brain, "body", body);
+            SetObjectReference(
+                brain,
+                "damageable",
+                damageable
+            );
+            SetObjectReference(
+                brain,
+                "target",
+                target
+            );
+            SetLayerMask(
+                brain,
+                "lineOfSightMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
+            );
+
+            EnemyFlankerModule2D flanker =
+                root.AddComponent<EnemyFlankerModule2D>();
+
+            SetObjectReference(
+                flanker,
+                "projectilePrefab",
+                projectilePrefab
+            );
+
+            root.GetComponent<MeshRenderer>().
+                sharedMaterial = material;
+        }
+
+        private static void CreateArtilleryEnemy(
+            string name,
+            int actorId,
+            Vector3 position,
+            Transform target,
+            Projectile2D projectilePrefab,
+            Material material,
+            int enemyLayer,
+            int worldLayer,
+            int oneWayLayer)
+        {
+            GameObject root =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cube
+                );
+
+            root.name = name;
+            root.layer = enemyLayer;
+            root.transform.position = position;
+            root.transform.localScale =
+                new Vector3(1.05f, 1.10f, 0.90f);
+
+            Object.DestroyImmediate(
+                root.GetComponent<BoxCollider>()
+            );
+
+            BoxCollider2D collider =
+                root.AddComponent<BoxCollider2D>();
+
+            collider.size =
+                new Vector2(0.94f, 1.08f);
+
+            Rigidbody2D body =
+                root.AddComponent<Rigidbody2D>();
+
+            body.gravityScale = 3.57f;
+            body.freezeRotation = true;
+            body.interpolation =
+                RigidbodyInterpolation2D.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode2D.Continuous;
+
+            Damageable2D damageable =
+                root.AddComponent<Damageable2D>();
+
+            SetInt(damageable, "actorId", actorId);
+            SetEnum(
+                damageable,
+                "faction",
+                (int)CombatFaction.Enemy
+            );
+            SetFloat(damageable, "maxHealth", 120f);
+            SetObjectReference(
+                damageable,
+                "body",
+                body
+            );
+
+            EnemyBrain2D brain =
+                root.AddComponent<EnemyBrain2D>();
+
+            SetInt(brain, "actorId", actorId);
+            SetEnum(
+                brain,
+                "role",
+                (int)EnemyRole.Artillery
+            );
+            SetFloat(brain, "detectionRange", 18f);
+            SetObjectReference(brain, "body", body);
+            SetObjectReference(
+                brain,
+                "damageable",
+                damageable
+            );
+            SetObjectReference(
+                brain,
+                "target",
+                target
+            );
+            SetLayerMask(
+                brain,
+                "lineOfSightMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
+            );
+
+            EnemyArtilleryModule2D artillery =
+                root.AddComponent<EnemyArtilleryModule2D>();
+
+            SetObjectReference(
+                artillery,
                 "projectilePrefab",
                 projectilePrefab
             );
