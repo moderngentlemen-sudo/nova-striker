@@ -71,7 +71,19 @@ Move the 12 weapons to ScriptableObjects. Gameplay code should reference data as
 
 ## Milestone 4 — Enemy framework
 
-Create a common enemy brain with role modules:
+Phase 1 is now **in progress** on `dev/unity-gameplay`.
+
+Implemented:
+
+- `EnemyBrain2D` common runtime shell
+- receiver-side actor identity for correct damage/defeat presentation cues
+- role-module architecture
+- Anchor baseline module
+- Skirmisher active module
+- target detection and World/OneWay line-of-sight checks
+- representative moving/firing `Enemy_Skirmisher` in the mechanics lab
+
+Role vocabulary:
 
 - Anchor
 - Artillery
@@ -79,7 +91,18 @@ Create a common enemy brain with role modules:
 - Skirmisher
 - Aerial
 
-Then port the 12 enemy archetypes.
+Still required:
+
+- Artillery role module
+- Flanker role module
+- Aerial role module
+- encounter/spawn ownership
+- stagger/armor/Break integration
+- mapping the preserved 12 enemy archetypes onto role + parameter combinations
+- production art/animation integration
+- Play Mode and controller validation of the representative enemy
+
+The current `Enemy_Skirmisher` is a generic framework-validation enemy, not a claim that a named browser archetype has been fully ported.
 
 ## Milestone 5 — Guardians
 
