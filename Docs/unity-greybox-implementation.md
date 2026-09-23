@@ -120,7 +120,8 @@ Selection priority when the button is pressed:
 2. **Close enemy + Counter → Dodge + Counter** (Nova and Echo)
 3. **Distance action**
    - **Nova → Deflect**
-   - **Echo → Grapple / pull**
+   - **Echo + Up / Up-Left / Up-Right + Counter → traversal grapple**
+   - **Echo + Counter without Up → enemy grapple / pull**
 
 Current greybox ranges:
 
@@ -133,12 +134,14 @@ Close Dodge Counter grants a short evasive movement and temporary damage invulne
 
 Throw is an advancing context action: holding movement toward the enemy when Counter is pressed takes priority over the close Dodge Counter and launches the enemy away/upward.
 
-Echo's distance Grapple now uses **soft-lock acquisition**. On the same Circle / I press, Echo chooses the best valid grapple candidate based primarily on aim alignment and secondarily on distance.
+Echo's distance Grapple is now split by directional intent rather than mixing enemies and traversal surfaces in one candidate pool.
 
-Valid Echo grapple candidates are:
+- **Circle / I without upward movement:** searches only for enemies in grapple range. Right-stick / arrow-key aim can bias which opponent is selected; if no aim is supplied, Echo uses his current facing direction.
+- **Up, Up-Left, or Up-Right on the movement input + Circle / I:** searches only for traversal surfaces and optional GrapplePoint2D overrides. The movement direction defines the traversal-grapple cone, so Up-Left and Up-Right intentionally steer which overhead surface Echo acquires.
 
-- **Enemy targets:** soft-lock and pull the enemy toward Echo.
-- **Ordinary solid surfaces above Echo:** any collider on the configured World / OneWay grapple-surface mask can be acquired for traversal.
+Traversal candidates are:
+
+- **Ordinary solid surfaces above Echo:** any collider on the configured World / OneWay grapple-surface mask can be acquired.
 - **Optional GrapplePoint2D overrides:** used only when a designer needs a precise anchor position, custom arrival distance, availability toggle, or special ID.
 
 Current greybox ranges:
@@ -148,7 +151,7 @@ Current greybox ranges:
 - the surface must be at least 0.30 Unity units above Echo
 - traversal acquisition uses 21 small CircleCast probes across the upper hemisphere for forgiving surface selection
 
-Right-stick / arrow-key aim biases which candidate is selected. Without explicit aim, Echo uses his current facing/aim direction.
+For traversal, the movement input—not the right stick—is authoritative: Up means vertical acquisition, while Up-Left and Up-Right bias the grapple cone diagonally. For enemy grappling, right-stick / arrow-key aim still biases target selection.
 
 A `CounterGrappleLock` cue is emitted as soon as a candidate is acquired so the final UI can display a lock reticle/tether preview before the grapple resolves. The current greybox executes the grapple on the same button press after the Counter startup window; it does not require a second Circle press.
 
