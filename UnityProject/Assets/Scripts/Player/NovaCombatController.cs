@@ -3,6 +3,7 @@ using NovaStriker.Combat;
 using NovaStriker.Core;
 using NovaStriker.Data;
 using NovaStriker.Input;
+using NovaStriker.Progression;
 using NovaStriker.Traversal;
 using UnityEngine;
 
@@ -393,18 +394,40 @@ namespace NovaStriker.Player
                     tier >= 1
                 );
 
+            WeaponMasteryService mastery =
+                WeaponMasteryService.Active;
+
+            float masteryDamage =
+                mastery
+                    ? mastery.DamageMultiplierFor(
+                        equippedWeapon.Id
+                    )
+                    : 1f;
+
+            float masterySpeed =
+                mastery
+                    ? mastery.ProjectileSpeedMultiplierFor(
+                        equippedWeapon.Id
+                    )
+                    : 1f;
+
+            float shotDamage =
+                equippedWeapon.DamageForTier(tier) *
+                (suitAbilities
+                    ? suitAbilities.OutgoingDamageMultiplier
+                    : 1f) *
+                masteryDamage;
+
             shot.Initialize(
                 playerId,
                 CombatFaction.Player,
                 equippedWeapon.Id,
                 equippedWeapon.Behavior,
                 direction,
-                equippedWeapon.ProjectileSpeed,
+                equippedWeapon.ProjectileSpeed *
+                    masterySpeed,
                 tier,
-                equippedWeapon.DamageForTier(tier) *
-                    (suitAbilities
-                        ? suitAbilities.OutgoingDamageMultiplier
-                        : 1f),
+                shotDamage,
                 piercing
             );
 
@@ -417,10 +440,7 @@ namespace NovaStriker.Player
                 origin,
                 direction,
                 tier,
-                equippedWeapon.DamageForTier(tier) *
-                    (suitAbilities
-                        ? suitAbilities.OutgoingDamageMultiplier
-                        : 1f),
+                shotDamage,
                 equippedWeapon.Id
             ));
         }
