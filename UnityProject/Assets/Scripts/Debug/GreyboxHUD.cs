@@ -31,7 +31,7 @@ namespace NovaStriker.Debugging
         {
             EnsureStyles();
 
-            GUI.Box(new Rect(14, 14, 455, 286), GUIContent.none);
+            GUI.Box(new Rect(14, 14, 455, 304), GUIContent.none);
 
             GUI.Label(
                 new Rect(28, 24, 390, 28),
@@ -44,6 +44,9 @@ namespace NovaStriker.Debugging
             float health = playerHealth ? playerHealth.Health : 0f;
             string dashTier = motor
                 ? motor.ActiveDashTier.ToString()
+                : "-";
+            string slideTier = motor
+                ? motor.ActiveSlideTier.ToString()
                 : "-";
 
             string character =
@@ -61,8 +64,9 @@ namespace NovaStriker.Debugging
                 $"Wall-jump lock: {(motor && motor.IsWallJumpControlLocked)}    " +
                 $"Grapple travel: {(motor && motor.IsGrapplingTraversal)}\n" +
                 $"Crouch: {(motor && motor.IsCrouching)}    " +
-                $"Dash tier: {dashTier}\n" +
-                $"Dash charge: {dashCharge:0.00}s    " +
+                $"Dash: {(motor && motor.IsDashing)} / {dashTier}\n" +
+                $"Slide: {(motor && motor.IsSliding)} / {slideTier}    " +
+                $"Dash charge: {dashCharge:0.00}s\n" +
                 $"Fire charge: {fireCharge:0.00}s\n" +
                 $"Deflect active: {(combat && combat.IsParryActive)}    " +
                 $"Perfect: {(combat && combat.IsPerfectParryWindow)}\n" +
@@ -70,13 +74,13 @@ namespace NovaStriker.Debugging
                 $"Health: {health:0}";
 
             GUI.Label(
-                new Rect(28, 58, 415, 166),
+                new Rect(28, 58, 415, 184),
                 state,
                 body
             );
 
             GUI.Label(
-                new Rect(28, 228, 420, 58),
+                new Rect(28, 246, 420, 58),
                 "WASD / Left Stick: move    Arrows / Right Stick: aim\n" +
                 "Space / Cross: jump    J / R2: fire    K / L2: dash\n" +
                 "U / Square: melee    I / Circle: contextual Counter\n" +
