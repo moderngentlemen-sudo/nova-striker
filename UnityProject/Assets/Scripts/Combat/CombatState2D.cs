@@ -290,7 +290,7 @@ namespace NovaStriker.Combat
                     break;
 
                 case "rail":
-                    DamageArmor(18f + tier * 14f);
+                    DamageArmorInternal(18f + tier * 14f);
                     exposedTimer =
                         Mathf.Max(exposedTimer, 1.3f);
                     break;
@@ -318,7 +318,7 @@ namespace NovaStriker.Combat
                     break;
 
                 case "spear":
-                    DamageArmor(22f + tier * 16f);
+                    DamageArmorInternal(22f + tier * 16f);
                     break;
 
                 case "gravity":
@@ -349,7 +349,7 @@ namespace NovaStriker.Combat
                     break;
 
                 case "null":
-                    DamageArmor(35f + tier * 22f);
+                    DamageArmorInternal(35f + tier * 22f);
                     vulnerableTimer =
                         Mathf.Max(vulnerableTimer, 1.5f);
                     break;
@@ -417,6 +417,65 @@ namespace NovaStriker.Combat
                 TriggerBreak(source);
         }
 
+        public void ConfigureDefense(
+            float shield,
+            float armor,
+            float breakCapacity,
+            float damageReduction = 0.24f,
+            bool refill = true)
+        {
+            maxShield = Mathf.Max(0f, shield);
+            maxArmor = Mathf.Max(0f, armor);
+            breakMax = Mathf.Max(0f, breakCapacity);
+            armorDamageReduction =
+                Mathf.Clamp(damageReduction, 0f, 0.8f);
+
+            if (refill)
+                ResetLayers();
+            else
+            {
+                Shield = Mathf.Min(Shield, maxShield);
+                Armor = Mathf.Min(Armor, maxArmor);
+                BreakGauge = Mathf.Min(BreakGauge, breakMax);
+            }
+        }
+
+        public float DamageShield(float amount)
+        {
+            if (Shield <= 0f || amount <= 0f)
+                return 0f;
+
+            float before = Shield;
+            Shield = Mathf.Max(0f, Shield - amount);
+
+            if (before > 0f && Shield <= 0f)
+            {
+                GameplayEventHub.Raise(
+                    new GameplayCue(
+                        GameplayCueType.ShieldBroken,
+                        damageable ? damageable.ActorId : -1,
+                        transform.position,
+                        Vector2.zero,
+                        0,
+                        maxShield,
+                        "shield-break-reaction"
+                    )
+                );
+            }
+
+            return before - Shield;
+        }
+
+        public float DamageArmor(float amount)
+        {
+            if (Armor <= 0f || amount <= 0f)
+                return 0f;
+
+            float before = Armor;
+            DamageArmorInternal(amount);
+            return before - Armor;
+        }
+
         public float RestoreShield(float amount)
         {
             if (maxShield <= 0f || amount <= 0f)
@@ -473,7 +532,7 @@ namespace NovaStriker.Combat
             cryoSlowTimer = 0f;
         }
 
-        private void DamageArmor(float amount)
+        private void DamageArmorInternal(float amount)
         {
             if (Armor <= 0f || amount <= 0f)
                 return;
