@@ -100,6 +100,12 @@ The branch now contains:
   - Echo grapple lock type and lock distance
   - last player gameplay cue, tier, value, and action ID for rapid Play Mode validation
 
+- `GreyboxMechanicsVisualizer`
+  - presentation-only movement trail during Dash, Powerslide, and Echo traversal grapple
+  - trail width/persistence scales by Dash/Powerslide tier so Quick, Burst, and Velocity Break are visually distinct
+  - temporary Echo grapple tether renders from the player to the acquired enemy or traversal surface
+  - observes gameplay state/cues only; it does not own movement, targeting, or Counter timing
+
 ## Reference timings carried forward
 
 ### Dash charge
@@ -300,7 +306,7 @@ Presentation systems should subscribe to `GameplayEventHub.CueRaised`. Examples:
 - `PerfectParry` → gold-white perfect-deflect VFX + hit-stop presentation + audio
 - `DropThrough` → crouch/drop animation
 
-The gameplay code remains authoritative even if all presentation listeners are disabled.
+The gameplay code remains authoritative even if all presentation listeners are disabled. The greybox mechanics visualizer is intentionally disposable presentation scaffolding for validating feel before production animation/VFX are integrated.
 
 ## Known incomplete items
 
