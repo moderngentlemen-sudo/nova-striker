@@ -45,6 +45,7 @@ namespace NovaStriker.Player
         [Header("References")]
         [SerializeField] private NovaMotor2D motor;
         [SerializeField] private Damageable2D selfDamageable;
+        [SerializeField] private StrikeSuitAbilityController suitAbilities;
         [SerializeField] private Transform muzzleSocket;
         [SerializeField] private Projectile2D projectilePrefab;
         [SerializeField] private WeaponDefinition equippedWeapon;
@@ -180,6 +181,7 @@ namespace NovaStriker.Player
         {
             motor = GetComponent<NovaMotor2D>();
             selfDamageable = GetComponent<Damageable2D>();
+            suitAbilities = GetComponent<StrikeSuitAbilityController>();
             parryWindow = ParryWindow.Default;
         }
 
@@ -190,6 +192,9 @@ namespace NovaStriker.Player
 
             if (!selfDamageable)
                 selfDamageable = GetComponent<Damageable2D>();
+
+            if (!suitAbilities)
+                suitAbilities = GetComponent<StrikeSuitAbilityController>();
 
             if (parryWindow.TotalDuration <= 0f)
                 parryWindow = ParryWindow.Default;
@@ -278,7 +283,12 @@ namespace NovaStriker.Player
             if (input.FireHeld)
             {
                 bool wasIdle = fireCharge <= 0f;
-                fireCharge += dt;
+                float chargeRate =
+                    suitAbilities
+                        ? suitAbilities.FireChargeRateMultiplier
+                        : 1f;
+
+                fireCharge += dt * chargeRate;
 
                 if (wasIdle)
                 {
@@ -385,7 +395,10 @@ namespace NovaStriker.Player
                 direction,
                 equippedWeapon.ProjectileSpeed,
                 tier,
-                equippedWeapon.DamageForTier(tier),
+                equippedWeapon.DamageForTier(tier) *
+                    (suitAbilities
+                        ? suitAbilities.OutgoingDamageMultiplier
+                        : 1f),
                 piercing
             );
 
@@ -398,7 +411,10 @@ namespace NovaStriker.Player
                 origin,
                 direction,
                 tier,
-                equippedWeapon.DamageForTier(tier),
+                equippedWeapon.DamageForTier(tier) *
+                    (suitAbilities
+                        ? suitAbilities.OutgoingDamageMultiplier
+                        : 1f),
                 equippedWeapon.Id
             ));
         }
@@ -768,9 +784,18 @@ namespace NovaStriker.Player
                     (Vector2)contextualCounterTarget.transform.position
                 ).normalized;
 
+            float grappleMultiplier =
+                suitAbilities
+                    ? suitAbilities.GrapplePullMultiplier
+                    : 1f;
+
             Vector2 pullVelocity =
-                targetToEcho * grapplePullSpeed +
-                Vector2.up * grappleLift;
+                targetToEcho *
+                grapplePullSpeed *
+                grappleMultiplier +
+                Vector2.up *
+                grappleLift *
+                grappleMultiplier;
 
             contextualCounterTarget.ApplyExternalVelocity(
                 pullVelocity
@@ -1206,7 +1231,10 @@ namespace NovaStriker.Player
 
             int count = Physics2D.OverlapCircle(
                 transform.position,
-                deflectRadius,
+                deflectRadius *
+                    (suitAbilities
+                        ? suitAbilities.DeflectRadiusMultiplier
+                        : 1f),
                 parryFilter,
                 parryHits
             );
@@ -1438,9 +1466,17 @@ namespace NovaStriker.Player
                 if (!meleeTargets.Add(target))
                     continue;
 
-                float damage = grounded
-                    ? 9f + meleeStep * 4f
-                    : 10f + airMeleeStep * 5f;
+                float damage =
+                    (
+                        grounded
+                            ? 9f + meleeStep * 4f
+                            : 10f + airMeleeStep * 5f
+                    ) *
+                    (
+                        suitAbilities
+                            ? suitAbilities.OutgoingDamageMultiplier
+                            : 1f
+                    );
 
                 Vector2 knockback;
 
