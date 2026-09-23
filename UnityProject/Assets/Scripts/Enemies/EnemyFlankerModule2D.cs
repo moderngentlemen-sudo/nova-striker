@@ -77,8 +77,9 @@ namespace NovaStriker.Enemies
                 return;
             }
 
-            float distance = brain.TargetDistance;
-            Vector2 direction = brain.DirectionToTarget;
+            float distance = brain.TacticalTargetDistance;
+            float targetDistance = brain.TargetDistance;
+            Vector2 direction = brain.DirectionToTacticalTarget;
             float toward =
                 SafeHorizontalSign(direction.x);
 
@@ -125,7 +126,7 @@ namespace NovaStriker.Enemies
 
             if (
                 fireTimer <= 0f &&
-                distance <= fireRange &&
+                targetDistance <= fireRange &&
                 brain.HasClearLineToTarget()
             )
             {
