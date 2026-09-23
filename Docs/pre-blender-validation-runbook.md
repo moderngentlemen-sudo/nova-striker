@@ -118,8 +118,14 @@ Walk representative combat beats from all six sectors and confirm the authored 1
 - mini-boss endpoints on non-final acts
 - Guardian endpoints on final acts
 - pooled enemies fully reset health, combat state, rigidbody state, archetype state, and AI state on reuse
+- representative acts realize the `ActLevelVarietyCatalog` topology, traversal, objective, route-choice, and hazard-pattern contracts
+- Zone / Node / Goal objective triggers report correctly to `ActObjectiveController2D`
+- node and multi-front objectives remain completable sequentially by one player while allowing co-op players to parallelize
+- optional upper/lower or split routes do not strand players outside shared-camera constraints
+- level variation module tags enable only the intended greybox geometry for the selected act
+- hazard phase staggering changes encounter cadence without changing combat authority
 
-**Pass condition:** no act requires production geometry or presentation assets to preserve gameplay progression.
+**Pass condition:** no act requires production geometry or presentation assets to preserve gameplay progression, and the level-variety contract can be represented with greybox modules while remaining solo-safe and one-screen co-op compatible.
 
 ## 7. Save / progression / commerce / DLC checks
 
@@ -190,4 +196,4 @@ At that point, stop adding gameplay code merely to simulate missing production w
 - final VFX, audio, music, lighting, haptics, cinematics
 - native Steam/Xbox/PlayStation/Nintendo/mobile provider adapters where licensed SDKs and credentials are available
 
-Until the Unity run above is actually performed, the correct status remains **code-integrated, not freshly Unity-validated**.
+An initial Unity 6000.6.2f1 compile and playable Mechanics Lab milestone has now been reached. Until the full matrix above is performed, the correct status remains **initial Play Mode confirmed, comprehensive Unity validation incomplete**.
