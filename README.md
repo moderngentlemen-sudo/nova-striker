@@ -25,7 +25,7 @@ The art pipeline intentionally keeps Blender source files separate from Unity-re
 
 ## Unity baseline
 
-The repository-level Unity project is under `UnityProject/` and currently targets **Unity 6.3 LTS (6000.3.15f1)** with the Unity Input System package.
+The repository-level Unity project is under `UnityProject/` and currently targets **Unity 6.6 (6000.6.2f1)** with Unity Input System 1.20.0.
 
 The first mechanics lab is generated inside the Editor from repository code:
 
