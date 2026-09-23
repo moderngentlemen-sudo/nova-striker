@@ -38,6 +38,7 @@ namespace NovaStriker.Campaign
         [SerializeField] private ActEncounterSlot[] encounterSlots;
         [SerializeField] private SectorHazard2D[] hazards;
         [SerializeField] private ActLevelVariationController2D levelVariation;
+        [SerializeField] private ActObjectiveController2D objective;
         [SerializeField] private SectorSetpieceController2D setpiece;
         [SerializeField] private SecretChallengeController2D secret;
         [SerializeField] private MiniBossController2D miniBoss;
@@ -64,6 +65,14 @@ namespace NovaStriker.Campaign
             {
                 levelVariation =
                     GetComponentInChildren<ActLevelVariationController2D>(
+                        true
+                    );
+            }
+
+            if (!objective)
+            {
+                objective =
+                    GetComponentInChildren<ActObjectiveController2D>(
                         true
                     );
             }
@@ -131,6 +140,9 @@ namespace NovaStriker.Campaign
         {
             if (levelVariation)
                 levelVariation.ConfigurePlan(CurrentVariety);
+
+            if (objective)
+                objective.ConfigureObjective(CurrentVariety.Objective);
 
             if (hazards != null)
             {
