@@ -78,6 +78,29 @@ namespace NovaStriker.Campaign
         public event Action<int> WaveStarted;
         public event Action EncounterCompleted;
 
+        public void ConfigureContent(
+            string id,
+            List<EncounterWave> configuredWaves,
+            float synergyReward = -1f)
+        {
+            if (Started)
+                return;
+
+            if (!string.IsNullOrEmpty(id))
+                encounterId = id;
+
+            waves =
+                configuredWaves ??
+                new List<EncounterWave>();
+
+            if (synergyReward >= 0f)
+                completionSynergy = synergyReward;
+
+            Completed = false;
+            currentWaveIndex = -1;
+            waveSpawnFinished = false;
+        }
+
         private void Reset()
         {
             activationTrigger = GetComponent<Collider2D>();
