@@ -21,7 +21,7 @@ namespace NovaStriker.Combat
             public readonly Stack<Projectile2D> Inactive = new();
         }
 
-        private static readonly Dictionary<int, Bucket> Buckets = new();
+        private static readonly Dictionary<EntityId, Bucket> Buckets = new();
         private static Transform poolRoot;
 
         public static int InactiveCount
@@ -130,7 +130,7 @@ namespace NovaStriker.Combat
         private static Bucket GetBucket(
             Projectile2D prefab)
         {
-            int key = prefab.GetInstanceID();
+            EntityId key = prefab.GetEntityId();
 
             if (!Buckets.TryGetValue(key, out Bucket bucket))
             {
