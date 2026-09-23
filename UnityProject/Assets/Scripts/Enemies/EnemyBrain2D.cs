@@ -53,6 +53,7 @@ namespace NovaStriker.Enemies
         private float retargetTimer;
         private float reactionOverrideTimer;
         private Vector2 reactionOverrideVelocity;
+        private Vector2 tacticalTargetOffset;
 
         public int ActorId => actorId;
         public EnemyRole Role => role;
@@ -66,6 +67,12 @@ namespace NovaStriker.Enemies
 
         public Vector2 TargetPosition =>
             target ? (Vector2)target.position : (Vector2)transform.position;
+
+        public Vector2 TacticalTargetOffset =>
+            tacticalTargetOffset;
+
+        public Vector2 TacticalTargetPosition =>
+            TargetPosition + tacticalTargetOffset;
 
         public Vector2 DirectionToTarget
         {
@@ -83,6 +90,28 @@ namespace NovaStriker.Enemies
         public float TargetDistance =>
             target
                 ? Vector2.Distance(transform.position, target.position)
+                : float.PositiveInfinity;
+
+        public Vector2 DirectionToTacticalTarget
+        {
+            get
+            {
+                Vector2 delta =
+                    TacticalTargetPosition -
+                    (Vector2)transform.position;
+
+                return delta.sqrMagnitude > 0.0001f
+                    ? delta.normalized
+                    : Vector2.zero;
+            }
+        }
+
+        public float TacticalTargetDistance =>
+            target
+                ? Vector2.Distance(
+                    transform.position,
+                    TacticalTargetPosition
+                )
                 : float.PositiveInfinity;
 
         public Vector2 TargetVelocity
@@ -124,6 +153,8 @@ namespace NovaStriker.Enemies
 
         private void OnEnable()
         {
+            EnemySquadCoordinator2D.Active?.Register(this);
+
             if (damageable)
             {
                 damageable.Damaged += OnDamaged;
@@ -133,6 +164,8 @@ namespace NovaStriker.Enemies
 
         private void OnDisable()
         {
+            EnemySquadCoordinator2D.Active?.Unregister(this);
+
             if (damageable)
             {
                 damageable.Damaged -= OnDamaged;
@@ -239,6 +272,17 @@ namespace NovaStriker.Enemies
 
             retargetTimer =
                 Mathf.Max(0.05f, retargetInterval);
+        }
+
+        public void SetTacticalTargetOffset(
+            Vector2 offset)
+        {
+            tacticalTargetOffset = offset;
+        }
+
+        public void ClearTacticalTargetOffset()
+        {
+            tacticalTargetOffset = Vector2.zero;
         }
 
         public void SetTarget(Transform value)
