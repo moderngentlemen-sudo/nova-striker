@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NovaStriker.Combat;
+using NovaStriker.Session;
 using UnityEngine;
 
 namespace NovaStriker.Enemies
@@ -42,9 +43,12 @@ namespace NovaStriker.Enemies
         [Header("Perception")]
         [SerializeField] private float detectionRange = 12f;
         [SerializeField] private LayerMask lineOfSightMask;
+        [SerializeField] private bool useStrikeTeamTargeting = true;
+        [SerializeField, Min(0.05f)] private float retargetInterval = 0.30f;
 
         private readonly List<EnemyRoleModule2D> modules = new();
         private EnemyRoleModule2D activeModule;
+        private float retargetTimer;
 
         public int ActorId => actorId;
         public EnemyRole Role => role;
@@ -115,6 +119,10 @@ namespace NovaStriker.Enemies
 
         private void FixedUpdate()
         {
+            float dt = Time.fixedDeltaTime;
+
+            UpdateStrikeTeamTarget(dt);
+
             if (IsDefeated)
             {
                 State = EnemyBrainState.Defeated;
@@ -125,12 +133,54 @@ namespace NovaStriker.Enemies
             if (!target || TargetDistance > detectionRange)
             {
                 State = EnemyBrainState.Idle;
-                activeModule?.TickIdle(this, Time.fixedDeltaTime);
+                activeModule?.TickIdle(this, dt);
                 return;
             }
 
             State = EnemyBrainState.Engage;
-            activeModule?.TickEngage(this, Time.fixedDeltaTime);
+            activeModule?.TickEngage(this, dt);
+        }
+
+        private void UpdateStrikeTeamTarget(float dt)
+        {
+            if (!useStrikeTeamTargeting)
+                return;
+
+            retargetTimer =
+                Mathf.Max(0f, retargetTimer - dt);
+
+            bool targetInvalid =
+                !target ||
+                !target.gameObject.activeInHierarchy;
+
+            if (
+                !targetInvalid &&
+                retargetTimer > 0f
+            )
+            {
+                return;
+            }
+
+            StrikeTeamSession session =
+                StrikeTeamSession.Active;
+
+            if (
+                session &&
+                session.TryGetNearestCombatReadyPlayer(
+                    transform.position,
+                    out StrikerPlayerIdentity nearest
+                )
+            )
+            {
+                target = nearest.transform;
+            }
+            else if (targetInvalid)
+            {
+                target = null;
+            }
+
+            retargetTimer =
+                Mathf.Max(0.05f, retargetInterval);
         }
 
         public void SetTarget(Transform value)
