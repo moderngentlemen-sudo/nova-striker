@@ -33,6 +33,8 @@ namespace NovaStriker.Core
         SuitAbilityResolved,
         SuitUltimateStarted,
         SuitUltimateEnded,
+        GuardianAbilityStarted,
+        GuardianAbilityResolved,
         TeamSyncStarted,
         ParryStarted,
         ParrySuccess,
