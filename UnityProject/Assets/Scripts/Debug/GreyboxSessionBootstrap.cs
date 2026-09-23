@@ -1,3 +1,4 @@
+using NovaStriker.Platform;
 using UnityEngine;
 
 namespace NovaStriker.Debugging
@@ -11,8 +12,12 @@ namespace NovaStriker.Debugging
         private void Awake()
         {
             Time.fixedDeltaTime = 1f / 60f;
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = 120;
+
+            if (!RuntimeScalabilityManager.Active)
+            {
+                QualitySettings.vSyncCount = 0;
+                Application.targetFrameRate = 120;
+            }
         }
     }
 }
