@@ -17,6 +17,8 @@ namespace NovaStriker.Campaign
 
         private float clock;
         private bool active;
+        private float forceActiveTimer;
+        private float disabledTimer;
         private readonly System.Collections.Generic.Dictionary<int, float>
             actorCooldowns = new();
         private readonly System.Collections.Generic.List<int>
@@ -40,6 +42,24 @@ namespace NovaStriker.Campaign
             clock += dt;
             UpdateCooldowns(dt);
 
+            forceActiveTimer =
+                Mathf.Max(0f, forceActiveTimer - dt);
+
+            disabledTimer =
+                Mathf.Max(0f, disabledTimer - dt);
+
+            if (disabledTimer > 0f)
+            {
+                active = false;
+                return;
+            }
+
+            if (forceActiveTimer > 0f)
+            {
+                active = true;
+                return;
+            }
+
             float c =
                 Mathf.Repeat(
                     clock + phaseOffset,
@@ -57,6 +77,35 @@ namespace NovaStriker.Campaign
                     HazardId.NullGrid => c < 0.95f,
                     _ => false
                 };
+        }
+
+        public void ForceActive(float seconds)
+        {
+            forceActiveTimer =
+                Mathf.Max(
+                    forceActiveTimer,
+                    Mathf.Max(0f, seconds)
+                );
+
+            disabledTimer = 0f;
+        }
+
+        public void DisableFor(float seconds)
+        {
+            disabledTimer =
+                Mathf.Max(
+                    disabledTimer,
+                    Mathf.Max(0f, seconds)
+                );
+
+            forceActiveTimer = 0f;
+        }
+
+        public void ResetCycle(float phase = 0f)
+        {
+            clock = phase;
+            forceActiveTimer = 0f;
+            disabledTimer = 0f;
         }
 
         private void OnTriggerStay2D(Collider2D other)
