@@ -120,6 +120,18 @@ Run these before tuning values:
 22. Test all three grounded melee hits, two aerial hits, and downward dive melee.
 23. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
+## Greybox presentation validation
+
+After pulling this revision, run **Nova Striker → Greybox → Build / Refresh Mechanics Lab** once so the regenerated player prefab receives the new `GreyboxMechanicsVisualizer`.
+
+In Play Mode:
+
+- Quick, Burst, and Velocity Break should leave progressively stronger movement trails.
+- Powerslide uses the same tier visualization while preserving the crouched collision state.
+- Echo enemy grapple should briefly draw a tether to the acquired opponent.
+- Echo Up / Up-diagonal traversal grapple should draw the tether to the selected solid surface and keep the movement trail active during traversal.
+- These effects are diagnostic only; disabling or deleting `GreyboxMechanicsVisualizer` must not change gameplay behavior.
+
 ## Dash / Counter telemetry pass
 
 The greybox HUD now exposes additional runtime diagnostics for this tuning pass:
