@@ -405,7 +405,9 @@ namespace NovaStriker.Combat
                     .GetComponent<CombatState2D>()
                     ?.ApplyWeaponStatus(
                         WeaponId,
-                        Tier
+                        Tier,
+                        OwnerPlayerId,
+                        Faction
                     );
             }
 
@@ -599,9 +601,11 @@ namespace NovaStriker.Combat
                     damageable.GetComponent<CombatState2D>();
 
                 combatState?.ApplyWeaponStatus(
-                    WeaponId,
-                    Tier
-                );
+                        WeaponId,
+                        Tier,
+                        OwnerPlayerId,
+                        Faction
+                    );
             }
 
             if (
