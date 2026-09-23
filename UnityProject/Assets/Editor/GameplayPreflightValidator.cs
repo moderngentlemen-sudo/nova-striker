@@ -216,8 +216,7 @@ namespace NovaStriker.EditorTools
         {
             StrikeTeamSession[] sessions =
                 Object.FindObjectsByType<StrikeTeamSession>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None
+                    FindObjectsInactive.Include
                 );
 
             if (sessions.Length > 1)
@@ -230,8 +229,7 @@ namespace NovaStriker.EditorTools
 
             StrikerPlayerIdentity[] players =
                 Object.FindObjectsByType<StrikerPlayerIdentity>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None
+                    FindObjectsInactive.Include
                 );
 
             HashSet<int> actorIds = new();
@@ -305,7 +303,7 @@ namespace NovaStriker.EditorTools
             }
 
             if (
-                Object.FindFirstObjectByType<RuntimeScalabilityManager>() ==
+                Object.FindAnyObjectByType<RuntimeScalabilityManager>() ==
                 null
             )
             {
@@ -316,7 +314,7 @@ namespace NovaStriker.EditorTools
             }
 
             if (
-                Object.FindFirstObjectByType<WeaponMasteryService>() ==
+                Object.FindAnyObjectByType<WeaponMasteryService>() ==
                 null
             )
             {
@@ -327,7 +325,7 @@ namespace NovaStriker.EditorTools
             }
 
             if (
-                Object.FindFirstObjectByType<SkillPerkService>() ==
+                Object.FindAnyObjectByType<SkillPerkService>() ==
                 null
             )
             {
@@ -338,7 +336,7 @@ namespace NovaStriker.EditorTools
             }
 
             if (
-                Object.FindFirstObjectByType<CoopAssistChainService>() ==
+                Object.FindAnyObjectByType<CoopAssistChainService>() ==
                 null
             )
             {
@@ -349,7 +347,7 @@ namespace NovaStriker.EditorTools
             }
 
             if (
-                Object.FindFirstObjectByType<CampaignRetryController2D>() ==
+                Object.FindAnyObjectByType<CampaignRetryController2D>() ==
                 null
             )
             {
@@ -361,8 +359,7 @@ namespace NovaStriker.EditorTools
 
             EnemyArchetypeController2D[] namedEnemies =
                 Object.FindObjectsByType<EnemyArchetypeController2D>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None
+                    FindObjectsInactive.Include
                 );
 
             if (namedEnemies.Length > 0)
