@@ -409,6 +409,24 @@ namespace NovaStriker.EditorTools
                 oneWayLayer
             );
 
+            GameObject[] enemyTemplates =
+                CreateNamedEnemyTemplates(
+                    player.transform,
+                    projectilePrefab,
+                    enemyMaterial,
+                    enemyLayer,
+                    worldLayer,
+                    oneWayLayer
+                );
+
+            GameplayDebugSpawner2D debugSpawner =
+                sessionRoot.GetComponent<GameplayDebugSpawner2D>();
+
+            ConfigureEnemyBindings(
+                debugSpawner,
+                enemyTemplates
+            );
+
             CreateHostileEmitter(
                 new Vector3(9.2f, 1.0f, 0f),
                 player.transform,
@@ -2192,6 +2210,269 @@ namespace NovaStriker.EditorTools
             );
 
             return root;
+        }
+
+        private static GameObject CreateAnchorEnemy(
+            string name,
+            int actorId,
+            Vector3 position,
+            Transform target,
+            Material material,
+            int enemyLayer,
+            int worldLayer,
+            int oneWayLayer)
+        {
+            GameObject root =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cube
+                );
+
+            root.name = name;
+            root.layer = enemyLayer;
+            root.transform.position = position;
+            root.transform.localScale =
+                new Vector3(1.0f, 1.25f, 0.9f);
+
+            Object.DestroyImmediate(
+                root.GetComponent<BoxCollider>()
+            );
+
+            BoxCollider2D collider =
+                root.AddComponent<BoxCollider2D>();
+
+            collider.size =
+                new Vector2(0.95f, 1.18f);
+
+            Rigidbody2D body =
+                root.AddComponent<Rigidbody2D>();
+
+            body.gravityScale = 3.57f;
+            body.freezeRotation = true;
+            body.interpolation =
+                RigidbodyInterpolation2D.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode2D.Continuous;
+
+            Damageable2D damageable =
+                root.AddComponent<Damageable2D>();
+
+            SetInt(damageable, "actorId", actorId);
+            SetEnum(
+                damageable,
+                "faction",
+                (int)CombatFaction.Enemy
+            );
+            SetFloat(damageable, "maxHealth", 150f);
+            SetObjectReference(
+                damageable,
+                "body",
+                body
+            );
+
+            AddCombatState(
+                root,
+                damageable,
+                0f,
+                35f,
+                95f
+            );
+
+            EnemyBrain2D brain =
+                root.AddComponent<EnemyBrain2D>();
+
+            SetInt(brain, "actorId", actorId);
+            SetEnum(
+                brain,
+                "role",
+                (int)EnemyRole.Anchor
+            );
+            SetObjectReference(brain, "body", body);
+            SetObjectReference(
+                brain,
+                "damageable",
+                damageable
+            );
+            SetObjectReference(
+                brain,
+                "target",
+                target
+            );
+            SetLayerMask(
+                brain,
+                "lineOfSightMask",
+                (1 << worldLayer) |
+                (1 << oneWayLayer)
+            );
+
+            root.AddComponent<EnemyAnchorModule2D>();
+
+            EnemyArchetypeController2D archetype =
+                root.AddComponent<EnemyArchetypeController2D>();
+
+            archetype.ConfigureArchetype(
+                EnemyArchetype.Shield
+            );
+
+            root.GetComponent<MeshRenderer>().
+                sharedMaterial = material;
+
+            return root;
+        }
+
+        private static GameObject[] CreateNamedEnemyTemplates(
+            Transform target,
+            Projectile2D projectilePrefab,
+            Material material,
+            int enemyLayer,
+            int worldLayer,
+            int oneWayLayer)
+        {
+            GameObject templateRoot =
+                new("Greybox_NamedEnemyTemplates");
+
+            GameObject[] templates =
+                new GameObject[12];
+
+            templates[(int)EnemyArchetype.Walker] =
+                CreateSkirmisherEnemy(
+                    "Template_Walker", 300, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Hopper] =
+                CreateSkirmisherEnemy(
+                    "Template_Hopper", 301, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Turret] =
+                CreateArtilleryEnemy(
+                    "Template_Turret", 302, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Sniper] =
+                CreateArtilleryEnemy(
+                    "Template_Sniper", 303, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Drone] =
+                CreateAerialEnemy(
+                    "Template_Drone", 304, Vector3.zero,
+                    AerialMotionPattern.HoverBob,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Orbiter] =
+                CreateAerialEnemy(
+                    "Template_Orbiter", 305, Vector3.zero,
+                    AerialMotionPattern.Orbit,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Shield] =
+                CreateAnchorEnemy(
+                    "Template_Shield", 306, Vector3.zero,
+                    target, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Heavy] =
+                CreateAnchorEnemy(
+                    "Template_Heavy", 307, Vector3.zero,
+                    target, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Guard] =
+                CreateAnchorEnemy(
+                    "Template_Guard", 308, Vector3.zero,
+                    target, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Charger] =
+                CreateFlankerEnemy(
+                    "Template_Charger", 309, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.WallHunter] =
+                CreateFlankerEnemy(
+                    "Template_WallHunter", 310, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            templates[(int)EnemyArchetype.Interceptor] =
+                CreateFlankerEnemy(
+                    "Template_Interceptor", 311, Vector3.zero,
+                    target, projectilePrefab, material,
+                    enemyLayer, worldLayer, oneWayLayer
+                );
+
+            for (int i = 0; i < templates.Length; i++)
+            {
+                GameObject template = templates[i];
+
+                if (!template)
+                    continue;
+
+                EnemyArchetypeController2D archetype =
+                    template.GetComponent<EnemyArchetypeController2D>();
+
+                archetype?.ConfigureArchetype(
+                    (EnemyArchetype)i
+                );
+
+                template.transform.SetParent(
+                    templateRoot.transform,
+                    true
+                );
+            }
+
+            templateRoot.SetActive(false);
+            return templates;
+        }
+
+        private static void ConfigureEnemyBindings(
+            GameplayDebugSpawner2D spawner,
+            GameObject[] templates)
+        {
+            if (!spawner || templates == null)
+                return;
+
+            SerializedObject serialized =
+                new(spawner);
+
+            SerializedProperty bindings =
+                serialized.FindProperty(
+                    "enemyPrefabs"
+                );
+
+            bindings.arraySize = templates.Length;
+
+            for (int i = 0; i < templates.Length; i++)
+            {
+                SerializedProperty item =
+                    bindings.GetArrayElementAtIndex(i);
+
+                item.FindPropertyRelative("Archetype").
+                    enumValueIndex = i;
+
+                item.FindPropertyRelative("Prefab").
+                    objectReferenceValue = templates[i];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static CombatState2D AddCombatState(
