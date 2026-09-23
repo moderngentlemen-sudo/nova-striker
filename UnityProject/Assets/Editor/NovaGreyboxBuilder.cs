@@ -1704,7 +1704,7 @@ namespace NovaStriker.EditorTools
                 sharedMaterial = material;
         }
 
-        private static void CreateSkirmisherEnemy(
+        private static GameObject CreateSkirmisherEnemy(
             string name,
             int actorId,
             Vector3 position,
@@ -1826,9 +1826,18 @@ namespace NovaStriker.EditorTools
 
             root.GetComponent<MeshRenderer>().
                 sharedMaterial = material;
+
+            EnemyArchetypeController2D archetype =
+                root.AddComponent<EnemyArchetypeController2D>();
+
+            archetype.ConfigureArchetype(
+                EnemyArchetype.Walker
+            );
+
+            return root;
         }
 
-        private static void CreateFlankerEnemy(
+        private static GameObject CreateFlankerEnemy(
             string name,
             int actorId,
             Vector3 position,
@@ -1935,9 +1944,18 @@ namespace NovaStriker.EditorTools
 
             root.GetComponent<MeshRenderer>().
                 sharedMaterial = material;
+
+            EnemyArchetypeController2D archetype =
+                root.AddComponent<EnemyArchetypeController2D>();
+
+            archetype.ConfigureArchetype(
+                EnemyArchetype.Charger
+            );
+
+            return root;
         }
 
-        private static void CreateArtilleryEnemy(
+        private static GameObject CreateArtilleryEnemy(
             string name,
             int actorId,
             Vector3 position,
@@ -2042,9 +2060,18 @@ namespace NovaStriker.EditorTools
 
             root.GetComponent<MeshRenderer>().
                 sharedMaterial = material;
+
+            EnemyArchetypeController2D archetype =
+                root.AddComponent<EnemyArchetypeController2D>();
+
+            archetype.ConfigureArchetype(
+                EnemyArchetype.Sniper
+            );
+
+            return root;
         }
 
-        private static void CreateAerialEnemy(
+        private static GameObject CreateAerialEnemy(
             string name,
             int actorId,
             Vector3 position,
@@ -2154,6 +2181,17 @@ namespace NovaStriker.EditorTools
 
             root.GetComponent<MeshRenderer>().
                 sharedMaterial = material;
+
+            EnemyArchetypeController2D archetype =
+                root.AddComponent<EnemyArchetypeController2D>();
+
+            archetype.ConfigureArchetype(
+                motionPattern == AerialMotionPattern.Orbit
+                    ? EnemyArchetype.Orbiter
+                    : EnemyArchetype.Drone
+            );
+
+            return root;
         }
 
         private static CombatState2D AddCombatState(
