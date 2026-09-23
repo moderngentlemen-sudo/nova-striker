@@ -373,7 +373,7 @@ namespace NovaStriker.Session
         private void OnGameplayCue(GameplayCue cue)
         {
             StrikerPlayerIdentity actor =
-                FindPlayerByActorId(cue.ActorId);
+                GetPlayerByActorId(cue.ActorId);
 
             if (!actor)
                 return;
@@ -422,7 +422,7 @@ namespace NovaStriker.Session
             }
         }
 
-        private StrikerPlayerIdentity FindPlayerByActorId(
+        public StrikerPlayerIdentity GetPlayerByActorId(
             int actorId)
         {
             for (int i = 0; i < players.Length; i++)
