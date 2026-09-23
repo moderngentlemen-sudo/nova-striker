@@ -121,6 +121,18 @@ Run these before tuning values:
 23. Test all three grounded melee hits, two aerial hits, and downward dive melee.
 24. Connect a DualShock/DualSense and repeat core traversal and Counter checks.
 
+## Character presentation bridge validation
+
+After rebuilding the mechanics lab, the generated player now contains separate `NovaVisualRoot` and `EchoVisualRoot` objects plus `StrikerPresentationBridge`.
+
+Validate:
+
+1. Start with Character = Nova and confirm the Nova placeholder is visible.
+2. Change Character to Echo and confirm the visual switches immediately without moving or replacing the gameplay root.
+3. Exercise Echo grapple, traversal, dash, wallslide, firing, melee, and Counter actions; gameplay behavior should be unchanged.
+4. Change back to Nova and confirm Nova's visual returns.
+5. The placeholder visuals are diagnostic only and are intended to be replaced by exported character-art prefabs later.
+
 ## Greybox presentation validation
 
 After pulling this revision, run **Nova Striker → Greybox → Build / Refresh Mechanics Lab** once so the regenerated player prefab receives the new `GreyboxMechanicsVisualizer`.
