@@ -92,3 +92,38 @@ Sentinel direction:
 - retained blue energy-core/visor/emitter language
 
 The scene is tagged with `nova_striker_nova_blockout_version = "2.0"`.
+
+
+## Nova Blockout V3 — final automated silhouette pass
+
+After reviewing V2 from front and side, run:
+
+`Blender/Launchers/Build_Nova_Blockout_V3.bat`
+
+V3 is intended to be the final scripted proportion pass before pose/articulation
+testing. It still modifies only generated `BLOCKOUT_Nova_*` objects and
+preserves the canonical rig, sockets, guides, references, and `GEO_FINAL`.
+
+V3 targets the remaining silhouette issues identified in V2:
+
+- approximately 10–15% less helmet/head mass
+- longer-looking upper arms and thighs
+- lower hand placement
+- more angular, lower-profile shoulder pauldrons
+- multi-piece chest architecture instead of a single rectangular breastplate
+- narrower pelvis and an added lower-abdomen armor break
+- reduced boot mass
+- tighter back-module placement
+- slimmer, longer forearm-integrated cannon
+- subtle forward helmet/chest bias in side profile
+
+The scene is tagged with:
+
+`nova_striker_nova_blockout_version = "3.0"`
+
+and:
+
+`nova_striker_nova_blockout_final_automated_pass = True`
+
+After V3, the next gate is articulation review rather than another scripted
+silhouette iteration.
