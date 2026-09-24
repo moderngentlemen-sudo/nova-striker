@@ -14,6 +14,9 @@ Double-click:
 - `Repair_Nova_Master.bat` — safely removes Blender's factory Camera/Cube/Light
   from master files created by the earliest launcher revision, saves, then opens
   the repaired file.
+- `Build_Nova_Blockout.bat` — replaces only the generated
+  `BLOCKOUT_Nova_*` guide geometry with the first recognizable full-body Nova
+  silhouette/armor blockout, saves, then opens it.
 - `Validate_Nova.bat` — runs the Blender → Unity source/export contract checks
   without writing an FBX.
 - `Export_Nova_To_Unity.bat` — validates and exports
