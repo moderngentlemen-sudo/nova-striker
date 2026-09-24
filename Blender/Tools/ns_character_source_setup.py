@@ -60,7 +60,43 @@ def parse_args():
         default="",
         help="Optional canonical .blend path to save after setup.",
     )
+    parser.add_argument(
+        "--clean-default-scene",
+        action="store_true",
+        help="Remove untouched Blender factory Camera/Cube/Light before setup.",
+    )
     return parser.parse_args(argv)
+
+
+def remove_factory_defaults():
+    expected = {
+        "Camera": "CAMERA",
+        "Cube": "MESH",
+        "Light": "LIGHT",
+    }
+
+    default_collection = bpy.data.collections.get("Collection")
+    if default_collection is None:
+        return
+
+    for object_name, object_type in expected.items():
+        obj = bpy.data.objects.get(object_name)
+        if (
+            obj is not None
+            and obj.type == object_type
+            and obj in default_collection.objects[:]
+        ):
+            bpy.data.objects.remove(
+                obj,
+                do_unlink=True,
+            )
+
+    if (
+        default_collection.name in bpy.data.collections
+        and len(default_collection.objects) == 0
+        and len(default_collection.children) == 0
+    ):
+        bpy.data.collections.remove(default_collection)
 
 
 def ensure_collection(name, parent=None):
@@ -253,6 +289,9 @@ def main():
     character = args.character
     config = CHARACTER_CONFIG[character]
     height = config["height"]
+
+    if args.clean_default_scene:
+        remove_factory_defaults()
 
     set_units()
     root, collections = create_source_collections(config["root_collection"])
