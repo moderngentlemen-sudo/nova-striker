@@ -563,6 +563,7 @@ def clear_test(rig):
     scene["nova_striker_nova_articulation_test_version"] = ""
     scene["nova_striker_nova_articulation_action"] = ""
     scene["nova_striker_nova_articulation_pose_count"] = 0
+    scene["nova_striker_nova_articulation_interpolation"] = ""
 
     bpy.ops.wm.save_as_mainfile(
         filepath=bpy.data.filepath
@@ -576,6 +577,13 @@ def clear_test(rig):
 
 def build_test(rig):
     scene = bpy.context.scene
+
+    # Review poses are discrete clearance snapshots, not animation samples.
+    # Force new keys to CONSTANT so arbitrary frames between timeline markers
+    # cannot produce misleading blended/interpolated poses.
+    edit_preferences = bpy.context.preferences.edit
+    previous_interpolation = edit_preferences.keyframe_new_interpolation_type
+    edit_preferences.keyframe_new_interpolation_type = "CONSTANT"
 
     if not scene.get("nova_striker_nova_articulation_test", False):
         scene["nova_striker_articulation_prev_frame_start"] = scene.frame_start
@@ -636,7 +644,12 @@ def build_test(rig):
 
     write_report(report_lines)
 
+    scene["nova_striker_nova_articulation_interpolation"] = "CONSTANT"
     scene.frame_set(POSES[0][0])
+
+    # Do not permanently change the user's Blender keyframe preference.
+    edit_preferences.keyframe_new_interpolation_type = previous_interpolation
+
     bpy.ops.wm.save_as_mainfile(
         filepath=bpy.data.filepath
     )
@@ -646,9 +659,9 @@ def build_test(rig):
         f"review poses across frames {POSES[0][0]}-{POSES[-1][0]}."
     )
     print(
-        "[Nova Striker] V2 uses geometry-aware floor planting and calibrated "
-        "pose limits. Review the NS_Nova_Articulation_Report text block for "
-        "contact-height diagnostics."
+        "[Nova Striker] V2 uses geometry-aware floor planting, calibrated "
+        "pose limits, and CONSTANT pose holds between markers. Review the "
+        "NS_Nova_Articulation_Report text block for contact-height diagnostics."
     )
 
 
