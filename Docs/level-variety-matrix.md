@@ -193,3 +193,34 @@ The validator checks that all eight scenes exist and contain:
 This is structural validation only. A passing result does not prove that a
 route feels good, that a moving platform carries players correctly, or that the
 shared camera remains readable during actual four-player Play Mode.
+
+
+## One-session Play Mode circuit
+
+The generated topology labs now form a single Play Mode test circuit. The
+level-variety HUD exposes:
+
+- current lab number and act key
+- topology / traversal / objective / route / hazard contract
+- objective progress and completion state
+- elapsed time
+- current-lab attempt count
+- completed-lab count for the current Play session
+- best completion time for the current lab
+- Previous Lab / Restart Lab / Next Lab controls
+
+`LevelVarietyGreyboxBuilder` enables the Mechanics Lab and all eight topology
+scenes in Editor Build Settings so the HUD can move between scenes without
+leaving Play Mode. Rebuilding the base Mechanics Lab now preserves existing
+generated lab entries rather than replacing the Build Settings list.
+
+During the circuit, transient results are written to:
+
+`UnityProject/Library/NovaStrikerValidation/level-variety-circuit.json`
+
+The report records attempts, objective completion, and best completion time for
+all eight labs. It explicitly identifies its scope as greybox topology Play Mode
+testing only. A complete circuit is evidence that the generated topology
+objectives were reached; it is not evidence of full combat/content coverage,
+four-controller validation, profiler validation, platform certification, or
+production-asset readiness.
