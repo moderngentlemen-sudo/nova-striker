@@ -47,3 +47,25 @@ pull the latest `dev/blender-production`, and double-click:
 The repair checks that the file is actually marked as Nova Striker's Nova source
 scene, removes only the untouched factory objects from Blender's default
 `Collection`, saves the master file, and reopens it.
+
+
+## Generate the first Nova silhouette blockout
+
+After the source scene is clean, close Blender and double-click:
+
+`Blender/Launchers/Build_Nova_Blockout.bat`
+
+This safely replaces only generated `BLOCKOUT_Nova_*` objects and preserves:
+
+- `RIG_Nova`
+- all gameplay-facing sockets
+- guides/reference collections
+- `NS_Nova_GEO_FINAL`
+- any non-generated work outside the `BLOCKOUT_Nova_*` namespace
+
+The generated blockout includes a full-body proportion pass, Sentinel-oriented
+chest/shoulder/boot armor massing, helmet/visor mass, back module, blue energy
+core, restrained navy waist soft-goods marker, and the integrated right-arm
+cannon volume.
+
+It is intentionally a silhouette/proportion review asset, not final topology.
