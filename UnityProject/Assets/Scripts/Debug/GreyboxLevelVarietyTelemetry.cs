@@ -63,6 +63,29 @@ namespace NovaStriker.Debugging
                 ? navigator.LabIndex
                 : -1;
 
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            System.Array.Clear(
+                completed,
+                0,
+                completed.Length
+            );
+
+            System.Array.Clear(
+                attempts,
+                0,
+                attempts.Length
+            );
+
+            System.Array.Clear(
+                bestSeconds,
+                0,
+                bestSeconds.Length
+            );
+        }
+
         public static void RegisterAttempt(int index)
         {
             if (!ValidIndex(index))
