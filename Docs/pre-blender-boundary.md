@@ -75,13 +75,14 @@ This document defines the point at which Nova Striker gameplay engineering is co
 
 The branch has reached an **initial Unity 6000.6.2f1 compile and Play Mode milestone**, including a user-confirmed playable Mechanics Lab after live compatibility reconciliation. It is not yet comprehensively Unity-validated. Full aggregate validation, 1–4 player coverage, persistence/commerce checks, level-variety scene validation, and profiling remain.
 
-Three editor validation layers are now available:
+The source-side pre-Blender gate now includes four editor validation layers:
 
 - `Nova Striker/Validation/Run Gameplay Preflight` for scene/configuration checks
 - `Nova Striker/Validation/Run Structural Batch Validation` for scene-independent campaign, enemy, Strike Team, and skill/perk contract checks
 - `Nova Striker/Validation/Run Asset + Presentation Contract Validation` for weapon/Guardian/generated-asset integrity, commerce definitions, presentation identifiers, gameplay-cue routing, and scalability-tier contracts
+- `Nova Striker/Validation/Validate Generated Level Variety Labs` for all eight generated topology scenes, including four-player/session/camera/objective/hazard/navigation runtime structure
 
-The structural validator can also be invoked with `-executeMethod NovaStriker.EditorTools.GameplayBatchValidator.RunForCommandLine` in a Unity batch-mode environment and exits non-zero on structural errors. The asset/presentation validator exposes the equivalent `NovaStriker.EditorTools.GameplayAssetContractValidator.RunForCommandLine` entry point. Generated greybox assets that have not yet been rebuilt are reported as warnings rather than source-only failures.
+The aggregate headless gate is `NovaStriker.EditorTools.PreBlenderValidationSuite.RebuildAndRunForCommandLine`. It rebuilds the Mechanics Lab and all eight topology labs, then runs all source/scene validators and exits non-zero on failure. The structural, asset/presentation, and level-variety validators also expose narrower command-line entry points. Generated greybox assets are part of this final source-side gate, but a passing result still does not substitute for Play Mode or profiler evidence.
 
 ## Remaining meaningful pre-Blender work
 
@@ -111,4 +112,4 @@ The following work should not be simulated with additional gameplay code once th
 - final VFX, lighting, particles, audio, music, voice, and haptics polish
 - production cinematics and presentation-specific transitions
 
-At that point the correct next step is production asset creation and Unity presentation integration, not expansion of the gameplay authority layer.
+Once the aggregate source gate and the remaining empirical Unity checks pass, the correct next step is production asset creation and Unity presentation integration, not expansion of the gameplay authority layer. Until new Play Mode evidence reveals a concrete defect, further gameplay-code expansion should be treated as out of scope.
