@@ -69,3 +69,26 @@ core, restrained navy waist soft-goods marker, and the integrated right-arm
 cannon volume.
 
 It is intentionally a silhouette/proportion review asset, not final topology.
+
+
+## Nova Blockout V2 refinement
+
+After reviewing the first front/side silhouette, run:
+
+`Blender/Launchers/Build_Nova_Blockout_V2.bat`
+
+V2 preserves the same rig/socket/reference/final-geometry safety rules while
+refining only generated `BLOCKOUT_Nova_*` objects.
+
+The V2 silhouette intentionally pushes Nova toward the approved military
+Sentinel direction:
+
+- stronger chest-to-waist taper
+- flatter tactical shoulder pauldrons
+- narrower sealed combat helmet and visor
+- lower torso/back depth
+- clearer thigh/knee/shin/boot rhythm
+- slimmer, longer integrated right-arm cannon
+- retained blue energy-core/visor/emitter language
+
+The scene is tagged with `nova_striker_nova_blockout_version = "2.0"`.
