@@ -150,6 +150,9 @@ namespace NovaStriker.EditorTools
             priority = 30)]
         public static void BuildAll()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return;
+
             EnsureFolders();
             EnsureMechanicsLab();
 
@@ -271,6 +274,9 @@ namespace NovaStriker.EditorTools
         private static void OpenLab(int index)
         {
             if (index < 0 || index >= Labs.Length)
+                return;
+
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
             EnsureFolders();
