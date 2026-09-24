@@ -2,6 +2,7 @@ using System;
 using NovaStriker.Campaign;
 using NovaStriker.Combat;
 using NovaStriker.Debugging;
+using NovaStriker.InputSystemIntegration;
 using NovaStriker.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -160,6 +161,11 @@ namespace NovaStriker.EditorTools
                     GreyboxLevelVarietyTelemetry
                 >(FindObjectsInactive.Include);
 
+            GreyboxInputEventBudgetGuard[] inputBudgetGuards =
+                UnityEngine.Object.FindObjectsByType<
+                    GreyboxInputEventBudgetGuard
+                >(FindObjectsInactive.Include);
+
             StrikerPlayerIdentity[] players =
                 UnityEngine.Object.FindObjectsByType<
                     StrikerPlayerIdentity
@@ -213,6 +219,15 @@ namespace NovaStriker.EditorTools
                     ref errors,
                     path +
                     " must contain exactly one level-variety telemetry component."
+                );
+            }
+
+            if (inputBudgetGuards.Length != 1)
+            {
+                Error(
+                    ref errors,
+                    path +
+                    " must contain exactly one bounded greybox input event budget guard."
                 );
             }
 
