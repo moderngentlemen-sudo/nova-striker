@@ -160,3 +160,36 @@ is to answer pre-production questions such as:
 The generated scenes should be rebuilt freely as the level contract is tuned.
 Final Blender environment work should replace their visual geometry rather than
 move gameplay authority into production art.
+
+
+## Topology lab validation and feedback
+
+The generated labs now retain a representative combat set from the Mechanics
+Lab so geometry can be evaluated under light skirmisher, flanker, artillery,
+and aerial pressure rather than as empty traversal courses.
+
+Each generated scene also contains `GreyboxLevelVarietyHUD`, which displays
+the active act key, topology, traversal emphasis, objective style, route-choice
+contract, hazard pattern, pair-split support, objective progress, and completion
+state.
+
+After building the labs, run:
+
+`Nova Striker > Validation > Validate Generated Level Variety Labs`
+
+The validator checks that all eight scenes exist and contain:
+
+- exactly one level-variety bootstrap
+- exactly one act-objective controller
+- exactly one level-variety HUD
+- all four Strike Team player objects
+- the shared Strike Team camera
+- sector-hazard volumes
+- the required Zone / Node / Goal objective triggers
+- moving-platform runtime where required
+- reconfiguring-space phase-toggle runtime where required
+- representative enemy pressure
+
+This is structural validation only. A passing result does not prove that a
+route feels good, that a moving platform carries players correctly, or that the
+shared camera remains readable during actual four-player Play Mode.
