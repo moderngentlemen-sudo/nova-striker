@@ -4,13 +4,18 @@ Canonical source file: `Nova_master.blend`
 
 Production brief: `Docs/nova-blender-production-brief.md`
 
-## First action in Blender
+## First action
 
-Open a new Blender scene and run:
+Recommended on Windows:
 
-`Blender/Tools/ns_character_source_setup.py -- --character Nova`
+Double-click:
 
-The helper creates:
+`Blender/Launchers/Create_Nova_Master.bat`
+
+It automatically finds Blender, creates `Nova_master.blend` if necessary, and
+opens it normally.
+
+The underlying setup helper creates:
 
 - Metric / 1-meter unit configuration
 - `NS_Nova_REFERENCE`
