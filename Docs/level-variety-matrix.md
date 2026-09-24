@@ -118,3 +118,45 @@ gameplay-code tasks:
 
 The gameplay contract should be changed only when Play Mode testing demonstrates
 a level-design problem, not simply to accommodate a production-art preference.
+
+
+## Generated playable topology labs
+
+The Editor now exposes:
+
+`Nova Striker > Greybox > Level Variety > Build All Topology Labs`
+
+This generates eight representative scenes under:
+
+`Assets/Greybox/LevelVariety/Scenes/`
+
+The current lab set is:
+
+1. Linear Run — Frozen Array
+2. Moving Convoy — Transit Spine
+3. Vertical Ascent — Upper Skyline
+4. Vertical Descent — Foundry Shaft
+5. Split Route — Maintenance Interior
+6. Layered Arena — Canopy Engine
+7. Looping Arena — Core Forge
+8. Reconfiguring Space — Memory Lattice
+
+Each scene clones the current Mechanics Lab runtime shell so the four-player
+session, camera, input, progression services, and playable Striker prefabs stay
+consistent. The builder removes the original test-room geometry and replaces it
+with topology-specific primitives, moving platforms, alternating platform
+groups, hazards, and objective triggers.
+
+These labs are representative topology tests, not final act layouts. Their job
+is to answer pre-production questions such as:
+
+- does the shared camera tolerate the route shape?
+- can one player complete the route without co-op?
+- can two-to-four players divide routes without becoming stranded?
+- do moving/reconfiguring surfaces remain readable during combat?
+- does the traversal grammar feel materially different from the Mechanics Lab?
+- do objective triggers remain legible without production presentation?
+
+The generated scenes should be rebuilt freely as the level contract is tuned.
+Final Blender environment work should replace their visual geometry rather than
+move gameplay authority into production art.
