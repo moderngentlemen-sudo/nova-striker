@@ -55,6 +55,11 @@ def parse_args():
         choices=sorted(CHARACTER_CONFIG.keys()),
         default="Nova",
     )
+    parser.add_argument(
+        "--save",
+        default="",
+        help="Optional canonical .blend path to save after setup.",
+    )
     return parser.parse_args(argv)
 
 
@@ -269,10 +274,28 @@ def main():
     bpy.context.scene["nova_striker_height_m"] = height
     bpy.context.scene["nova_striker_pipeline_version"] = "1.0.0"
 
-    print(
-        f"[Nova Striker] Created {character} source scaffold at {height:.2f} m. "
-        f"Save manually as Blender/Characters/{character}/{character}_master.blend."
-    )
+    if args.save:
+        import os
+
+        output_path = os.path.abspath(args.save)
+        os.makedirs(
+            os.path.dirname(output_path),
+            exist_ok=True,
+        )
+
+        bpy.ops.wm.save_as_mainfile(
+            filepath=output_path
+        )
+
+        print(
+            f"[Nova Striker] Created and saved {character} source scaffold "
+            f"at {height:.2f} m: {output_path}"
+        )
+    else:
+        print(
+            f"[Nova Striker] Created {character} source scaffold at {height:.2f} m. "
+            f"Save as Blender/Characters/{character}/{character}_master.blend."
+        )
 
 
 if __name__ == "__main__":
