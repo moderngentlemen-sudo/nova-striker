@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Create", "Open", "Repair", "Blockout", "BlockoutV2", "Validate", "Export")]
+    [ValidateSet("Create", "Open", "Repair", "Blockout", "BlockoutV2", "BlockoutV3", "Validate", "Export")]
     [string]$Action,
 
     [Parameter(Mandatory = $true)]
@@ -82,6 +82,7 @@ $ExportScript = Join-Path $RepoRoot "Blender\Tools\ns_export_character_fbx.py"
 $RepairScript = Join-Path $RepoRoot "Blender\Tools\ns_repair_character_scene.py"
 $NovaBlockoutScript = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout.py"
 $NovaBlockoutV2Script = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout_v2.py"
+$NovaBlockoutV3Script = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout_v3.py"
 $CharacterDir = Join-Path $RepoRoot ("Blender\Characters\" + $Character)
 $BlendPath = Join-Path $CharacterDir ($Character + "_master.blend")
 $UnityExportDir = Join-Path $RepoRoot ("UnityProject\Assets\Art\Models\Characters\" + $Character)
@@ -105,6 +106,10 @@ if (!(Test-Path $NovaBlockoutScript)) {
 
 if (!(Test-Path $NovaBlockoutV2Script)) {
     throw "Missing Nova blockout V2 helper: $NovaBlockoutV2Script"
+}
+
+if (!(Test-Path $NovaBlockoutV3Script)) {
+    throw "Missing Nova blockout V3 helper: $NovaBlockoutV3Script"
 }
 
 New-Item -ItemType Directory -Force -Path $CharacterDir | Out-Null
@@ -210,6 +215,29 @@ switch ($Action) {
         Write-Host ""
         Write-Host "Nova blockout V2 generated and saved." -ForegroundColor Green
         Write-Step "Opening Nova blockout V2 in Blender"
+        Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
+    }
+
+    "BlockoutV3" {
+        if ($Character -ne "Nova") {
+            throw "The automated silhouette blockout V3 is currently available for Nova only."
+        }
+
+        if (!(Test-Path $BlendPath)) {
+            throw "Nova master file does not exist. Run Create_Nova_Master.bat first."
+        }
+
+        Write-Step "Generating Nova production silhouette blockout V3"
+
+        & $BlenderExe --background $BlendPath --python $NovaBlockoutV3Script
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Nova blockout V3 generation failed with exit code $LASTEXITCODE."
+        }
+
+        Write-Host ""
+        Write-Host "Nova blockout V3 generated and saved." -ForegroundColor Green
+        Write-Step "Opening Nova blockout V3 in Blender"
         Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
     }
 
