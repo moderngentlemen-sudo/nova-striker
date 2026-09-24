@@ -341,6 +341,11 @@ namespace NovaStriker.EditorTools
                     hazards
                 );
 
+            PositionRepresentativeEnemies(
+                anchors,
+                plan
+            );
+
             ActObjectiveController2D objective =
                 root.AddComponent<ActObjectiveController2D>();
 
@@ -376,6 +381,18 @@ namespace NovaStriker.EditorTools
                 root.transform
             );
 
+            GameObject hudRoot =
+                new("LevelVariety_HUD");
+
+            GreyboxLevelVarietyHUD hud =
+                hudRoot.AddComponent<GreyboxLevelVarietyHUD>();
+
+            hud.Configure(
+                bootstrap,
+                objective
+            );
+
+            EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(objective);
             EditorUtility.SetDirty(variation);
             EditorUtility.SetDirty(bootstrap);
@@ -1527,6 +1544,59 @@ namespace NovaStriker.EditorTools
             text.color = Color.white;
         }
 
+        private static void PositionRepresentativeEnemies(
+            TopologyAnchors anchors,
+            ActLevelVarietyReference plan)
+        {
+            SetSceneObjectPosition(
+                "Enemy_Skirmisher",
+                anchors.HoldCenter +
+                new Vector3(2.4f, 0.4f, 0f)
+            );
+
+            SetSceneObjectPosition(
+                "Enemy_Flanker",
+                anchors.NodeA +
+                new Vector3(-1.4f, 0.8f, 0f)
+            );
+
+            SetSceneObjectPosition(
+                "Enemy_Artillery",
+                anchors.NodeB +
+                new Vector3(1.8f, 0.8f, 0f)
+            );
+
+            SetSceneObjectPosition(
+                "Enemy_Aerial_HoverTest",
+                anchors.Goal +
+                new Vector3(-2.0f, 2.4f, 0f)
+            );
+
+            SetSceneObjectPosition(
+                "Enemy_Aerial_OrbitTest",
+                plan.Topology == LevelTopologyKind.VerticalAscent ||
+                plan.Topology == LevelTopologyKind.VerticalDescent
+                    ? anchors.HoldCenter +
+                      new Vector3(2.2f, 3.0f, 0f)
+                    : anchors.Goal +
+                      new Vector3(-4.0f, 3.2f, 0f)
+            );
+        }
+
+        private static void SetSceneObjectPosition(
+            string objectName,
+            Vector3 position)
+        {
+            GameObject target =
+                GameObject.Find(objectName);
+
+            if (!target)
+                return;
+
+            target.transform.position = position;
+            target.SetActive(true);
+        }
+
         private static void PositionPlayers(
             Vector3 start)
         {
@@ -1561,7 +1631,12 @@ namespace NovaStriker.EditorTools
                     "Striker_Player2",
                     "Striker_Player3",
                     "Striker_Player4",
-                    "Greybox_HUD"
+                    "Greybox_HUD",
+                    "Enemy_Skirmisher",
+                    "Enemy_Flanker",
+                    "Enemy_Artillery",
+                    "Enemy_Aerial_HoverTest",
+                    "Enemy_Aerial_OrbitTest"
                 };
 
             GameObject[] roots =
