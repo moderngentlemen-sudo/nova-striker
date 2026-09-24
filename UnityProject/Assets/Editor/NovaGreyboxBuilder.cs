@@ -1496,6 +1496,7 @@ namespace NovaStriker.EditorTools
                 new("Greybox_Session");
 
             root.AddComponent<GreyboxSessionBootstrap>();
+            root.AddComponent<GreyboxInputEventBudgetGuard>();
 
             StrikeTeamSession session =
                 root.AddComponent<StrikeTeamSession>();
