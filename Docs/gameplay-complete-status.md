@@ -159,7 +159,8 @@ The branch is now close to the pre-Blender boundary. The remaining material work
 - one/two/three/four-player Play Mode smoke passes
 - join/leave and controller disconnect/reconnect validation
 - end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
-- greybox realization and Play Mode validation of the 18-act level-variety matrix, including solo-safe route alternatives and optional co-op pair/team splits
+- generated playable topology labs now cover Linear Run, Moving Convoy, Vertical Ascent, Vertical Descent, Split Route, Layered Arena, Looping Arena, and Reconfiguring Space
+- Play Mode validation of those topology labs remains outstanding, including solo-safe route alternatives, optional co-op pair/team splits, moving-platform behavior, reconfiguring geometry, and shared-camera readability
 - representative profiler/allocation captures and pool/budget tuning, using `GameplayPerformanceProbe` only as a triage aid
 - instantiate production Animator/VFX/audio/haptic assets against the frozen presentation contract after gameplay validation; identifier design itself is no longer an open gameplay task
 - native provider adapters only where Steam/Xbox/PlayStation/Nintendo/mobile SDK access and credentials permit
