@@ -56,16 +56,32 @@ Production briefs:
 - `Docs/blender-character-rig-contract.md`
 - `Docs/blender-production-kickoff.md`
 
-## First Blender action
+## First Blender action — recommended
 
 Start with Nova.
 
-From a new Blender scene, run the setup helper with `--character Nova`, load
-the approved Nova visual references into the `NS_Nova_REFERENCE` collection,
-replace the primitive proportion markers with the actual blockout, and save the
-canonical source as:
+On Windows, open:
 
-`Blender/Characters/Nova/Nova_master.blend`
+`Blender/Launchers/`
+
+and double-click:
+
+`Create_Nova_Master.bat`
+
+That launcher finds Blender automatically, creates and saves the canonical Nova
+source scene if needed, and opens it in the normal Blender interface.
+
+The manual Python setup path remains available for advanced use, but it is no
+longer the default workflow.
+
+After Blender opens, load the approved Nova visual references into the
+`NS_Nova_REFERENCE` collection and replace the primitive proportion markers
+with the actual blockout.
+
+When ready, use:
+
+- `Validate_Nova.bat`
+- `Export_Nova_To_Unity.bat`
 
 Do not begin final-detail modeling until the blockout has completed its first
 FBX → Unity `NovaVisualRoot` round trip.
