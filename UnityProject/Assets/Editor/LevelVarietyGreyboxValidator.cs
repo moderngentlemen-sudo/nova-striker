@@ -128,6 +128,16 @@ namespace NovaStriker.EditorTools
                     GreyboxLevelVarietyHUD
                 >(FindObjectsInactive.Include);
 
+            GreyboxLevelVarietyNavigator[] navigators =
+                UnityEngine.Object.FindObjectsByType<
+                    GreyboxLevelVarietyNavigator
+                >(FindObjectsInactive.Include);
+
+            GreyboxLevelVarietyTelemetry[] telemetry =
+                UnityEngine.Object.FindObjectsByType<
+                    GreyboxLevelVarietyTelemetry
+                >(FindObjectsInactive.Include);
+
             StrikerPlayerIdentity[] players =
                 UnityEngine.Object.FindObjectsByType<
                     StrikerPlayerIdentity
@@ -166,6 +176,24 @@ namespace NovaStriker.EditorTools
                 );
             }
 
+            if (navigators.Length != 1)
+            {
+                Error(
+                    ref errors,
+                    path +
+                    " must contain exactly one level-variety navigator."
+                );
+            }
+
+            if (telemetry.Length != 1)
+            {
+                Error(
+                    ref errors,
+                    path +
+                    " must contain exactly one level-variety telemetry component."
+                );
+            }
+
             if (players.Length != 4)
             {
                 Error(
@@ -196,6 +224,15 @@ namespace NovaStriker.EditorTools
                     ref warnings,
                     path +
                     " contains no sector-hazard volume."
+                );
+            }
+
+            if (!BuildSettingsContains(path))
+            {
+                Error(
+                    ref errors,
+                    path +
+                    " is not enabled in Editor Build Settings; Play Mode circuit navigation will fail."
                 );
             }
 
@@ -324,6 +361,30 @@ namespace NovaStriker.EditorTools
                     );
                 }
             }
+        }
+
+        private static bool BuildSettingsContains(
+            string path)
+        {
+            EditorBuildSettingsScene[] scenes =
+                EditorBuildSettings.scenes;
+
+            for (int i = 0; i < scenes.Length; i++)
+            {
+                if (
+                    scenes[i].enabled &&
+                    string.Equals(
+                        scenes[i].path,
+                        path,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void Error(
