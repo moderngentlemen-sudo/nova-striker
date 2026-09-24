@@ -138,8 +138,9 @@ This branch is the full pre-Blender gameplay-development run. The intent is to e
 - versioned `GameplayPresentationContract` now freezes production-facing Animator parameter names, generic rig/socket names, gameplay event IDs, VFX/audio IDs, and semantic haptic routes without transferring timing authority to production assets
 - Asset + Presentation Contract validator checks the 12-weapon/6-Guardian contracts, generated definitions when present, commerce integrity, presentation identifier uniqueness, gameplay-cue routing, and the four scalability tiers
 - generated greybox assets are warnings rather than source-only validation failures when they have not yet been rebuilt
-- unified `PreBlenderValidationSuite` can rebuild the Mechanics Lab and invoke all three current validation layers in deterministic order
-- the unified suite now exposes aggregate command-line pass/fail entry points, returns a non-zero process exit on source-validation failure, and writes a machine-readable report under `Library/NovaStrikerValidation`
+- unified `PreBlenderValidationSuite` now rebuilds the Mechanics Lab plus all eight level-variety labs and invokes the complete source/scene validation stack in deterministic order
+- the unified suite exposes aggregate command-line pass/fail entry points, returns a non-zero process exit on source/scene validation failure, and writes a machine-readable report under `Library/NovaStrikerValidation`
+- the generated level-variety validator now also exposes a headless command-line entry point
 - aggregate source validation explicitly leaves Play Mode and production-asset validation unresolved rather than conflating code health with runtime QA
 - Mechanics Lab Editor/Development Build sessions auto-install `GameplayPerformanceProbe`, which exposes rolling frame-time and pool triage data while keeping the Unity Profiler authoritative
 - `Docs/pre-blender-validation-runbook.md` defines the compile, 1–4 player, character, content, campaign, save/commerce, scalability, and frozen-presentation-contract validation matrix
@@ -152,10 +153,10 @@ The expanded `dev/gameplay-complete` branch has now reached an **initial Unity 6
 
 ## Remaining meaningful pre-Blender work
 
-The branch is now close to the pre-Blender boundary. The remaining material work is primarily validation, profiling, integration verification, and tuning rather than missing gameplay architecture:
+The branch has reached the **terminal source-side pre-Blender architecture boundary**. No additional gameplay-authority subsystem is currently justified. Remaining material work is empirical validation, profiling, defect reconciliation, and production integration:
 
-- fresh Unity 6.6 compile/error reconciliation
-- regenerate the Mechanics Lab and run the aggregate pre-Blender validation suite, ideally through its command-line pass/fail entry point so the report is retained
+- fresh Unity 6.6 compile/error reconciliation if the latest commits expose any editor issues
+- run the aggregate pre-Blender validation suite; its rebuild entry point now regenerates both the Mechanics Lab and all eight topology labs and retains the source/scene report
 - one/two/three/four-player Play Mode smoke passes
 - join/leave and controller disconnect/reconnect validation
 - end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
@@ -174,4 +175,4 @@ See `Docs/pre-blender-boundary.md` for the explicit dependency matrix and stop c
 
 ## Stop boundary
 
-Do not add gameplay authority merely to compensate for missing production art. Once the validation/profiling list above passes, remaining meaningful work should move to Blender/production assets and Unity presentation integration: final models, rigs, authored animation, materials/textures, environment meshes, final VFX/audio/lighting, and production polish.
+Do not add gameplay authority merely to compensate for missing production art. The source-side architecture is now frozen unless Unity testing reveals a concrete defect or an approved gameplay requirement is demonstrably missing. Once the remaining validation/profiling list passes, meaningful work moves to Blender/production assets and Unity presentation integration: final models, rigs, authored animation, materials/textures, environment meshes, final VFX/audio/lighting, and production polish.
