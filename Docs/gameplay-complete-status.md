@@ -161,7 +161,10 @@ The branch is now close to the pre-Blender boundary. The remaining material work
 - end-to-end validation of all weapons, Guardians, perks, named enemies, bosses, pickups, challenges, setpieces, retries, saves, commerce restore, and DLC gates
 - generated playable topology-lab tooling covers Linear Run, Moving Convoy, Vertical Ascent, Vertical Descent, Split Route, Layered Arena, Looping Arena, and Reconfiguring Space
 - topology labs retain representative skirmisher/flanker/artillery/aerial pressure and expose a dedicated level-variety HUD for objective/progress feedback
-- an interactive generated-scene validator checks all eight labs for four-player/session/camera/objective/hazard/topology-runtime contracts
+- the topology HUD now provides Previous / Restart / Next lab navigation, elapsed time, attempts, completed-lab count, and best-time feedback so all eight scenes can be tested in one Play session
+- transient topology-circuit telemetry is written under `Library/NovaStrikerValidation` with explicit topology-only validation scope
+- the Mechanics Lab builder now preserves generated topology scenes in Editor Build Settings, keeping Play Mode circuit navigation stable across rebuilds
+- an interactive generated-scene validator checks all eight labs for four-player/session/camera/objective/hazard/topology-runtime/navigation contracts
 - Play Mode validation of those topology labs remains outstanding, including solo-safe route alternatives, optional co-op pair/team splits, moving-platform behavior, reconfiguring geometry, combat readability, and shared-camera behavior
 - representative profiler/allocation captures and pool/budget tuning, using `GameplayPerformanceProbe` only as a triage aid
 - instantiate production Animator/VFX/audio/haptic assets against the frozen presentation contract after gameplay validation; identifier design itself is no longer an open gameplay task
