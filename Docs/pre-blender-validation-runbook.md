@@ -121,9 +121,19 @@ The generated scenes include a temporary level-variety HUD and representative
 enemy pressure so topology can be judged under light combat rather than as an
 empty traversal course.
 
-Play at least one pass through all eight generated topology labs, then walk
-representative combat beats from all six sectors and confirm the authored
-18-act composition remains scalable from one to four players. Specifically verify:
+Open `LV_01_LinearRun`, enter Play Mode, and use the level-variety HUD's
+Previous / Restart / Next controls to run all eight labs without leaving Play
+Mode. The HUD tracks attempts, elapsed time, objective completion, and circuit
+progress. Session results are written to:
+
+`UnityProject/Library/NovaStrikerValidation/level-variety-circuit.json`
+
+Completing the circuit is topology/objective evidence only; it does not replace
+the wider controller, combat-content, persistence, or profiler matrix.
+
+After the eight-lab circuit, walk representative combat beats from all six
+sectors and confirm the authored 18-act composition remains scalable from one
+to four players. Specifically verify:
 
 - base-count plus additional-player scaling
 - encounter completion and reward spawning
