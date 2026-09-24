@@ -1,24 +1,36 @@
 """
-Nova Striker — Nova articulation / armor-clearance test.
+Nova Striker — Nova articulation / armor-clearance test V2.
 
-Creates a dedicated, removable test action on RIG_Nova with representative
-gameplay poses. It does not modify edit bones, mesh topology, sockets, reference
-collections, GEO_FINAL, or gameplay data.
+Creates a dedicated, removable production-review action on RIG_Nova with
+representative gameplay poses.
 
-The generated action is for Blender production review only and is not exported
-by the current FBX helper (bake_anim=False).
+V2 improves the first test harness with:
+- geometry-aware floor planting using the generated boot/knee/body blockout
+- calibrated crouch/Powerslide/wall/revive pose limits
+- more realistic pelvis/root placement and torso compensation
+- a removable text report containing contact-height diagnostics
+- automatic cleanup of the legacy V1 test action
+
+It does not modify edit bones, mesh topology, sockets, references, GEO_FINAL,
+or gameplay data. The current FBX helper uses bake_anim=False, so this review
+action is not exported as authored gameplay animation.
 """
 
 import argparse
 import math
 import sys
 import bpy
+from mathutils import Vector
 
 
 CHARACTER = "Nova"
 RIG_NAME = "RIG_Nova"
-ACTION_NAME = "TEST_Nova_Articulation_v1"
+ACTION_NAME = "TEST_Nova_Articulation_v2"
+LEGACY_ACTION_NAMES = (
+    "TEST_Nova_Articulation_v1",
+)
 MARKER_PREFIX = "NS_TEST_NOVA_"
+REPORT_NAME = "NS_Nova_Articulation_Report"
 
 REQUIRED_BONES = [
     "root",
@@ -62,6 +74,29 @@ POSES = [
     (240, "Co-op Sync"),
 ]
 
+POSE_CONTACTS = {
+    "Neutral": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Aim Forward": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Aim Up": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Aim Down": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Deep Crouch": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Powerslide": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Dash Lean": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Wall Jump Prep": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Cannon Fire": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Downed": (
+        "BLOCKOUT_Nova_TorsoCore",
+        "BLOCKOUT_Nova_ChestCenter",
+        "BLOCKOUT_Nova_Shoulder_L",
+        "BLOCKOUT_Nova_Shoulder_R",
+    ),
+    "Revive Reach": (
+        "BLOCKOUT_Nova_Boot_R",
+        "BLOCKOUT_Nova_KneePlate_L",
+    ),
+    "Co-op Sync": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+}
+
 
 def deg(value):
     return math.radians(value)
@@ -74,7 +109,7 @@ def parse_args():
     parser.add_argument(
         "--clear",
         action="store_true",
-        help="Remove the generated articulation action and test markers.",
+        help="Remove generated Nova articulation test data.",
     )
     return parser.parse_args(argv)
 
@@ -96,9 +131,9 @@ def require_rig():
         raise RuntimeError(f"Missing canonical armature: {RIG_NAME}")
 
     missing = [
-        bone
-        for bone in REQUIRED_BONES
-        if bone not in rig.pose.bones
+        bone_name
+        for bone_name in REQUIRED_BONES
+        if bone_name not in rig.pose.bones
     ]
     if missing:
         raise RuntimeError(
@@ -113,6 +148,31 @@ def remove_test_markers(scene):
     for marker in list(scene.timeline_markers):
         if marker.name.startswith(MARKER_PREFIX):
             scene.timeline_markers.remove(marker)
+
+
+def remove_test_actions(rig):
+    names = (ACTION_NAME,) + LEGACY_ACTION_NAMES
+
+    if rig.animation_data and rig.animation_data.action:
+        if rig.animation_data.action.name in names:
+            rig.animation_data.action = None
+
+    for action_name in names:
+        action = bpy.data.actions.get(action_name)
+        if action is not None:
+            bpy.data.actions.remove(
+                action,
+                do_unlink=True,
+            )
+
+
+def remove_report():
+    report = bpy.data.texts.get(REPORT_NAME)
+    if report is not None:
+        bpy.data.texts.remove(
+            report,
+            do_unlink=True,
+        )
 
 
 def reset_pose(rig):
@@ -157,208 +217,280 @@ def key_all(rig, frame):
         )
 
 
+def world_min_z(obj):
+    return min(
+        (obj.matrix_world @ Vector(corner)).z
+        for corner in obj.bound_box
+    )
+
+
+def contact_heights(object_names):
+    heights = {}
+    for object_name in object_names:
+        obj = bpy.data.objects.get(object_name)
+        if obj is not None and obj.type == "MESH":
+            heights[object_name] = world_min_z(obj)
+    return heights
+
+
+def plant_contacts_to_floor(rig, object_names, target_z=0.0):
+    if not object_names:
+        return {}
+
+    bpy.context.view_layer.update()
+    heights = contact_heights(object_names)
+
+    if not heights:
+        return {}
+
+    lowest = min(heights.values())
+    root = rig.pose.bones["root"]
+    root.location.z += target_z - lowest
+
+    bpy.context.view_layer.update()
+    return contact_heights(object_names)
+
+
+def contact_report_line(label, heights):
+    if not heights:
+        return f"{label}: no geometry floor-contact normalization"
+
+    values = list(heights.values())
+    spread = max(values) - min(values)
+    items = ", ".join(
+        f"{name}={height:.4f}m"
+        for name, height in sorted(heights.items())
+    )
+
+    status = "OK"
+    if spread > 0.08:
+        status = "REVIEW"
+
+    return (
+        f"{label}: {status}; contact spread={spread:.4f}m; "
+        f"{items}"
+    )
+
+
 def neutral(rig):
+    # Bind-pose baseline.
     pass
 
 
 def aim_forward(rig):
+    set_rot(rig, "spine_01", x=-3)
     set_rot(rig, "spine_02", x=-5)
-    set_rot(rig, "spine_03", x=-7)
-    set_rot(rig, "clavicle_r", x=-12, z=-7)
-    set_rot(rig, "upperarm_r", x=-58, z=10)
-    set_rot(rig, "lowerarm_r", x=-18)
-    set_rot(rig, "hand_r", x=6)
-    set_rot(rig, "clavicle_l", x=-5, z=5)
-    set_rot(rig, "upperarm_l", x=-18, z=-10)
+    set_rot(rig, "spine_03", x=-5)
+    set_rot(rig, "clavicle_r", x=-8, z=-6)
+    set_rot(rig, "upperarm_r", x=-48, z=9)
+    set_rot(rig, "lowerarm_r", x=-14)
+    set_rot(rig, "hand_r", x=4)
+    set_rot(rig, "clavicle_l", x=-4, z=5)
+    set_rot(rig, "upperarm_l", x=-14, z=-9)
 
 
 def aim_up(rig):
-    set_rot(rig, "spine_02", x=5)
-    set_rot(rig, "spine_03", x=10)
-    set_rot(rig, "neck", x=-5)
-    set_rot(rig, "head", x=-12)
-    set_rot(rig, "clavicle_r", x=-18, z=-8)
-    set_rot(rig, "upperarm_r", x=-72, y=-12, z=8)
-    set_rot(rig, "lowerarm_r", x=-24)
+    set_rot(rig, "spine_01", x=3)
+    set_rot(rig, "spine_02", x=6)
+    set_rot(rig, "spine_03", x=8)
+    set_rot(rig, "neck", x=-4)
+    set_rot(rig, "head", x=-9)
+    set_rot(rig, "clavicle_r", x=-12, z=-7)
+    set_rot(rig, "upperarm_r", x=-64, y=-8, z=8)
+    set_rot(rig, "lowerarm_r", x=-20)
 
 
 def aim_down(rig):
-    set_rot(rig, "spine_02", x=-12)
-    set_rot(rig, "spine_03", x=-12)
-    set_rot(rig, "neck", x=6)
-    set_rot(rig, "head", x=10)
-    set_rot(rig, "clavicle_r", x=-5, z=-5)
-    set_rot(rig, "upperarm_r", x=-38, y=10, z=8)
-    set_rot(rig, "lowerarm_r", x=28)
+    set_rot(rig, "spine_01", x=-6)
+    set_rot(rig, "spine_02", x=-9)
+    set_rot(rig, "spine_03", x=-9)
+    set_rot(rig, "neck", x=5)
+    set_rot(rig, "head", x=8)
+    set_rot(rig, "clavicle_r", x=-4, z=-4)
+    set_rot(rig, "upperarm_r", x=-32, y=7, z=7)
+    set_rot(rig, "lowerarm_r", x=22)
 
 
 def deep_crouch(rig):
-    set_loc(rig, "root", z=-0.23)
-    set_rot(rig, "pelvis", x=12)
-    set_rot(rig, "spine_01", x=-10)
-    set_rot(rig, "spine_02", x=-12)
-    set_rot(rig, "spine_03", x=-8)
+    # Athletic gameplay crouch rather than an anatomical-limit squat.
+    set_loc(rig, "root", y=-0.10)
+    set_rot(rig, "pelvis", x=7)
+    set_rot(rig, "spine_01", x=-12)
+    set_rot(rig, "spine_02", x=-15)
+    set_rot(rig, "spine_03", x=-9)
+    set_rot(rig, "neck", x=5)
 
     for side in ("l", "r"):
-        set_rot(rig, f"thigh_{side}", x=68)
-        set_rot(rig, f"calf_{side}", x=-112)
-        set_rot(rig, f"foot_{side}", x=42)
+        set_rot(rig, f"thigh_{side}", x=52)
+        set_rot(rig, f"calf_{side}", x=-84)
+        set_rot(rig, f"foot_{side}", x=28)
 
-    set_rot(rig, "upperarm_r", x=-28, z=8)
-    set_rot(rig, "lowerarm_r", x=-20)
-    set_rot(rig, "upperarm_l", x=-22, z=-8)
-    set_rot(rig, "lowerarm_l", x=-35)
+    set_rot(rig, "upperarm_r", x=-30, z=8)
+    set_rot(rig, "lowerarm_r", x=-18)
+    set_rot(rig, "upperarm_l", x=-20, z=-8)
+    set_rot(rig, "lowerarm_l", x=-28)
 
 
 def powerslide(rig):
-    set_loc(rig, "root", y=-0.16, z=-0.28)
-    set_rot(rig, "pelvis", x=22, z=-5)
-    set_rot(rig, "spine_01", x=-18)
-    set_rot(rig, "spine_02", x=-22)
-    set_rot(rig, "spine_03", x=-12)
+    # Low forward center of mass, one leg carrying more compression.
+    set_loc(rig, "root", y=-0.18)
+    set_rot(rig, "pelvis", x=14, z=-4)
+    set_rot(rig, "spine_01", x=-16)
+    set_rot(rig, "spine_02", x=-19)
+    set_rot(rig, "spine_03", x=-11)
+    set_rot(rig, "neck", x=6)
 
-    set_rot(rig, "thigh_l", x=78, z=6)
-    set_rot(rig, "calf_l", x=-120)
-    set_rot(rig, "foot_l", x=48)
+    set_rot(rig, "thigh_l", x=56, z=5)
+    set_rot(rig, "calf_l", x=-92)
+    set_rot(rig, "foot_l", x=30)
 
-    set_rot(rig, "thigh_r", x=38, z=-8)
-    set_rot(rig, "calf_r", x=-62)
-    set_rot(rig, "foot_r", x=24)
+    set_rot(rig, "thigh_r", x=24, z=-6)
+    set_rot(rig, "calf_r", x=-48)
+    set_rot(rig, "foot_r", x=16)
 
-    set_rot(rig, "upperarm_r", x=-46, z=12)
+    set_rot(rig, "upperarm_r", x=-42, z=11)
     set_rot(rig, "lowerarm_r", x=-12)
-    set_rot(rig, "upperarm_l", x=12, z=-18)
-    set_rot(rig, "lowerarm_l", x=-40)
+    set_rot(rig, "upperarm_l", x=10, z=-15)
+    set_rot(rig, "lowerarm_l", x=-32)
 
 
 def dash_lean(rig):
-    set_loc(rig, "root", y=-0.08, z=-0.04)
-    set_rot(rig, "pelvis", x=-6)
-    set_rot(rig, "spine_01", x=-16)
-    set_rot(rig, "spine_02", x=-18)
-    set_rot(rig, "spine_03", x=-14)
-    set_rot(rig, "neck", x=8)
-    set_rot(rig, "head", x=8)
+    set_loc(rig, "root", y=-0.10)
+    set_rot(rig, "pelvis", x=-4)
+    set_rot(rig, "spine_01", x=-13)
+    set_rot(rig, "spine_02", x=-16)
+    set_rot(rig, "spine_03", x=-12)
+    set_rot(rig, "neck", x=7)
+    set_rot(rig, "head", x=6)
 
-    set_rot(rig, "thigh_l", x=18)
-    set_rot(rig, "calf_l", x=-28)
-    set_rot(rig, "thigh_r", x=-18)
-    set_rot(rig, "calf_r", x=-15)
+    set_rot(rig, "thigh_l", x=16)
+    set_rot(rig, "calf_l", x=-24)
+    set_rot(rig, "thigh_r", x=-14)
+    set_rot(rig, "calf_r", x=-12)
 
-    set_rot(rig, "upperarm_r", x=12, z=8)
-    set_rot(rig, "lowerarm_r", x=-24)
-    set_rot(rig, "upperarm_l", x=-30, z=-8)
-    set_rot(rig, "lowerarm_l", x=-18)
+    set_rot(rig, "upperarm_r", x=10, z=7)
+    set_rot(rig, "lowerarm_r", x=-20)
+    set_rot(rig, "upperarm_l", x=-26, z=-7)
+    set_rot(rig, "lowerarm_l", x=-16)
 
 
 def wall_cling(rig):
-    set_loc(rig, "root", y=0.08, z=0.03)
-    set_rot(rig, "pelvis", x=8)
-    set_rot(rig, "spine_02", x=-8)
-    set_rot(rig, "spine_03", x=-10)
+    # Suspended pose: no floor normalization is applied.
+    set_loc(rig, "root", y=0.08, z=0.30)
+    set_rot(rig, "pelvis", x=6)
+    set_rot(rig, "spine_01", x=-5)
+    set_rot(rig, "spine_02", x=-7)
+    set_rot(rig, "spine_03", x=-8)
 
-    set_rot(rig, "upperarm_l", x=-105, z=-18)
-    set_rot(rig, "lowerarm_l", x=-48)
-    set_rot(rig, "upperarm_r", x=-92, z=18)
-    set_rot(rig, "lowerarm_r", x=-38)
+    set_rot(rig, "upperarm_l", x=-82, z=-16)
+    set_rot(rig, "lowerarm_l", x=-42)
+    set_rot(rig, "upperarm_r", x=-74, z=16)
+    set_rot(rig, "lowerarm_r", x=-34)
 
-    set_rot(rig, "thigh_l", x=36, z=8)
-    set_rot(rig, "calf_l", x=-74)
-    set_rot(rig, "foot_l", x=35)
-    set_rot(rig, "thigh_r", x=58, z=-8)
-    set_rot(rig, "calf_r", x=-92)
-    set_rot(rig, "foot_r", x=45)
+    set_rot(rig, "thigh_l", x=32, z=6)
+    set_rot(rig, "calf_l", x=-62)
+    set_rot(rig, "foot_l", x=28)
+    set_rot(rig, "thigh_r", x=48, z=-6)
+    set_rot(rig, "calf_r", x=-78)
+    set_rot(rig, "foot_r", x=34)
 
 
 def wall_jump_prep(rig):
-    set_loc(rig, "root", y=0.05, z=-0.10)
-    set_rot(rig, "pelvis", x=18)
-    set_rot(rig, "spine_01", x=-18)
-    set_rot(rig, "spine_02", x=-14)
-    set_rot(rig, "spine_03", x=-8)
+    set_loc(rig, "root", y=0.04)
+    set_rot(rig, "pelvis", x=12)
+    set_rot(rig, "spine_01", x=-13)
+    set_rot(rig, "spine_02", x=-12)
+    set_rot(rig, "spine_03", x=-7)
 
-    set_rot(rig, "upperarm_l", x=-72, z=-22)
-    set_rot(rig, "lowerarm_l", x=-70)
-    set_rot(rig, "upperarm_r", x=-58, z=16)
-    set_rot(rig, "lowerarm_r", x=-34)
+    set_rot(rig, "upperarm_l", x=-62, z=-18)
+    set_rot(rig, "lowerarm_l", x=-55)
+    set_rot(rig, "upperarm_r", x=-50, z=14)
+    set_rot(rig, "lowerarm_r", x=-28)
 
     for side in ("l", "r"):
-        set_rot(rig, f"thigh_{side}", x=74)
-        set_rot(rig, f"calf_{side}", x=-118)
-        set_rot(rig, f"foot_{side}", x=44)
+        set_rot(rig, f"thigh_{side}", x=58)
+        set_rot(rig, f"calf_{side}", x=-92)
+        set_rot(rig, f"foot_{side}", x=31)
 
 
 def cannon_fire(rig):
-    set_rot(rig, "pelvis", z=-3)
-    set_rot(rig, "spine_01", x=-4, z=3)
-    set_rot(rig, "spine_02", x=-7, z=5)
-    set_rot(rig, "spine_03", x=-8, z=6)
-    set_rot(rig, "clavicle_r", x=-12, z=-10)
-    set_rot(rig, "upperarm_r", x=-64, z=8)
-    set_rot(rig, "lowerarm_r", x=-10)
-    set_rot(rig, "hand_r", x=5)
+    set_loc(rig, "root", y=-0.03)
+    set_rot(rig, "pelvis", z=-2)
+    set_rot(rig, "spine_01", x=-4, z=2)
+    set_rot(rig, "spine_02", x=-6, z=4)
+    set_rot(rig, "spine_03", x=-7, z=5)
 
-    set_rot(rig, "upperarm_l", x=16, z=-18)
-    set_rot(rig, "lowerarm_l", x=-22)
-    set_rot(rig, "thigh_l", x=8)
-    set_rot(rig, "thigh_r", x=-8)
+    set_rot(rig, "clavicle_r", x=-9, z=-9)
+    set_rot(rig, "upperarm_r", x=-54, z=8)
+    set_rot(rig, "lowerarm_r", x=-8)
+    set_rot(rig, "hand_r", x=4)
+
+    set_rot(rig, "upperarm_l", x=13, z=-15)
+    set_rot(rig, "lowerarm_l", x=-18)
+    set_rot(rig, "thigh_l", x=6)
+    set_rot(rig, "thigh_r", x=-6)
 
 
 def downed(rig):
-    set_loc(rig, "root", y=0.05, z=0.22)
-    set_rot(rig, "root", x=82, z=10)
-    set_rot(rig, "pelvis", x=-8)
-    set_rot(rig, "spine_02", x=8)
-    set_rot(rig, "neck", x=-12)
+    # Side-fall review pose. Body contact, not foot contact, defines the floor.
+    set_loc(rig, "root", y=0.04, z=0.10)
+    set_rot(rig, "root", x=76, z=8)
+    set_rot(rig, "pelvis", x=-6)
+    set_rot(rig, "spine_02", x=6)
+    set_rot(rig, "neck", x=-9)
 
-    set_rot(rig, "upperarm_l", x=-18, z=-28)
-    set_rot(rig, "lowerarm_l", x=-40)
-    set_rot(rig, "upperarm_r", x=20, z=25)
-    set_rot(rig, "lowerarm_r", x=-30)
+    set_rot(rig, "upperarm_l", x=-16, z=-24)
+    set_rot(rig, "lowerarm_l", x=-32)
+    set_rot(rig, "upperarm_r", x=18, z=22)
+    set_rot(rig, "lowerarm_r", x=-24)
 
-    set_rot(rig, "thigh_l", x=32)
-    set_rot(rig, "calf_l", x=-58)
-    set_rot(rig, "thigh_r", x=-15)
-    set_rot(rig, "calf_r", x=-22)
+    set_rot(rig, "thigh_l", x=26)
+    set_rot(rig, "calf_l", x=-46)
+    set_rot(rig, "thigh_r", x=-12)
+    set_rot(rig, "calf_r", x=-18)
 
 
 def revive_reach(rig):
-    set_loc(rig, "root", y=-0.05, z=-0.16)
-    set_rot(rig, "pelvis", x=14)
-    set_rot(rig, "spine_01", x=-18)
-    set_rot(rig, "spine_02", x=-22)
-    set_rot(rig, "spine_03", x=-14)
+    # One-knee kneel with forward reach rather than a symmetric deep squat.
+    set_loc(rig, "root", y=-0.08)
+    set_rot(rig, "pelvis", x=9)
+    set_rot(rig, "spine_01", x=-13)
+    set_rot(rig, "spine_02", x=-17)
+    set_rot(rig, "spine_03", x=-11)
 
-    set_rot(rig, "thigh_l", x=76)
-    set_rot(rig, "calf_l", x=-120)
-    set_rot(rig, "foot_l", x=44)
-    set_rot(rig, "thigh_r", x=18)
-    set_rot(rig, "calf_r", x=-74)
+    set_rot(rig, "thigh_l", x=64)
+    set_rot(rig, "calf_l", x=-102)
+    set_rot(rig, "foot_l", x=34)
 
-    set_rot(rig, "upperarm_l", x=-74, z=-12)
-    set_rot(rig, "lowerarm_l", x=-22)
-    set_rot(rig, "hand_l", x=-10)
+    set_rot(rig, "thigh_r", x=28)
+    set_rot(rig, "calf_r", x=-56)
+    set_rot(rig, "foot_r", x=18)
 
-    set_rot(rig, "upperarm_r", x=-28, z=12)
-    set_rot(rig, "lowerarm_r", x=-28)
+    set_rot(rig, "upperarm_l", x=-58, z=-10)
+    set_rot(rig, "lowerarm_l", x=-18)
+    set_rot(rig, "hand_l", x=-8)
+
+    set_rot(rig, "upperarm_r", x=-24, z=10)
+    set_rot(rig, "lowerarm_r", x=-22)
 
 
 def coop_sync(rig):
-    set_rot(rig, "pelvis", x=-3)
-    set_rot(rig, "spine_01", x=-5)
-    set_rot(rig, "spine_02", x=-5)
-    set_rot(rig, "spine_03", x=-3)
+    set_loc(rig, "root", y=-0.02)
+    set_rot(rig, "pelvis", x=-2)
+    set_rot(rig, "spine_01", x=-4)
+    set_rot(rig, "spine_02", x=-4)
+    set_rot(rig, "spine_03", x=-2)
 
-    set_rot(rig, "clavicle_l", z=-10)
-    set_rot(rig, "upperarm_l", x=-42, z=-35)
-    set_rot(rig, "lowerarm_l", x=-26)
+    set_rot(rig, "clavicle_l", z=-8)
+    set_rot(rig, "upperarm_l", x=-36, z=-30)
+    set_rot(rig, "lowerarm_l", x=-22)
 
-    set_rot(rig, "clavicle_r", z=10)
-    set_rot(rig, "upperarm_r", x=-50, z=28)
-    set_rot(rig, "lowerarm_r", x=-18)
+    set_rot(rig, "clavicle_r", z=8)
+    set_rot(rig, "upperarm_r", x=-42, z=24)
+    set_rot(rig, "lowerarm_r", x=-15)
 
-    set_rot(rig, "thigh_l", x=8, z=4)
-    set_rot(rig, "thigh_r", x=-8, z=-4)
+    set_rot(rig, "thigh_l", x=6, z=3)
+    set_rot(rig, "thigh_r", x=-6, z=-3)
 
 
 POSE_BUILDERS = {
@@ -378,19 +510,47 @@ POSE_BUILDERS = {
 }
 
 
+def write_report(lines):
+    report = bpy.data.texts.get(REPORT_NAME)
+    if report is None:
+        report = bpy.data.texts.new(REPORT_NAME)
+    else:
+        report.clear()
+
+    report.write(
+        "Nova Striker — Nova Articulation Review V2\n"
+        "Generated from the V3 blockout/starter rig.\n"
+        "Contact diagnostics are review aids, not pass/fail gameplay data.\n\n"
+    )
+
+    for line in lines:
+        report.write(line + "\n")
+
+
+def restore_previous_action(rig, scene):
+    previous_name = scene.get(
+        "nova_striker_articulation_previous_action",
+        "",
+    )
+    if previous_name:
+        previous_action = bpy.data.actions.get(previous_name)
+        if previous_action is not None:
+            rig.animation_data_create()
+            rig.animation_data.action = previous_action
+            return True
+    return False
+
+
 def clear_test(rig):
     scene = bpy.context.scene
     remove_test_markers(scene)
+    remove_test_actions(rig)
+    remove_report()
 
-    if rig.animation_data and rig.animation_data.action:
-        if rig.animation_data.action.name == ACTION_NAME:
-            rig.animation_data.action = None
+    restored = restore_previous_action(rig, scene)
+    if not restored:
+        reset_pose(rig)
 
-    existing = bpy.data.actions.get(ACTION_NAME)
-    if existing is not None:
-        bpy.data.actions.remove(existing)
-
-    reset_pose(rig)
     scene.frame_start = int(
         scene.get("nova_striker_articulation_prev_frame_start", 1)
     )
@@ -400,11 +560,17 @@ def clear_test(rig):
     scene.frame_set(scene.frame_start)
 
     scene["nova_striker_nova_articulation_test"] = False
-    bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+    scene["nova_striker_nova_articulation_test_version"] = ""
+    scene["nova_striker_nova_articulation_action"] = ""
+    scene["nova_striker_nova_articulation_pose_count"] = 0
+
+    bpy.ops.wm.save_as_mainfile(
+        filepath=bpy.data.filepath
+    )
 
     print(
-        "[Nova Striker] Removed Nova articulation test action/markers "
-        "and restored neutral pose."
+        "[Nova Striker] Removed Nova articulation V1/V2 test data "
+        "and restored the previous action or neutral pose."
     )
 
 
@@ -415,28 +581,33 @@ def build_test(rig):
         scene["nova_striker_articulation_prev_frame_start"] = scene.frame_start
         scene["nova_striker_articulation_prev_frame_end"] = scene.frame_end
 
-    previous_action = ""
     if rig.animation_data and rig.animation_data.action:
-        previous_action = rig.animation_data.action.name
+        current_name = rig.animation_data.action.name
+        test_names = (ACTION_NAME,) + LEGACY_ACTION_NAMES
+        if current_name not in test_names:
+            scene["nova_striker_articulation_previous_action"] = current_name
 
-    if previous_action and previous_action != ACTION_NAME:
-        scene["nova_striker_articulation_previous_action"] = previous_action
-
-    existing = bpy.data.actions.get(ACTION_NAME)
-    if existing is not None:
-        if rig.animation_data and rig.animation_data.action == existing:
-            rig.animation_data.action = None
-        bpy.data.actions.remove(existing)
+    remove_test_actions(rig)
+    remove_test_markers(scene)
 
     action = bpy.data.actions.new(ACTION_NAME)
     rig.animation_data_create()
     rig.animation_data.action = action
 
-    remove_test_markers(scene)
+    report_lines = []
 
     for frame, label in POSES:
+        scene.frame_set(frame)
         reset_pose(rig)
         POSE_BUILDERS[label](rig)
+
+        contacts = POSE_CONTACTS.get(label, ())
+        final_heights = plant_contacts_to_floor(
+            rig,
+            contacts,
+            target_z=0.0,
+        )
+
         key_all(rig, frame)
 
         marker_name = (
@@ -448,23 +619,36 @@ def build_test(rig):
             frame=frame,
         )
 
+        report_lines.append(
+            contact_report_line(
+                label,
+                final_heights,
+            )
+        )
+
     scene.frame_start = POSES[0][0]
     scene.frame_end = POSES[-1][0]
     scene["nova_striker_nova_articulation_test"] = True
-    scene["nova_striker_nova_articulation_test_version"] = "1.0"
+    scene["nova_striker_nova_articulation_test_version"] = "2.0"
     scene["nova_striker_nova_articulation_action"] = ACTION_NAME
     scene["nova_striker_nova_articulation_pose_count"] = len(POSES)
+    scene["nova_striker_nova_articulation_floor_planting"] = "geometry_aware"
+
+    write_report(report_lines)
 
     scene.frame_set(POSES[0][0])
-    bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+    bpy.ops.wm.save_as_mainfile(
+        filepath=bpy.data.filepath
+    )
 
     print(
         f"[Nova Striker] Created {ACTION_NAME} with {len(POSES)} "
         f"review poses across frames {POSES[0][0]}-{POSES[-1][0]}."
     )
     print(
-        "[Nova Striker] Use the timeline markers to inspect armor/socket "
-        "clearance. This action is production-review data, not gameplay timing."
+        "[Nova Striker] V2 uses geometry-aware floor planting and calibrated "
+        "pose limits. Review the NS_Nova_Articulation_Report text block for "
+        "contact-height diagnostics."
     )
 
 
