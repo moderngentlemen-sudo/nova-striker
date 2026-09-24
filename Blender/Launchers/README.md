@@ -26,6 +26,12 @@ Double-click:
   visual arm/leg rhythm, introduces angular pauldrons and a multi-piece chest,
   narrows the pelvis, tightens the back module, and integrates the arm cannon
   more deeply along the forearm.
+- `Test_Nova_Articulation.bat` — creates a dedicated, removable Blender test
+  action with labeled timeline poses for neutral, forward/up/down aim, deep
+  crouch, Powerslide, dash lean, wall cling, wall-jump preparation, cannon fire,
+  downed, revive reach, and co-op Sync.
+- `Clear_Nova_Articulation_Test.bat` — removes only the generated articulation
+  action/markers and restores a neutral pose.
 - `Validate_Nova.bat` — runs the Blender → Unity source/export contract checks
   without writing an FBX.
 - `Export_Nova_To_Unity.bat` — validates and exports
