@@ -150,8 +150,31 @@ namespace NovaStriker.EditorTools
             priority = 30)]
         public static void BuildAll()
         {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            BuildAllInternal(
+                promptToSave: true,
+                openFirstLabWhenDone: true
+            );
+        }
+
+        public static void BuildAllForValidation()
+        {
+            BuildAllInternal(
+                promptToSave: false,
+                openFirstLabWhenDone: false
+            );
+        }
+
+        private static void BuildAllInternal(
+            bool promptToSave,
+            bool openFirstLabWhenDone)
+        {
+            if (
+                promptToSave &&
+                !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()
+            )
+            {
                 return;
+            }
 
             EnsureFolders();
             EnsureMechanicsLab();
@@ -197,7 +220,9 @@ namespace NovaStriker.EditorTools
             AssetDatabase.Refresh();
 
             EditorSceneManager.OpenScene(
-                Labs[0].ScenePath,
+                openFirstLabWhenDone
+                    ? Labs[0].ScenePath
+                    : BaseScenePath,
                 OpenSceneMode.Single
             );
 
