@@ -184,11 +184,14 @@ namespace NovaStriker.EditorTools
             {
                 BuildLab(
                     Labs[i],
+                    i,
                     world,
                     oneWay,
                     accent
                 );
             }
+
+            ConfigureBuildSettings();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -298,6 +301,7 @@ namespace NovaStriker.EditorTools
 
         private static void BuildLab(
             LabSpec spec,
+            int labIndex,
             Material world,
             Material oneWay,
             Material accent)
@@ -375,6 +379,22 @@ namespace NovaStriker.EditorTools
                 variation
             );
 
+            GreyboxLevelVarietyNavigator navigator =
+                root.AddComponent<GreyboxLevelVarietyNavigator>();
+
+            navigator.Configure(
+                labIndex,
+                GetLabScenePaths()
+            );
+
+            GreyboxLevelVarietyTelemetry telemetry =
+                root.AddComponent<GreyboxLevelVarietyTelemetry>();
+
+            telemetry.Configure(
+                navigator,
+                objective
+            );
+
             CreateLabel(
                 spec,
                 plan,
@@ -389,10 +409,14 @@ namespace NovaStriker.EditorTools
 
             hud.Configure(
                 bootstrap,
-                objective
+                objective,
+                navigator,
+                telemetry
             );
 
             EditorUtility.SetDirty(hud);
+            EditorUtility.SetDirty(navigator);
+            EditorUtility.SetDirty(telemetry);
             EditorUtility.SetDirty(objective);
             EditorUtility.SetDirty(variation);
             EditorUtility.SetDirty(bootstrap);
@@ -1671,6 +1695,74 @@ namespace NovaStriker.EditorTools
             }
 
             NovaGreyboxBuilder.BuildGreybox();
+        }
+
+        private static string[] GetLabScenePaths()
+        {
+            string[] paths =
+                new string[Labs.Length];
+
+            for (int i = 0; i < Labs.Length; i++)
+                paths[i] = Labs[i].ScenePath;
+
+            return paths;
+        }
+
+        private static void ConfigureBuildSettings()
+        {
+            List<EditorBuildSettingsScene> scenes =
+                new(EditorBuildSettings.scenes);
+
+            AddBuildSceneIfMissing(
+                scenes,
+                BaseScenePath
+            );
+
+            for (int i = 0; i < Labs.Length; i++)
+            {
+                AddBuildSceneIfMissing(
+                    scenes,
+                    Labs[i].ScenePath
+                );
+            }
+
+            EditorBuildSettings.scenes =
+                scenes.ToArray();
+        }
+
+        private static void AddBuildSceneIfMissing(
+            List<EditorBuildSettingsScene> scenes,
+            string path)
+        {
+            for (int i = 0; i < scenes.Count; i++)
+            {
+                if (
+                    string.Equals(
+                        scenes[i].path,
+                        path,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    if (!scenes[i].enabled)
+                    {
+                        scenes[i] =
+                            new EditorBuildSettingsScene(
+                                path,
+                                true
+                            );
+                    }
+
+                    return;
+                }
+            }
+
+            scenes.Add(
+                new EditorBuildSettingsScene(
+                    path,
+                    true
+                )
+            );
         }
 
         private static void EnsureFolders()
