@@ -17,6 +17,10 @@ Double-click:
 - `Build_Nova_Blockout.bat` — replaces only the generated
   `BLOCKOUT_Nova_*` guide geometry with the first recognizable full-body Nova
   silhouette/armor blockout, saves, then opens it.
+- `Build_Nova_Blockout_V2.bat` — regenerates only the `BLOCKOUT_Nova_*`
+  namespace with the refined military/Sentinel proportions: tapered torso,
+  flatter pauldrons, narrower helmet/visor, clearer knee/leg rhythm, reduced
+  torso depth, and a slimmer/longer integrated arm cannon.
 - `Validate_Nova.bat` — runs the Blender → Unity source/export contract checks
   without writing an FBX.
 - `Export_Nova_To_Unity.bat` — validates and exports
