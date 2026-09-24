@@ -21,16 +21,17 @@ Interactive editor use:
 
 `Nova Striker > Validation > Rebuild Mechanics Lab + Run Full Validation`
 
-The command rebuilds generated greybox assets, refreshes the AssetDatabase, and then invokes, in order:
+The command now rebuilds both the Mechanics Lab and the generated level-variety labs, refreshes the AssetDatabase, and then invokes, in order:
 
 1. Gameplay Preflight
 2. Structural Batch Validation
 3. Asset + Presentation Contract Validation
+4. Generated Level Variety Scene Validation
 
 The unified suite now also exposes aggregate headless entry points:
 
 - `NovaStriker.EditorTools.PreBlenderValidationSuite.RunForCommandLine`
-- `NovaStriker.EditorTools.PreBlenderValidationSuite.RebuildAndRunForCommandLine`
+- `NovaStriker.EditorTools.PreBlenderValidationSuite.RebuildAndRunForCommandLine` — rebuilds the Mechanics Lab and all eight topology labs before running the complete source-side validation gate
 
 A command-line run exits Unity with code `0` only when every invoked source-side validation step completes without error logs or exceptions; otherwise it exits with code `1`. The suite also writes a machine-readable result to:
 
@@ -42,8 +43,9 @@ The individual headless validators remain available for narrower diagnostics:
 
 - `NovaStriker.EditorTools.GameplayBatchValidator.RunForCommandLine`
 - `NovaStriker.EditorTools.GameplayAssetContractValidator.RunForCommandLine`
+- `NovaStriker.EditorTools.LevelVarietyGreyboxValidator.RunForCommandLine`
 
-**Pass condition:** no validator errors. Warnings must either be resolved or explicitly understood before the branch is called Unity-validated.
+**Pass condition:** no validator errors. Warnings must either be resolved or explicitly understood. A pass at this stage is the terminal **source-side** pre-Blender gate; it still does not promote the branch to comprehensive Unity validation without the Play Mode, controller, persistence, content, and profiler passes below.
 
 ## 3. Local-player smoke matrix
 
