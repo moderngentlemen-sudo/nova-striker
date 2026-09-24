@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Create", "Open", "Validate", "Export")]
+    [ValidateSet("Create", "Open", "Repair", "Validate", "Export")]
     [string]$Action,
 
     [Parameter(Mandatory = $true)]
@@ -79,6 +79,7 @@ $BlenderExe = Resolve-BlenderExecutable
 
 $SetupScript = Join-Path $RepoRoot "Blender\Tools\ns_character_source_setup.py"
 $ExportScript = Join-Path $RepoRoot "Blender\Tools\ns_export_character_fbx.py"
+$RepairScript = Join-Path $RepoRoot "Blender\Tools\ns_repair_character_scene.py"
 $CharacterDir = Join-Path $RepoRoot ("Blender\Characters\" + $Character)
 $BlendPath = Join-Path $CharacterDir ($Character + "_master.blend")
 $UnityExportDir = Join-Path $RepoRoot ("UnityProject\Assets\Art\Models\Characters\" + $Character)
@@ -90,6 +91,10 @@ if (!(Test-Path $SetupScript)) {
 
 if (!(Test-Path $ExportScript)) {
     throw "Missing Blender export helper: $ExportScript"
+}
+
+if (!(Test-Path $RepairScript)) {
+    throw "Missing Blender repair helper: $RepairScript"
 }
 
 New-Item -ItemType Directory -Force -Path $CharacterDir | Out-Null
@@ -107,7 +112,7 @@ switch ($Action) {
         else {
             Write-Step "Creating $Character master scene"
 
-            & $BlenderExe --background --factory-startup --python $SetupScript -- --character $Character --save $BlendPath
+            & $BlenderExe --background --factory-startup --python $SetupScript -- --character $Character --save $BlendPath --clean-default-scene
 
             if ($LASTEXITCODE -ne 0) {
                 throw "Blender source setup failed with exit code $LASTEXITCODE."
@@ -122,7 +127,7 @@ switch ($Action) {
         if (!(Test-Path $BlendPath)) {
             Write-Step "$Character master file does not exist yet; creating it first."
 
-            & $BlenderExe --background --factory-startup --python $SetupScript -- --character $Character --save $BlendPath
+            & $BlenderExe --background --factory-startup --python $SetupScript -- --character $Character --save $BlendPath --clean-default-scene
 
             if ($LASTEXITCODE -ne 0) {
                 throw "Blender source setup failed with exit code $LASTEXITCODE."
@@ -130,6 +135,25 @@ switch ($Action) {
         }
 
         Write-Step "Opening $Character master file"
+        Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
+    }
+
+    "Repair" {
+        if (!(Test-Path $BlendPath)) {
+            throw ($Character + " master file does not exist. Run Create_" + $Character + "_Master.bat first.")
+        }
+
+        Write-Step "Repairing $Character source scene"
+
+        & $BlenderExe --background $BlendPath --python $RepairScript -- --character $Character
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "$Character repair failed with exit code $LASTEXITCODE."
+        }
+
+        Write-Host ""
+        Write-Host "$Character source scene repaired." -ForegroundColor Green
+        Write-Step "Opening repaired $Character master file"
         Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
     }
 
