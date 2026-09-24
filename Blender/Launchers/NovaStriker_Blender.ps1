@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Create", "Open", "Repair", "Validate", "Export")]
+    [ValidateSet("Create", "Open", "Repair", "Blockout", "Validate", "Export")]
     [string]$Action,
 
     [Parameter(Mandatory = $true)]
@@ -80,6 +80,7 @@ $BlenderExe = Resolve-BlenderExecutable
 $SetupScript = Join-Path $RepoRoot "Blender\Tools\ns_character_source_setup.py"
 $ExportScript = Join-Path $RepoRoot "Blender\Tools\ns_export_character_fbx.py"
 $RepairScript = Join-Path $RepoRoot "Blender\Tools\ns_repair_character_scene.py"
+$NovaBlockoutScript = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout.py"
 $CharacterDir = Join-Path $RepoRoot ("Blender\Characters\" + $Character)
 $BlendPath = Join-Path $CharacterDir ($Character + "_master.blend")
 $UnityExportDir = Join-Path $RepoRoot ("UnityProject\Assets\Art\Models\Characters\" + $Character)
@@ -95,6 +96,10 @@ if (!(Test-Path $ExportScript)) {
 
 if (!(Test-Path $RepairScript)) {
     throw "Missing Blender repair helper: $RepairScript"
+}
+
+if (!(Test-Path $NovaBlockoutScript)) {
+    throw "Missing Nova blockout helper: $NovaBlockoutScript"
 }
 
 New-Item -ItemType Directory -Force -Path $CharacterDir | Out-Null
@@ -154,6 +159,29 @@ switch ($Action) {
         Write-Host ""
         Write-Host "$Character source scene repaired." -ForegroundColor Green
         Write-Step "Opening repaired $Character master file"
+        Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
+    }
+
+    "Blockout" {
+        if ($Character -ne "Nova") {
+            throw "The automated silhouette blockout is currently available for Nova only."
+        }
+
+        if (!(Test-Path $BlendPath)) {
+            throw "Nova master file does not exist. Run Create_Nova_Master.bat first."
+        }
+
+        Write-Step "Generating Nova production silhouette blockout"
+
+        & $BlenderExe --background $BlendPath --python $NovaBlockoutScript
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Nova blockout generation failed with exit code $LASTEXITCODE."
+        }
+
+        Write-Host ""
+        Write-Host "Nova blockout generated and saved." -ForegroundColor Green
+        Write-Step "Opening Nova blockout in Blender"
         Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
     }
 
