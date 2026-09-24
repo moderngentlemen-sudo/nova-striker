@@ -127,3 +127,44 @@ and:
 
 After V3, the next gate is articulation review rather than another scripted
 silhouette iteration.
+
+
+## Articulation and armor-clearance review
+
+After V3 has been reviewed from front and side, close Blender and run:
+
+`Blender/Launchers/Test_Nova_Articulation.bat`
+
+The helper creates a dedicated action named:
+
+`TEST_Nova_Articulation_v1`
+
+and adds labeled timeline markers at representative gameplay poses:
+
+- Neutral
+- Aim Forward
+- Aim Up
+- Aim Down
+- Deep Crouch
+- Powerslide
+- Dash Lean
+- Wall Cling
+- Wall Jump Prep
+- Cannon Fire
+- Downed
+- Revive Reach
+- Co-op Sync
+
+Use the marked frames to inspect plate intersections, shoulder/cannon clearance,
+hip/knee compression, helmet/chest interference, socket placement, and overall
+silhouette under extreme movement.
+
+The test does not change edit-bone positions, topology, sockets, references,
+`GEO_FINAL`, gameplay timing, or the Unity presentation contract. The current
+FBX helper also uses `bake_anim=False`, so this review action is not exported
+as gameplay animation.
+
+To remove the generated review action and markers and return to a neutral pose,
+run:
+
+`Blender/Launchers/Clear_Nova_Articulation_Test.bat`
