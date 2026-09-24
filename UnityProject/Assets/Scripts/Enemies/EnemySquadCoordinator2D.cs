@@ -55,8 +55,7 @@ namespace NovaStriker.Enemies
 
             EnemyBrain2D[] existing =
                 FindObjectsByType<EnemyBrain2D>(
-                    FindObjectsInactive.Exclude,
-                    FindObjectsSortMode.None
+                    FindObjectsInactive.Exclude
                 );
 
             for (int i = 0; i < existing.Length; i++)
