@@ -114,6 +114,22 @@ Native `.blend` files must never be placed inside `UnityProject/Assets`.
 
 ## Tooling
 
+### Recommended Windows workflow
+
+Use the one-click files under `Blender/Launchers/`:
+
+- `Create_Nova_Master.bat`
+- `Open_Nova.bat`
+- `Validate_Nova.bat`
+- `Export_Nova_To_Unity.bat`
+
+Equivalent Echo launchers are included for the second character round trip.
+
+The launchers automatically discover Blender and wrap the technical scripts
+below.
+
+### Underlying tools
+
 `Blender/Tools/ns_character_source_setup.py`
 
 Creates the non-destructive source-scene scaffold, unit setup, canonical collection
