@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("Create", "Open", "Repair", "Blockout", "BlockoutV2", "BlockoutV3", "Validate", "Export")]
+    [ValidateSet("Create", "Open", "Repair", "Blockout", "BlockoutV2", "BlockoutV3", "Articulation", "ClearArticulation", "Validate", "Export")]
     [string]$Action,
 
     [Parameter(Mandatory = $true)]
@@ -83,6 +83,7 @@ $RepairScript = Join-Path $RepoRoot "Blender\Tools\ns_repair_character_scene.py"
 $NovaBlockoutScript = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout.py"
 $NovaBlockoutV2Script = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout_v2.py"
 $NovaBlockoutV3Script = Join-Path $RepoRoot "Blender\Tools\ns_build_nova_blockout_v3.py"
+$NovaArticulationScript = Join-Path $RepoRoot "Blender\Tools\ns_test_nova_articulation.py"
 $CharacterDir = Join-Path $RepoRoot ("Blender\Characters\" + $Character)
 $BlendPath = Join-Path $CharacterDir ($Character + "_master.blend")
 $UnityExportDir = Join-Path $RepoRoot ("UnityProject\Assets\Art\Models\Characters\" + $Character)
@@ -110,6 +111,10 @@ if (!(Test-Path $NovaBlockoutV2Script)) {
 
 if (!(Test-Path $NovaBlockoutV3Script)) {
     throw "Missing Nova blockout V3 helper: $NovaBlockoutV3Script"
+}
+
+if (!(Test-Path $NovaArticulationScript)) {
+    throw "Missing Nova articulation helper: $NovaArticulationScript"
 }
 
 New-Item -ItemType Directory -Force -Path $CharacterDir | Out-Null
@@ -238,6 +243,52 @@ switch ($Action) {
         Write-Host ""
         Write-Host "Nova blockout V3 generated and saved." -ForegroundColor Green
         Write-Step "Opening Nova blockout V3 in Blender"
+        Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
+    }
+
+    "Articulation" {
+        if ($Character -ne "Nova") {
+            throw "The automated articulation review is currently available for Nova only."
+        }
+
+        if (!(Test-Path $BlendPath)) {
+            throw "Nova master file does not exist. Run Create_Nova_Master.bat first."
+        }
+
+        Write-Step "Creating Nova articulation and armor-clearance test"
+
+        & $BlenderExe --background $BlendPath --python $NovaArticulationScript
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Nova articulation test generation failed with exit code $LASTEXITCODE."
+        }
+
+        Write-Host ""
+        Write-Host "Nova articulation test created and saved." -ForegroundColor Green
+        Write-Step "Opening Nova articulation review in Blender"
+        Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
+    }
+
+    "ClearArticulation" {
+        if ($Character -ne "Nova") {
+            throw "The automated articulation cleanup is currently available for Nova only."
+        }
+
+        if (!(Test-Path $BlendPath)) {
+            throw "Nova master file does not exist."
+        }
+
+        Write-Step "Removing Nova articulation test data"
+
+        & $BlenderExe --background $BlendPath --python $NovaArticulationScript -- --clear
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Nova articulation test cleanup failed with exit code $LASTEXITCODE."
+        }
+
+        Write-Host ""
+        Write-Host "Nova articulation test removed." -ForegroundColor Green
+        Write-Step "Opening Nova in neutral pose"
         Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
     }
 
