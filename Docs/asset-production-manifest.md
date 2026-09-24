@@ -38,10 +38,10 @@ Examples:
 
 | ID | Asset | Concept | Sheet | Blender | Rig | Anim | Unity | Gameplay |
 |---|---|---|---|---|---|---|---|---|
-| CHR-NOVA | Nova | approved | in_progress | not_started | not_started | not_started | scaffolded | in_progress |
+| CHR-NOVA | Nova | approved | in_progress | review | not_started | not_started | scaffolded | in_progress |
 | CHR-ECHO | Echo | approved | in_progress | not_started | not_started | not_started | scaffolded | in_progress |
 
-Nova and Echo now both have approved production directions, active reference-sheet preparation, active Unity gameplay work, and a scaffolded presentation handoff: separate character visual roots and a shared `StrikerPresentationBridge` for Animator/event integration. Blender production has moved to `dev/blender-production`. `scaffolded` in the Unity column does **not** mean a production model, rig, or character-art prefab exists.
+Nova and Echo now both have approved production directions, active reference-sheet preparation, active Unity gameplay work, and a scaffolded presentation handoff: separate character visual roots and a shared `StrikerPresentationBridge` for Animator/event integration. Blender production has moved to `dev/blender-production`. Nova's generated V3 blockout has reached the review gate and now has a dedicated articulation/armor-clearance test workflow; this does **not** advance the production rig or animation-ready gates. `scaffolded` in the Unity column does **not** mean a production model, rig, or character-art prefab exists.
 
 ### Guardians
 
