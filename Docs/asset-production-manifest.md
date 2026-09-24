@@ -38,10 +38,10 @@ Examples:
 
 | ID | Asset | Concept | Sheet | Blender | Rig | Anim | Unity | Gameplay |
 |---|---|---|---|---|---|---|---|---|
-| CHR-NOVA | Nova | foundation | not_started | not_started | not_started | not_started | scaffolded | in_progress |
-| CHR-ECHO | Echo | foundation | not_started | not_started | not_started | not_started | scaffolded | in_progress |
+| CHR-NOVA | Nova | approved | in_progress | not_started | not_started | not_started | scaffolded | in_progress |
+| CHR-ECHO | Echo | approved | in_progress | not_started | not_started | not_started | scaffolded | in_progress |
 
-Nova and Echo now both have active Unity gameplay work plus a scaffolded presentation handoff: separate character visual roots and a shared `StrikerPresentationBridge` for Animator/event integration. `scaffolded` in the Unity column does **not** mean a production model, rig, or character-art prefab exists.
+Nova and Echo now both have approved production directions, active reference-sheet preparation, active Unity gameplay work, and a scaffolded presentation handoff: separate character visual roots and a shared `StrikerPresentationBridge` for Animator/event integration. Blender production has moved to `dev/blender-production`. `scaffolded` in the Unity column does **not** mean a production model, rig, or character-art prefab exists.
 
 ### Guardians
 
@@ -158,6 +158,21 @@ Before an asset reaches `gameplay_integrated`:
 - Animator/VFX hooks consume gameplay events rather than own gameplay timing,
 - gameplay remains functional with visual presentation disabled,
 - performance has been profiled on the current target baseline.
+
+## Blender production kickoff
+
+The current production branch is `dev/blender-production`.
+
+Character preparation now includes:
+
+- `Docs/blender-production-kickoff.md`
+- `Docs/nova-blender-production-brief.md`
+- `Docs/echo-blender-production-brief.md`
+- `Docs/blender-character-rig-contract.md`
+- `Blender/Tools/ns_character_source_setup.py`
+- `Blender/Tools/ns_export_character_fbx.py`
+
+Nova remains the first full round-trip asset.
 
 ## Initial production priority
 
