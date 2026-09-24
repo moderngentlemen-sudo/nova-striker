@@ -132,3 +132,26 @@ Before a character rig is considered ready for the first Unity round trip:
 6. FBX exports at Unity scale 1,
 7. Unity can parent the art prefab under the appropriate visual root,
 8. gameplay still works with the art prefab disabled.
+
+
+## Nova articulation review harness
+
+The current Nova production-review helper creates a temporary action named
+`TEST_Nova_Articulation_v2` on `RIG_Nova`.
+
+This is a blockout/clearance test harness, not the production animation rig and
+not gameplay timing authority.
+
+V2 uses geometry-aware floor normalization against generated blockout contact
+objects for grounded poses and calibrates the most collision-sensitive poses:
+deep crouch, Powerslide, wall movement, revive reach, and cannon fire.
+
+The helper also generates the Blender text block
+`NS_Nova_Articulation_Report`, which records contact-height spread as a
+diagnostic. A large spread means the pose should be visually reviewed; it does
+not by itself fail the rig or blockout.
+
+Running `Clear_Nova_Articulation_Test.bat` removes the generated V1/V2 test
+actions, timeline markers, and diagnostic report while preserving the canonical
+skeleton, sockets, blockout/final geometry, and previous non-test action when
+available.
