@@ -37,7 +37,12 @@ def parse_args():
     argv = argv[argv.index("--") + 1:] if "--" in argv else []
     parser = argparse.ArgumentParser()
     parser.add_argument("--character", choices=["Nova", "Echo"], required=True)
-    parser.add_argument("--out", required=True)
+    parser.add_argument("--out", default="")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Run export-contract validation without writing an FBX.",
+    )
     parser.add_argument(
         "--include-blockout",
         action="store_true",
@@ -50,11 +55,14 @@ def near(value, target=0.0, tolerance=1e-4):
     return abs(value - target) <= tolerance
 
 
-def validate_transform(obj):
+def validate_transform(obj, require_origin=True):
     errors = []
 
-    if any(not near(v, 0.0) for v in obj.location):
-        errors.append(f"{obj.name}: location must be 0,0,0 before export.")
+    if (
+        require_origin
+        and any(not near(v, 0.0) for v in obj.location)
+    ):
+        errors.append(f"{obj.name}: location must be 0,0,0 before final export.")
 
     if any(not near(v, 0.0) for v in obj.rotation_euler):
         errors.append(f"{obj.name}: rotation must be applied before export.")
@@ -102,8 +110,11 @@ def main():
     ]
 
     meshes = final_meshes
+    using_blockout = False
+
     if not meshes and args.include_blockout:
         meshes = blockout_meshes
+        using_blockout = True
 
     if not meshes:
         errors.append(
@@ -112,13 +123,31 @@ def main():
         )
 
     for mesh in meshes:
-        errors.extend(validate_transform(mesh))
+        errors.extend(
+            validate_transform(
+                mesh,
+                require_origin=not using_blockout,
+            )
+        )
 
     if errors:
         print("[Nova Striker] Character export validation FAILED:")
         for error in errors:
             print(" - " + error)
         raise SystemExit(2)
+
+    print(
+        f"[Nova Striker] {character} export-contract validation PASSED "
+        f"({'blockout' if using_blockout else 'final mesh'})."
+    )
+
+    if args.validate_only:
+        return
+
+    if not args.out:
+        raise SystemExit(
+            "An --out path is required unless --validate-only is used."
+        )
 
     bpy.ops.object.select_all(action="DESELECT")
 
