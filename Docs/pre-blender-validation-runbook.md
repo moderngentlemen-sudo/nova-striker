@@ -109,9 +109,17 @@ Exercise each of the following at least once in Play Mode:
 
 ## 6. Campaign / encounter matrix
 
-Before the campaign pass, generate the representative topology scenes with:
+Before the campaign pass, generate and structurally validate the representative topology scenes with:
 
 `Nova Striker > Greybox > Level Variety > Build All Topology Labs`
+
+then:
+
+`Nova Striker > Validation > Validate Generated Level Variety Labs`
+
+The generated scenes include a temporary level-variety HUD and representative
+enemy pressure so topology can be judged under light combat rather than as an
+empty traversal course.
 
 Play at least one pass through all eight generated topology labs, then walk
 representative combat beats from all six sectors and confirm the authored
