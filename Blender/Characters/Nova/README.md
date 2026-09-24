@@ -150,6 +150,10 @@ and a generated Blender text report named:
 The report records floor-contact height/spread diagnostics for each applicable
 pose. These values are review aids rather than gameplay pass/fail criteria.
 
+Articulation keys use `CONSTANT` interpolation. Each labeled pose is therefore
+held exactly until the next marker; scrubbing to an in-between frame will not
+create a misleading blend between two clearance poses.
+
 The action adds labeled timeline markers at representative gameplay poses:
 
 - Neutral
