@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using NovaStriker.CameraSystem;
 using NovaStriker.Campaign;
@@ -453,10 +454,43 @@ namespace NovaStriker.EditorTools
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            EditorBuildSettings.scenes = new[]
+            List<EditorBuildSettingsScene> buildScenes =
+                new(EditorBuildSettings.scenes);
+
+            bool mechanicsLabListed = false;
+
+            for (int i = 0; i < buildScenes.Count; i++)
             {
-                new EditorBuildSettingsScene(ScenePath, true)
-            };
+                if (buildScenes[i].path != ScenePath)
+                    continue;
+
+                mechanicsLabListed = true;
+
+                if (!buildScenes[i].enabled)
+                {
+                    buildScenes[i] =
+                        new EditorBuildSettingsScene(
+                            ScenePath,
+                            true
+                        );
+                }
+
+                break;
+            }
+
+            if (!mechanicsLabListed)
+            {
+                buildScenes.Insert(
+                    0,
+                    new EditorBuildSettingsScene(
+                        ScenePath,
+                        true
+                    )
+                );
+            }
+
+            EditorBuildSettings.scenes =
+                buildScenes.ToArray();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
