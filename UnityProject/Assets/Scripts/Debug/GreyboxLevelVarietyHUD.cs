@@ -12,6 +12,8 @@ namespace NovaStriker.Debugging
     {
         [SerializeField] private GreyboxLevelVarietyBootstrap bootstrap;
         [SerializeField] private ActObjectiveController2D objective;
+        [SerializeField] private GreyboxLevelVarietyNavigator navigator;
+        [SerializeField] private GreyboxLevelVarietyTelemetry telemetry;
 
         private GUIStyle header;
         private GUIStyle body;
@@ -19,10 +21,14 @@ namespace NovaStriker.Debugging
 
         public void Configure(
             GreyboxLevelVarietyBootstrap labBootstrap,
-            ActObjectiveController2D objectiveController)
+            ActObjectiveController2D objectiveController,
+            GreyboxLevelVarietyNavigator labNavigator,
+            GreyboxLevelVarietyTelemetry labTelemetry)
         {
             bootstrap = labBootstrap;
             objective = objectiveController;
+            navigator = labNavigator;
+            telemetry = labTelemetry;
         }
 
         private void Awake()
@@ -32,6 +38,22 @@ namespace NovaStriker.Debugging
 
             if (!objective)
                 objective = FindAnyObjectByType<ActObjectiveController2D>();
+
+            if (!navigator)
+            {
+                navigator =
+                    FindAnyObjectByType<
+                        GreyboxLevelVarietyNavigator
+                    >();
+            }
+
+            if (!telemetry)
+            {
+                telemetry =
+                    FindAnyObjectByType<
+                        GreyboxLevelVarietyTelemetry
+                    >();
+            }
         }
 
         private void OnGUI()
@@ -44,8 +66,8 @@ namespace NovaStriker.Debugging
             ActLevelVarietyReference plan =
                 bootstrap.CurrentPlan;
 
-            float width = 470f;
-            float height = 188f;
+            float width = 500f;
+            float height = 252f;
             float x = 14f;
             float y = Screen.height - height - 14f;
 
@@ -67,8 +89,37 @@ namespace NovaStriker.Debugging
                         ? "ACTIVE"
                         : "READY";
 
+            int labNumber =
+                navigator
+                    ? navigator.LabIndex + 1
+                    : 0;
+
+            int labCount =
+                navigator
+                    ? navigator.LabCount
+                    : 0;
+
+            string telemetryText =
+                telemetry
+                    ? "    Time: " +
+                      telemetry.ElapsedSeconds.ToString("0.0") +
+                      "s    Attempts: " +
+                      telemetry.CurrentAttempts +
+                      "\nCircuit: " +
+                      telemetry.CompletedLabCount +
+                      "/" +
+                      Mathf.Max(1, labCount) +
+                      " complete    Best: " +
+                      (
+                          telemetry.CurrentBestSeconds > 0f
+                              ? telemetry.CurrentBestSeconds.ToString("0.0") + "s"
+                              : "-"
+                      )
+                    : string.Empty;
+
             string text =
-                plan.Key + "\n" +
+                "Lab " + labNumber + "/" + Mathf.Max(1, labCount) +
+                "    " + plan.Key + "\n" +
                 "Topology: " + plan.Topology +
                 "    Traversal: " + plan.Traversal + "\n" +
                 "Objective: " + plan.Objective +
@@ -78,10 +129,11 @@ namespace NovaStriker.Debugging
                 (plan.SupportsPairSplit ? "supported" : "not required") +
                 "\nProgress: " +
                 Mathf.RoundToInt(objective.Progress01 * 100f) +
-                "%    Status: " + status;
+                "%    Status: " + status +
+                telemetryText;
 
             GUI.Label(
-                new Rect(x + 14f, y + 42f, width - 28f, 108f),
+                new Rect(x + 14f, y + 42f, width - 28f, 132f),
                 text,
                 body
             );
@@ -89,7 +141,7 @@ namespace NovaStriker.Debugging
             if (objective.Completed)
             {
                 GUI.Label(
-                    new Rect(x + 14f, y + 150f, width - 28f, 26f),
+                    new Rect(x + 14f, y + 176f, width - 28f, 24f),
                     "OBJECTIVE COMPLETE — topology pass may continue.",
                     completeStyle
                 );
@@ -97,11 +149,51 @@ namespace NovaStriker.Debugging
             else
             {
                 GUI.Label(
-                    new Rect(x + 14f, y + 150f, width - 28f, 26f),
+                    new Rect(x + 14f, y + 176f, width - 28f, 24f),
                     ObjectiveHint(plan.Objective),
                     body
                 );
             }
+
+            bool previousEnabled = GUI.enabled;
+            GUI.enabled =
+                navigator &&
+                navigator.CanNavigate;
+
+            float buttonY = y + 208f;
+            float buttonWidth = 146f;
+
+            if (
+                GUI.Button(
+                    new Rect(x + 14f, buttonY, buttonWidth, 30f),
+                    "Previous Lab"
+                )
+            )
+            {
+                navigator.LoadPrevious();
+            }
+
+            if (
+                GUI.Button(
+                    new Rect(x + 177f, buttonY, buttonWidth, 30f),
+                    "Restart Lab"
+                )
+            )
+            {
+                navigator.RestartCurrent();
+            }
+
+            if (
+                GUI.Button(
+                    new Rect(x + 340f, buttonY, buttonWidth, 30f),
+                    "Next Lab"
+                )
+            )
+            {
+                navigator.LoadNext();
+            }
+
+            GUI.enabled = previousEnabled;
         }
 
         private static string ObjectiveHint(
