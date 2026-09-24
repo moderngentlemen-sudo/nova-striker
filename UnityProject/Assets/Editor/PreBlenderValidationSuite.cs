@@ -39,6 +39,7 @@ namespace NovaStriker.EditorTools
             public string startedUtc;
             public string finishedUtc;
             public bool rebuiltMechanicsLab;
+            public bool rebuiltLevelVarietyLabs;
             public bool sourceValidationPassed;
             public bool playModeValidated;
             public bool productionAssetsValidated;
@@ -53,7 +54,10 @@ namespace NovaStriker.EditorTools
             priority = 10)]
         public static void RunInteractive()
         {
-            RunSuite(rebuildMechanicsLab: false);
+            RunSuite(
+                rebuildMechanicsLab: false,
+                rebuildLevelVarietyLabs: false
+            );
         }
 
         [MenuItem(
@@ -61,7 +65,10 @@ namespace NovaStriker.EditorTools
             priority = 11)]
         public static void RebuildAndRunInteractive()
         {
-            RunSuite(rebuildMechanicsLab: true);
+            RunSuite(
+                rebuildMechanicsLab: true,
+                rebuildLevelVarietyLabs: true
+            );
         }
 
         /// <summary>
@@ -71,7 +78,10 @@ namespace NovaStriker.EditorTools
         /// </summary>
         public static void RunForCommandLine()
         {
-            RunCommandLine(rebuildMechanicsLab: false);
+            RunCommandLine(
+                rebuildMechanicsLab: false,
+                rebuildLevelVarietyLabs: false
+            );
         }
 
         /// <summary>
@@ -81,18 +91,29 @@ namespace NovaStriker.EditorTools
         /// </summary>
         public static void RebuildAndRunForCommandLine()
         {
-            RunCommandLine(rebuildMechanicsLab: true);
+            RunCommandLine(
+                rebuildMechanicsLab: true,
+                rebuildLevelVarietyLabs: true
+            );
         }
 
-        private static void RunCommandLine(bool rebuildMechanicsLab)
+        private static void RunCommandLine(
+            bool rebuildMechanicsLab,
+            bool rebuildLevelVarietyLabs)
         {
-            bool passed = RunSuite(rebuildMechanicsLab);
+            bool passed =
+                RunSuite(
+                    rebuildMechanicsLab,
+                    rebuildLevelVarietyLabs
+                );
 
             if (Application.isBatchMode)
                 EditorApplication.Exit(passed ? 0 : 1);
         }
 
-        private static bool RunSuite(bool rebuildMechanicsLab)
+        private static bool RunSuite(
+            bool rebuildMechanicsLab,
+            bool rebuildLevelVarietyLabs)
         {
             DateTime startedUtc = DateTime.UtcNow;
             ValidationReport report = new ValidationReport
@@ -100,14 +121,17 @@ namespace NovaStriker.EditorTools
                 unityVersion = Application.unityVersion,
                 startedUtc = startedUtc.ToString("O"),
                 rebuiltMechanicsLab = rebuildMechanicsLab,
+                rebuiltLevelVarietyLabs = rebuildLevelVarietyLabs,
                 playModeValidated = false,
                 productionAssetsValidated = false,
                 validationScope =
                     "Unity editor compile-time/source-contract validation",
                 boundaryNote =
-                    "A passing report does not mark 1-4 player Play Mode, " +
-                    "controller, save/commerce, profiler, platform SDK, or " +
-                    "production Blender/presentation validation complete."
+                    "A passing report confirms editor/source contracts and " +
+                    "generated greybox scene structure only. It does not mark " +
+                    "1-4 player Play Mode, controller, persistence behavior, " +
+                    "profiler, platform SDK, or production Blender/presentation " +
+                    "validation complete."
             };
 
             Debug.Log(
@@ -126,6 +150,16 @@ namespace NovaStriker.EditorTools
                     ExecuteStep(
                         "Mechanics Lab rebuild",
                         NovaGreyboxBuilder.BuildGreybox,
+                        report
+                    );
+            }
+
+            if (rebuildLevelVarietyLabs)
+            {
+                allPassed &=
+                    ExecuteStep(
+                        "Level variety lab rebuild",
+                        LevelVarietyGreyboxBuilder.BuildAllForValidation,
                         report
                     );
             }
@@ -158,6 +192,27 @@ namespace NovaStriker.EditorTools
                     report
                 );
 
+            allPassed &=
+                ExecuteStep(
+                    "Generated level variety scene validation",
+                    () =>
+                    {
+                        bool passed =
+                            LevelVarietyGreyboxValidator.ValidateGeneratedLabs(
+                                restoreOriginalScene: true
+                            );
+
+                        if (!passed)
+                        {
+                            Debug.LogError(
+                                Prefix +
+                                "Generated level variety scene validation failed."
+                            );
+                        }
+                    },
+                    report
+                );
+
             report.sourceValidationPassed = allPassed;
             report.finishedUtc = DateTime.UtcNow.ToString("O");
 
@@ -173,8 +228,9 @@ namespace NovaStriker.EditorTools
                 elapsedSeconds.ToString("0.00") +
                 "s. Report: " +
                 ReportRelativePath +
-                ". Manual 1-4 player Play Mode, controller, save/commerce, " +
-                "profiler, and production-asset passes remain separate.";
+                ". Manual topology-circuit Play Mode, 1-4 player/controller, " +
+                "persistence/commerce behavior, profiler, and production-asset " +
+                "passes remain separate.";
 
             if (allPassed)
                 Debug.Log(summary);
