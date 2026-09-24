@@ -1,5 +1,6 @@
 using System;
 using NovaStriker.Campaign;
+using NovaStriker.Combat;
 using NovaStriker.Debugging;
 using NovaStriker.Player;
 using UnityEditor;
@@ -228,7 +229,7 @@ namespace NovaStriker.EditorTools
                 if (
                     damageables[i] &&
                     damageables[i].Faction ==
-                    Combat.CombatFaction.Enemy
+                    CombatFaction.Enemy
                 )
                 {
                     enemyCount++;
