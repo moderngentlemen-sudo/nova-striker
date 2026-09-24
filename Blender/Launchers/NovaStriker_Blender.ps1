@@ -255,7 +255,7 @@ switch ($Action) {
             throw "Nova master file does not exist. Run Create_Nova_Master.bat first."
         }
 
-        Write-Step "Creating Nova articulation and armor-clearance test"
+        Write-Step "Creating Nova articulation V2 and armor-clearance test"
 
         & $BlenderExe --background $BlendPath --python $NovaArticulationScript
 
@@ -264,7 +264,7 @@ switch ($Action) {
         }
 
         Write-Host ""
-        Write-Host "Nova articulation test created and saved." -ForegroundColor Green
+        Write-Host "Nova articulation V2 test created and saved." -ForegroundColor Green
         Write-Step "Opening Nova articulation review in Blender"
         Start-Process -FilePath $BlenderExe -ArgumentList @($BlendPath)
     }
