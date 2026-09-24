@@ -102,7 +102,6 @@ def add_cube(
     bpy.ops.mesh.primitive_cube_add(
         size=1.0,
         location=location,
-        rotation=rotation,
     )
     obj = bpy.context.object
     obj.name = name
@@ -113,6 +112,10 @@ def add_cube(
         modifier.width = bevel
         modifier.segments = 2
 
+    # Apply dimensions before rotation so angled armor keeps predictable local
+    # proportions rather than using an already-rotated world bounding box.
+    apply_object_transform(obj)
+    obj.rotation_euler = rotation
     apply_object_transform(obj)
     move_to_collection(obj, collection)
 
@@ -241,7 +244,7 @@ def build_nova_v3():
     add_cube(
         f"{GENERATED_PREFIX}TorsoCore",
         (0.0, -0.008 * h, 0.715 * h),
-        (0.245 * h, 0.128 * h, 0.275 * h),
+        (0.235 * h, 0.124 * h, 0.270 * h),
         dark,
         collection,
         rig,
@@ -252,7 +255,7 @@ def build_nova_v3():
     add_cube(
         f"{GENERATED_PREFIX}PelvisCore",
         (0.0, 0.0, 0.515 * h),
-        (0.190 * h, 0.122 * h, 0.135 * h),
+        (0.180 * h, 0.118 * h, 0.132 * h),
         dark,
         collection,
         rig,
@@ -266,7 +269,7 @@ def build_nova_v3():
     add_cube(
         f"{GENERATED_PREFIX}ChestCenter",
         (0.0, -0.040 * h, 0.752 * h),
-        (0.145 * h, 0.100 * h, 0.155 * h),
+        (0.120 * h, 0.096 * h, 0.145 * h),
         armor,
         collection,
         rig,
@@ -277,8 +280,8 @@ def build_nova_v3():
     for side, sign in (("L", 1.0), ("R", -1.0)):
         add_cube(
             f"{GENERATED_PREFIX}ChestPlate_{side}",
-            (sign * 0.112 * h, -0.032 * h, 0.765 * h),
-            (0.185 * h, 0.100 * h, 0.145 * h),
+            (sign * 0.085 * h, -0.032 * h, 0.765 * h),
+            (0.145 * h, 0.096 * h, 0.138 * h),
             armor,
             collection,
             rig,
@@ -331,11 +334,12 @@ def build_nova_v3():
         0.018,
     )
 
-    # Smaller head and helmet with a subtle forward combat bias.
+    # Smaller head and helmet with a subtle forward combat bias. The shell
+    # remains inside the canonical 1.85 m envelope.
     add_uv_sphere(
         f"{GENERATED_PREFIX}HeadCore",
-        (0.0, -0.012 * h, 0.928 * h),
-        (0.073 * h, 0.064 * h, 0.094 * h),
+        (0.0, -0.012 * h, 0.930 * h),
+        (0.068 * h, 0.060 * h, 0.062 * h),
         dark,
         collection,
         rig,
@@ -344,8 +348,8 @@ def build_nova_v3():
 
     add_cube(
         f"{GENERATED_PREFIX}HelmetShell",
-        (0.0, -0.016 * h, 0.938 * h),
-        (0.155 * h, 0.118 * h, 0.170 * h),
+        (0.0, -0.016 * h, 0.930 * h),
+        (0.145 * h, 0.112 * h, 0.130 * h),
         armor,
         collection,
         rig,
@@ -355,8 +359,8 @@ def build_nova_v3():
 
     add_cube(
         f"{GENERATED_PREFIX}Visor",
-        (0.0, -0.084 * h, 0.943 * h),
-        (0.105 * h, 0.014 * h, 0.040 * h),
+        (0.0, -0.078 * h, 0.940 * h),
+        (0.098 * h, 0.014 * h, 0.035 * h),
         blue,
         collection,
         rig,
@@ -402,17 +406,20 @@ def build_nova_v3():
     pauldron_tilt = math.radians(11.0)
 
     for side, sign, upperarm, lowerarm, hand, thigh, calf, foot in sides:
-        shoulder_x = sign * 0.205 * h
-        upperarm_x = sign * 0.258 * h
-        forearm_x = sign * 0.330 * h
-        hand_x = sign * 0.390 * h
+        shoulder_x = sign * 0.145 * h
+        upperarm_x = sign * 0.185 * h
+        forearm_x = sign * 0.295 * h
+        hand_x = sign * 0.365 * h
         leg_x = sign * 0.078 * h
+
+        upperarm_tilt = math.radians(-sign * 50.0)
+        forearm_tilt = math.radians(-sign * 39.0)
 
         # Angular, lower-profile pauldrons.
         add_cube(
             f"{GENERATED_PREFIX}Shoulder_{side}",
             (shoulder_x, -0.003 * h, 0.792 * h),
-            (0.130 * h, 0.090 * h, 0.052 * h),
+            (0.115 * h, 0.086 * h, 0.050 * h),
             armor,
             collection,
             rig,
@@ -424,29 +431,31 @@ def build_nova_v3():
         # Slightly longer-looking arms and lower hand position.
         add_cube(
             f"{GENERATED_PREFIX}UpperArm_{side}",
-            (upperarm_x, 0.0, 0.680 * h),
-            (0.078 * h, 0.084 * h, 0.235 * h),
+            (upperarm_x, 0.0, 0.745 * h),
+            (0.070 * h, 0.080 * h, 0.180 * h),
             dark,
             collection,
             rig,
             upperarm,
-            0.026,
+            0.022,
+            rotation=(0.0, upperarm_tilt, 0.0),
         )
 
         add_cube(
             f"{GENERATED_PREFIX}ForearmArmor_{side}",
-            (forearm_x, -0.004 * h, 0.565 * h),
-            (0.088 * h, 0.095 * h, 0.195 * h),
+            (forearm_x, -0.004 * h, 0.635 * h),
+            (0.075 * h, 0.086 * h, 0.150 * h),
             armor,
             collection,
             rig,
             lowerarm,
-            0.028,
+            0.022,
+            rotation=(0.0, forearm_tilt, 0.0),
         )
 
         add_cube(
             f"{GENERATED_PREFIX}Hand_{side}",
-            (hand_x, -0.003 * h, 0.510 * h),
+            (hand_x, -0.003 * h, 0.565 * h),
             (0.055 * h, 0.064 * h, 0.070 * h),
             dark,
             collection,
@@ -459,7 +468,7 @@ def build_nova_v3():
         add_cube(
             f"{GENERATED_PREFIX}Thigh_{side}",
             (leg_x, 0.0, 0.390 * h),
-            (0.103 * h, 0.118 * h, 0.315 * h),
+            (0.103 * h, 0.118 * h, 0.220 * h),
             dark,
             collection,
             rig,
@@ -470,7 +479,7 @@ def build_nova_v3():
         add_cube(
             f"{GENERATED_PREFIX}ThighArmor_{side}",
             (leg_x, -0.036 * h, 0.415 * h),
-            (0.116 * h, 0.052 * h, 0.205 * h),
+            (0.116 * h, 0.052 * h, 0.160 * h),
             armor,
             collection,
             rig,
@@ -491,8 +500,8 @@ def build_nova_v3():
 
         add_cube(
             f"{GENERATED_PREFIX}Shin_{side}",
-            (leg_x, 0.0, 0.162 * h),
-            (0.095 * h, 0.108 * h, 0.240 * h),
+            (leg_x, 0.0, 0.185 * h),
+            (0.095 * h, 0.108 * h, 0.200 * h),
             dark,
             collection,
             rig,
@@ -502,8 +511,8 @@ def build_nova_v3():
 
         add_cube(
             f"{GENERATED_PREFIX}ShinArmor_{side}",
-            (leg_x, -0.038 * h, 0.165 * h),
-            (0.108 * h, 0.052 * h, 0.190 * h),
+            (leg_x, -0.038 * h, 0.185 * h),
+            (0.108 * h, 0.052 * h, 0.150 * h),
             armor,
             collection,
             rig,
@@ -522,30 +531,32 @@ def build_nova_v3():
             0.022,
         )
 
-    # Forearm-integrated cannon: slimmer radius with more length running
-    # rearward along the arm so it reads as part of the Strike Suit.
+    # Forearm-integrated cannon: its long axis now follows the right forearm
+    # instead of pointing straight out of the character's front silhouette.
+    cannon_tilt = math.radians(39.0)
+
     add_cylinder(
         f"{GENERATED_PREFIX}ArmCannonBody",
-        (-0.330 * h, -0.065 * h, 0.565 * h),
-        0.047 * h,
-        0.34 * h,
+        (-0.315 * h, -0.020 * h, 0.610 * h),
+        0.045 * h,
+        0.240 * h,
         metal,
         collection,
         rig,
         "lowerarm_r",
-        rotation=(math.radians(90.0), 0.0, 0.0),
+        rotation=(0.0, cannon_tilt, 0.0),
     )
 
     add_cylinder(
         f"{GENERATED_PREFIX}ArmCannonEmitter",
-        (-0.330 * h, -0.242 * h, 0.565 * h),
+        (-0.400 * h, -0.020 * h, 0.505 * h),
+        0.033 * h,
         0.032 * h,
-        0.042 * h,
         blue,
         collection,
         rig,
         "lowerarm_r",
-        rotation=(math.radians(90.0), 0.0, 0.0),
+        rotation=(0.0, cannon_tilt, 0.0),
     )
 
     bpy.context.scene["nova_striker_nova_blockout_version"] = "3.0"
