@@ -1572,24 +1572,18 @@ namespace NovaStriker.EditorTools
 
             label.transform.position =
                 spec.StartPosition +
-                new Vector3(0f, 4.5f, 0f);
+                new Vector3(0f, 3.35f, 0f);
 
             TextMesh text =
                 label.AddComponent<TextMesh>();
 
             text.text =
-                spec.DisplayName +
-                "\n" +
-                plan.Topology +
-                " | " +
-                plan.Traversal +
-                " | " +
-                plan.Objective;
+                spec.DisplayName;
 
             text.anchor = TextAnchor.UpperLeft;
             text.alignment = TextAlignment.Left;
-            text.characterSize = 0.22f;
-            text.fontSize = 48;
+            text.characterSize = 0.085f;
+            text.fontSize = 40;
             text.color = Color.white;
         }
 
