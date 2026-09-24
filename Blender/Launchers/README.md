@@ -21,6 +21,11 @@ Double-click:
   namespace with the refined military/Sentinel proportions: tapered torso,
   flatter pauldrons, narrower helmet/visor, clearer knee/leg rhythm, reduced
   torso depth, and a slimmer/longer integrated arm cannon.
+- `Build_Nova_Blockout_V3.bat` — final automated silhouette/proportion pass
+  before articulation review. It further reduces head/boot mass, lengthens the
+  visual arm/leg rhythm, introduces angular pauldrons and a multi-piece chest,
+  narrows the pelvis, tightens the back module, and integrates the arm cannon
+  more deeply along the forearm.
 - `Validate_Nova.bat` — runs the Blender → Unity source/export contract checks
   without writing an FBX.
 - `Export_Nova_To_Unity.bat` — validates and exports
