@@ -109,7 +109,13 @@ Exercise each of the following at least once in Play Mode:
 
 ## 6. Campaign / encounter matrix
 
-Walk representative combat beats from all six sectors and confirm the authored 18-act composition remains scalable from one to four players. Specifically verify:
+Before the campaign pass, generate the representative topology scenes with:
+
+`Nova Striker > Greybox > Level Variety > Build All Topology Labs`
+
+Play at least one pass through all eight generated topology labs, then walk
+representative combat beats from all six sectors and confirm the authored
+18-act composition remains scalable from one to four players. Specifically verify:
 
 - base-count plus additional-player scaling
 - encounter completion and reward spawning
