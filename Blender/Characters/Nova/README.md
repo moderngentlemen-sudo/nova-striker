@@ -34,3 +34,16 @@ Save manually as `Nova_master.blend`.
 
 Do not treat generated blockout markers as approved anatomy, armor, or topology.
 They only establish scale and source-scene organization.
+
+
+## Early-launcher repair
+
+If `Nova_master.blend` was created before factory-scene cleanup was added and
+still contains Blender's default `Camera`, `Cube`, and `Light`, close Blender,
+pull the latest `dev/blender-production`, and double-click:
+
+`Blender/Launchers/Repair_Nova_Master.bat`
+
+The repair checks that the file is actually marked as Nova Striker's Nova source
+scene, removes only the untouched factory objects from Blender's default
+`Collection`, saves the master file, and reopens it.
