@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using NovaStriker.Campaign;
 using UnityEngine;
 
@@ -9,6 +11,27 @@ namespace NovaStriker.Debugging
     /// </summary>
     public sealed class GreyboxLevelVarietyTelemetry : MonoBehaviour
     {
+        [Serializable]
+        private sealed class LabReport
+        {
+            public int labIndex;
+            public bool completed;
+            public int attempts;
+            public float bestSeconds;
+        }
+
+        [Serializable]
+        private sealed class CircuitReport
+        {
+            public string unityVersion;
+            public string updatedUtc;
+            public int labCount;
+            public int completedCount;
+            public bool circuitComplete;
+            public string validationScope;
+            public LabReport[] labs;
+        }
+
         private const int MaxLabs = 8;
 
         private static readonly bool[] completed =
@@ -67,23 +90,25 @@ namespace NovaStriker.Debugging
             RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            System.Array.Clear(
+            Array.Clear(
                 completed,
                 0,
                 completed.Length
             );
 
-            System.Array.Clear(
+            Array.Clear(
                 attempts,
                 0,
                 attempts.Length
             );
 
-            System.Array.Clear(
+            Array.Clear(
                 bestSeconds,
                 0,
                 bestSeconds.Length
             );
+
+            TryDeletePreviousReport();
         }
 
         public static void RegisterAttempt(int index)
@@ -96,6 +121,8 @@ namespace NovaStriker.Debugging
                     1,
                     attempts[index] + 1
                 );
+
+            WriteReport();
         }
 
         public void Configure(
@@ -193,6 +220,112 @@ namespace NovaStriker.Debugging
             {
                 bestSeconds[index] = elapsed;
             }
+
+            WriteReport();
+        }
+
+        private static void WriteReport()
+        {
+            try
+            {
+                LabReport[] labs =
+                    new LabReport[MaxLabs];
+
+                int completedCount = 0;
+
+                for (int i = 0; i < MaxLabs; i++)
+                {
+                    if (completed[i])
+                        completedCount++;
+
+                    labs[i] =
+                        new LabReport
+                        {
+                            labIndex = i,
+                            completed = completed[i],
+                            attempts = attempts[i],
+                            bestSeconds = bestSeconds[i]
+                        };
+                }
+
+                CircuitReport report =
+                    new()
+                    {
+                        unityVersion = Application.unityVersion,
+                        updatedUtc =
+                            DateTime.UtcNow.ToString("O"),
+                        labCount = MaxLabs,
+                        completedCount = completedCount,
+                        circuitComplete =
+                            completedCount == MaxLabs,
+                        validationScope =
+                            "Greybox level-topology Play Mode circuit only; " +
+                            "not comprehensive gameplay, controller, profiler, " +
+                            "platform, or production-asset validation.",
+                        labs = labs
+                    };
+
+                string path =
+                    ReportPath();
+
+                string directory =
+                    Path.GetDirectoryName(path);
+
+                if (!string.IsNullOrWhiteSpace(directory))
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(
+                    path,
+                    JsonUtility.ToJson(
+                        report,
+                        true
+                    )
+                );
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "[Level Variety Telemetry] Could not write circuit report: " +
+                    exception.Message
+                );
+            }
+        }
+
+        private static void TryDeletePreviousReport()
+        {
+            try
+            {
+                string path =
+                    ReportPath();
+
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+                // Stale report cleanup is best-effort and never gameplay authority.
+            }
+        }
+
+        private static string ReportPath()
+        {
+            if (Application.isEditor)
+            {
+                return Path.GetFullPath(
+                    Path.Combine(
+                        Application.dataPath,
+                        "..",
+                        "Library",
+                        "NovaStrikerValidation",
+                        "level-variety-circuit.json"
+                    )
+                );
+            }
+
+            return Path.Combine(
+                Application.persistentDataPath,
+                "level-variety-circuit.json"
+            );
         }
 
         private static bool ValidIndex(int index)
