@@ -14,6 +14,15 @@ namespace NovaStriker.Debugging
         [SerializeField] private ActObjectiveController2D objective;
         [SerializeField] private ActLevelVariationController2D variation;
 
+        public int SectorIndex => sectorIndex;
+        public int ActIndex => actIndex;
+
+        public ActLevelVarietyReference CurrentPlan =>
+            ActLevelVarietyCatalog.Get(
+                sectorIndex,
+                actIndex
+            );
+
         public void Configure(
             int sector,
             int act,
@@ -29,10 +38,7 @@ namespace NovaStriker.Debugging
         private void Start()
         {
             ActLevelVarietyReference plan =
-                ActLevelVarietyCatalog.Get(
-                    sectorIndex,
-                    actIndex
-                );
+                CurrentPlan;
 
             variation?.ConfigurePlan(plan);
             objective?.ConfigureObjective(plan.Objective);
