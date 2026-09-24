@@ -11,6 +11,9 @@ Double-click:
   `Blender/Characters/Nova/Nova_master.blend`, then opens it.
 - `Open_Nova.bat` — opens the existing Nova master file; creates it first if
   it does not exist.
+- `Repair_Nova_Master.bat` — safely removes Blender's factory Camera/Cube/Light
+  from master files created by the earliest launcher revision, saves, then opens
+  the repaired file.
 - `Validate_Nova.bat` — runs the Blender → Unity source/export contract checks
   without writing an FBX.
 - `Export_Nova_To_Unity.bat` — validates and exports
@@ -22,6 +25,7 @@ Equivalent Echo launchers are included:
 
 - `Create_Echo_Master.bat`
 - `Open_Echo.bat`
+- `Repair_Echo_Master.bat`
 - `Validate_Echo.bat`
 - `Export_Echo_To_Unity.bat`
 
@@ -44,6 +48,11 @@ the project.
 
 Creating a master file never overwrites an existing `*_master.blend`.
 If the file already exists, the Create launcher simply opens it.
+
+New master files now remove Blender's untouched factory Camera/Cube/Light before
+the Nova Striker scaffold is created. The Repair launcher is only for master files
+created before that cleanup was added; it verifies the Nova Striker character
+marker before making changes.
 
 The Export launchers currently allow the generated blockout meshes so the first
 pipeline round trip can be tested before final character topology exists. Once a
