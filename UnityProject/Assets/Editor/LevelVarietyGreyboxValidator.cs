@@ -37,6 +37,25 @@ namespace NovaStriker.EditorTools
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
 
+            ValidateGeneratedLabs(
+                restoreOriginalScene: true
+            );
+        }
+
+        public static void RunForCommandLine()
+        {
+            bool passed =
+                ValidateGeneratedLabs(
+                    restoreOriginalScene: false
+                );
+
+            if (Application.isBatchMode)
+                EditorApplication.Exit(passed ? 0 : 1);
+        }
+
+        public static bool ValidateGeneratedLabs(
+            bool restoreOriginalScene)
+        {
             Scene original =
                 SceneManager.GetActiveScene();
 
@@ -62,6 +81,7 @@ namespace NovaStriker.EditorTools
             finally
             {
                 if (
+                    restoreOriginalScene &&
                     !string.IsNullOrWhiteSpace(originalPath) &&
                     AssetDatabase.LoadAssetAtPath<SceneAsset>(
                         originalPath
@@ -86,6 +106,8 @@ namespace NovaStriker.EditorTools
                 Debug.LogWarning(summary);
             else
                 Debug.Log(summary);
+
+            return errors == 0;
         }
 
         private static void ValidateScene(
