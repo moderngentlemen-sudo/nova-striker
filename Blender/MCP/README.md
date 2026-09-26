@@ -89,10 +89,11 @@ This does not edit the artist's open master file. The runner:
 
 1. copies `Nova_master.blend` to a temporary review file,
 2. opens the copy with headless Blender,
-3. ensures the current Nova articulation V2 review action exists,
+3. ensures the current Nova articulation V3 review action exists,
 4. visits all 13 review poses,
 5. renders front and side orthographic images for every pose,
-6. records pose bounds and the generated contact diagnostics,
+6. records pose bounds and structured contact diagnostics, including absolute
+   floor error and pair-contact spread,
 7. writes `articulation-report.json`,
 8. writes `summary.txt`,
 9. opens the local review output folder.
