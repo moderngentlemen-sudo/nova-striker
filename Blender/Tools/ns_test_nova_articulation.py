@@ -1,15 +1,17 @@
 """
-Nova Striker — Nova articulation / armor-clearance test V2.
+Nova Striker — Nova articulation / armor-clearance test V3.1.
 
 Creates a dedicated, removable production-review action on RIG_Nova with
 representative gameplay poses.
 
-V2 improves the first test harness with:
-- geometry-aware floor planting using the generated boot/knee/body blockout
-- calibrated crouch/Powerslide/wall/revive pose limits
-- more realistic pelvis/root placement and torso compensation
-- a removable text report containing contact-height diagnostics
-- automatic cleanup of the legacy V1 test action
+V3.1 preserves the corrected world-space root/contact logic and closes the
+remaining pose-level review items:
+- Cannon Fire uses a stable two-foot braced stance
+- Revive Reach uses a low two-foot combat-revive stance compatible with the
+  current starter FK rig
+- geometry-aware floor planting remains authoritative for grounded review poses
+- contact diagnostics check both absolute floor error and pair spread
+- legacy articulation test actions are removed automatically
 
 It does not modify edit bones, mesh topology, sockets, references, GEO_FINAL,
 or gameplay data. The current FBX helper uses bake_anim=False, so this review
@@ -26,10 +28,11 @@ from mathutils import Vector
 
 CHARACTER = "Nova"
 RIG_NAME = "RIG_Nova"
-ACTION_NAME = "TEST_Nova_Articulation_v3"
+ACTION_NAME = "TEST_Nova_Articulation_v3_1"
 LEGACY_ACTION_NAMES = (
     "TEST_Nova_Articulation_v1",
     "TEST_Nova_Articulation_v2",
+    "TEST_Nova_Articulation_v3",
 )
 MARKER_PREFIX = "NS_TEST_NOVA_"
 REPORT_NAME = "NS_Nova_Articulation_Report"
@@ -128,10 +131,10 @@ POSE_CONTACTS = {
         ),
     },
     "Revive Reach": {
-        "mode": "kneel_pair",
+        "mode": "grounded_pair",
         "primary": (
+            "BLOCKOUT_Nova_Boot_L",
             "BLOCKOUT_Nova_Boot_R",
-            "BLOCKOUT_Nova_KneePlate_L",
         ),
     },
     "Co-op Sync": {
@@ -574,21 +577,28 @@ def wall_jump_prep(rig):
 
 
 def cannon_fire(rig):
+    # Stable two-foot braced firing stance. Upper-body asymmetry carries the
+    # recoil/readability while the lower body stays reliably planted.
     set_root_world_offset(rig, y=-0.03)
-    set_rot(rig, "pelvis", z=-2)
-    set_rot(rig, "spine_01", x=-4, z=2)
-    set_rot(rig, "spine_02", x=-6, z=4)
-    set_rot(rig, "spine_03", x=-7, z=5)
+    set_rot(rig, "pelvis", x=2)
+    set_rot(rig, "spine_01", x=-5, z=2)
+    set_rot(rig, "spine_02", x=-7, z=4)
+    set_rot(rig, "spine_03", x=-8, z=6)
 
-    set_rot(rig, "clavicle_r", x=-9, z=-9)
-    set_rot(rig, "upperarm_r", x=-54, z=8)
-    set_rot(rig, "lowerarm_r", x=-8)
+    set_rot(rig, "clavicle_r", x=-10, z=-10)
+    set_rot(rig, "upperarm_r", x=-56, z=8)
+    set_rot(rig, "lowerarm_r", x=-9)
     set_rot(rig, "hand_r", x=4)
 
-    set_rot(rig, "upperarm_l", x=13, z=-15)
+    set_rot(rig, "upperarm_l", x=12, z=-16)
     set_rot(rig, "lowerarm_l", x=-18)
-    set_rot(rig, "thigh_l", x=6)
-    set_rot(rig, "thigh_r", x=-6)
+
+    # Keep both legs symmetric so the floor-planting pass can establish a true
+    # two-foot stance instead of inheriting a small FK height mismatch.
+    for side in ("l", "r"):
+        set_rot(rig, f"thigh_{side}", x=4)
+        set_rot(rig, f"calf_{side}", x=-8)
+        set_rot(rig, f"foot_{side}", x=3)
 
 
 def downed(rig):
@@ -611,27 +621,27 @@ def downed(rig):
 
 
 def revive_reach(rig):
-    # One-knee kneel with forward reach rather than a symmetric deep squat.
-    set_root_world_offset(rig, y=-0.08)
-    set_rot(rig, "pelvis", x=9)
-    set_rot(rig, "spine_01", x=-13)
-    set_rot(rig, "spine_02", x=-17)
-    set_rot(rig, "spine_03", x=-11)
+    # The starter rig does not yet have IK controls suitable for a reliable
+    # one-knee contact solve. Use a low, planted combat-revive stance instead:
+    # both feet stay grounded while the torso/left arm carry the reach.
+    set_root_world_offset(rig, y=-0.12)
+    set_rot(rig, "pelvis", x=10)
+    set_rot(rig, "spine_01", x=-16)
+    set_rot(rig, "spine_02", x=-20)
+    set_rot(rig, "spine_03", x=-13)
+    set_rot(rig, "neck", x=5)
 
-    set_rot(rig, "thigh_l", x=64)
-    set_rot(rig, "calf_l", x=-102)
-    set_rot(rig, "foot_l", x=34)
+    for side in ("l", "r"):
+        set_rot(rig, f"thigh_{side}", x=46)
+        set_rot(rig, f"calf_{side}", x=-72)
+        set_rot(rig, f"foot_{side}", x=24)
 
-    set_rot(rig, "thigh_r", x=28)
-    set_rot(rig, "calf_r", x=-56)
-    set_rot(rig, "foot_r", x=18)
+    set_rot(rig, "upperarm_l", x=-62, z=-12)
+    set_rot(rig, "lowerarm_l", x=-20)
+    set_rot(rig, "hand_l", x=-10)
 
-    set_rot(rig, "upperarm_l", x=-58, z=-10)
-    set_rot(rig, "lowerarm_l", x=-18)
-    set_rot(rig, "hand_l", x=-8)
-
-    set_rot(rig, "upperarm_r", x=-24, z=10)
-    set_rot(rig, "lowerarm_r", x=-22)
+    set_rot(rig, "upperarm_r", x=-26, z=10)
+    set_rot(rig, "lowerarm_r", x=-20)
 
 
 def coop_sync(rig):
@@ -678,7 +688,7 @@ def write_report(lines):
         report.clear()
 
     report.write(
-        "Nova Striker — Nova Articulation Review V3\n"
+        "Nova Striker — Nova Articulation Review V3.1\n"
         "Generated from the V3 blockout/starter rig.\n"
         "Root translation is converted from world space into the root bone's "
         "pose-local channels before keying.\n"
@@ -733,7 +743,7 @@ def clear_test(rig):
     )
 
     print(
-        "[Nova Striker] Removed Nova articulation V1/V2 test data "
+        "[Nova Striker] Removed generated Nova articulation test data "
         "and restored the previous action or neutral pose."
     )
 
@@ -826,7 +836,7 @@ def build_test(rig):
     scene.frame_start = POSES[0][0]
     scene.frame_end = POSES[-1][0]
     scene["nova_striker_nova_articulation_test"] = True
-    scene["nova_striker_nova_articulation_test_version"] = "3.0"
+    scene["nova_striker_nova_articulation_test_version"] = "3.1"
     scene["nova_striker_nova_articulation_action"] = ACTION_NAME
     scene["nova_striker_nova_articulation_pose_count"] = len(POSES)
     scene["nova_striker_nova_articulation_floor_planting"] = "world_space_root_channel_v3"
@@ -852,9 +862,9 @@ def build_test(rig):
         f"review poses across frames {POSES[0][0]}-{POSES[-1][0]}."
     )
     print(
-        "[Nova Striker] V3 uses world-space root translation, geometry-aware "
-        "floor planting, absolute contact checks, and CONSTANT pose holds. "
-        "Review the "
+        "[Nova Striker] V3.1 uses world-space root translation, geometry-aware "
+        "floor planting, corrected Cannon Fire/Revive Reach stances, absolute "
+        "contact checks, and CONSTANT pose holds. Review the "
         "NS_Nova_Articulation_Report text block for contact-height diagnostics."
     )
 
