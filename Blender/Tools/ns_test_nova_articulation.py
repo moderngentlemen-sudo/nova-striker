@@ -4,12 +4,13 @@ Nova Striker — Nova articulation / armor-clearance test V3.2.
 Creates a dedicated, removable production-review action on RIG_Nova with
 representative gameplay poses.
 
-V3.2 preserves the corrected world-space root/contact logic and closes the
-remaining pose-level review items:
-- Cannon Fire uses a stable two-foot braced stance
-- Revive Reach uses a low two-foot combat-revive stance compatible with the
-  current starter FK rig
-- geometry-aware floor planting remains authoritative for grounded review poses
+V3.2 preserves the corrected root/contact system and adds world-space pose
+direction validation:
+- Aim Forward/Up/Down and Cannon Fire align the cannon to explicit world targets
+- Wall Cling and Wall Jump Prep align average hand reach toward a canonical +X
+  review wall
+- direction diagnostics record target/measured vectors and angular error
+- geometry-aware floor planting remains authoritative for grounded poses
 - contact diagnostics check both absolute floor error and pair spread
 - legacy articulation test actions are removed automatically
 
