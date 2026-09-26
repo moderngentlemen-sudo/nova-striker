@@ -542,6 +542,17 @@ def run_review():
         )
         write_review_index(output_dir, report)
 
+        direction_targets = [
+            item
+            for item in structured_directions
+            if item.get("status") != "NOT_APPLICABLE"
+        ]
+        direction_failures = [
+            item.get("label")
+            for item in direction_targets
+            if item.get("status") != "OK"
+        ]
+
         print(
             json.dumps(
                 {
@@ -550,6 +561,8 @@ def run_review():
                     "output": str(output_dir),
                     "pose_count": len(poses),
                     "render_count": len(poses) * 2,
+                    "direction_target_count": len(direction_targets),
+                    "direction_failures": direction_failures,
                     "saved_source": False,
                 }
             )
