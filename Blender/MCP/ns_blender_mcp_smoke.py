@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import sys
+import time
 
 
 def parse_args():
@@ -44,6 +45,35 @@ def main():
         raise SystemExit(
             f"Could not import Blender MCP server from {mcp_root}: {exc}"
         ) from exc
+
+    print("== Blender MCP command readiness ==")
+    ready = False
+    last_error = None
+
+    for attempt in range(1, 9):
+        try:
+            response = blender_mcp_server.execute(
+                "print('NOVA_STRIKER_MCP_READY')",
+                timeout=3,
+            )
+            if "NOVA_STRIKER_MCP_READY" in response.get("output", ""):
+                ready = True
+                print(
+                    f"Main-thread command round-trip ready on attempt {attempt}."
+                )
+                break
+        except Exception as exc:
+            last_error = exc
+            print(
+                f"Readiness attempt {attempt}/8 failed: {exc}"
+            )
+            time.sleep(0.5)
+
+    if not ready:
+        raise SystemExit(
+            "Blender MCP TCP listener was reachable but Blender never "
+            f"completed a command round-trip. Last error: {last_error}"
+        )
 
     print("== Blender MCP ping ==")
     ping = blender_mcp_server.ping()
