@@ -2,7 +2,7 @@
 Deterministic Nova articulation review renderer.
 
 Runs on a temporary copy of Nova_master.blend. It:
-1. ensures TEST_Nova_Articulation_v3 exists,
+1. ensures TEST_Nova_Articulation_v3_1 exists,
 2. visits every labeled review pose,
 3. renders orthographic front and side images,
 4. records per-pose world bounds,
@@ -317,7 +317,7 @@ def main():
             "nova_striker_nova_articulation_test_version",
             "",
         )
-        != "3.0"
+        != "3.1"
     )
 
     if needs_rebuild:
@@ -393,6 +393,134 @@ def main():
         encoding="utf-8",
     )
 
+    diagnostics_by_label = {
+        item.get("label"): item
+        for item in structured_contacts
+    }
+
+    review_cards = []
+    for pose in poses:
+        label = pose["label"]
+        diagnostic = diagnostics_by_label.get(
+            label,
+            {},
+        )
+        status = diagnostic.get(
+            "status",
+            "UNKNOWN",
+        )
+        reason = diagnostic.get(
+            "reason",
+            "",
+        )
+        front = pose["renders"].get(
+            "front",
+            "",
+        )
+        side = pose["renders"].get(
+            "side",
+            "",
+        )
+
+        review_cards.append(
+            f"""
+            <section class="pose-card">
+              <header>
+                <h2>{pose['frame']:03d} — {label}</h2>
+                <p><strong>{status}</strong> {reason}</p>
+              </header>
+              <div class="images">
+                <figure>
+                  <img src="{front}" alt="{label} front view">
+                  <figcaption>Front</figcaption>
+                </figure>
+                <figure>
+                  <img src="{side}" alt="{label} side view">
+                  <figcaption>Side</figcaption>
+                </figure>
+              </div>
+            </section>
+            """
+        )
+
+    review_html = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nova Articulation Review</title>
+<style>
+body {{
+  margin: 0;
+  padding: 32px;
+  font-family: Arial, sans-serif;
+  background: #17191d;
+  color: #f4f6f8;
+}}
+main {{
+  max-width: 1400px;
+  margin: 0 auto;
+}}
+.summary {{
+  margin-bottom: 32px;
+}}
+.pose-card {{
+  margin: 0 0 32px;
+  padding: 20px;
+  background: #22262c;
+  border-radius: 12px;
+}}
+.pose-card h2 {{
+  margin: 0 0 8px;
+}}
+.pose-card p {{
+  margin: 0 0 16px;
+}}
+.images {{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}}
+figure {{
+  margin: 0;
+}}
+img {{
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #111317;
+  border-radius: 8px;
+}}
+figcaption {{
+  padding-top: 8px;
+  opacity: 0.8;
+}}
+@media (max-width: 900px) {{
+  .images {{
+    grid-template-columns: 1fr;
+  }}
+}}
+</style>
+</head>
+<body>
+<main>
+  <section class="summary">
+    <h1>Nova Striker — Automated Articulation Review</h1>
+    <p>Blockout {report['blockout_version']} · articulation {report['articulation_test_version']} · {len(poses)} poses · {len(poses) * 2} renders</p>
+  </section>
+  {''.join(review_cards)}
+</main>
+</body>
+</html>
+"""
+
+    (
+        output_dir
+        / "review-index.html"
+    ).write_text(
+        review_html,
+        encoding="utf-8",
+    )
+
     summary_lines = [
         "Nova Striker — Automated Nova Articulation Review",
         "",
@@ -402,6 +530,7 @@ def main():
         f"Interpolation: {report['interpolation']}",
         f"Poses: {report['pose_count']}",
         f"Rendered images: {report['pose_count'] * 2}",
+        "Visual index: review-index.html",
         "",
         "Contact diagnostics:",
         contact_report.strip() or "(none)",
