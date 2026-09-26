@@ -24,12 +24,16 @@ CAMERA_NAME = "NS_MCP_REFERENCE_CAMERA"
 COLLECTION_NAME = "NS_MCP_REFERENCE_PACK"
 BLOCKOUT_PREFIX = "BLOCKOUT_Nova_"
 
+# Values are camera-to-subject look directions because point_camera places
+# the camera at center - direction * distance. Nova faces -Y, so a true front
+# camera sits on -Y and looks toward +Y.
 VIEWS = (
-    ("01_Front", Vector((0.0, -1.0, 0.0))),
-    ("02_FrontThreeQuarter", Vector((1.0, -1.0, 0.0))),
+    ("01_Front", Vector((0.0, 1.0, 0.0))),
+    ("02_FrontThreeQuarter", Vector((1.0, 1.0, 0.0))),
     ("03_Side", Vector((1.0, 0.0, 0.0))),
-    ("04_BackThreeQuarter", Vector((1.0, 1.0, 0.0))),
-    ("05_Back", Vector((0.0, 1.0, 0.0))),
+    ("04_BackThreeQuarter", Vector((1.0, -1.0, 0.0))),
+    ("05_Back", Vector((0.0, -1.0, 0.0))),
+    ("06_Top", Vector((0.0, 0.0, -1.0))),
 )
 
 LOCKED_INHERITANCE = (
@@ -56,6 +60,7 @@ OPEN_DESIGN_DECISIONS = (
     "final open / unhelmeted presentation",
     "final visor face-visibility treatment",
     "modular team / class marking locations",
+    "exact visible-height reconciliation against the 1.85 m production target",
 )
 
 
@@ -394,6 +399,7 @@ figcaption{{padding-top:8px;text-align:center}}
 <h1>Nova Striker — Production Reference Pack</h1>
 <p>Approved Blockout V3 · Articulation V3.2.1 · <span class="badge">SHEET REVIEW REQUIRED</span></p>
 <p>This pack is a modeling-reference foundation. It does not approve the final reference sheet automatically.</p>
+<p><strong>Scale review:</strong> visible blockout height {metadata['rendered_height_m']:.4f} m vs 1.85 m production target; reconcile this explicitly before sheet approval.</p>
 </header>
 <section class="grid">
 {''.join(figures)}
@@ -425,8 +431,8 @@ def write_checklist(output_dir):
         "## Geometry / proportion",
         "",
         "- [ ] Matches approved Nova Blockout V3 proportions.",
-        "- [ ] Preserves 1.85 m target height.",
-        "- [ ] Front, side, and rear construction are unambiguous.",
+        "- [ ] Exact visible-height relationship to the 1.85 m production target is explicitly approved.",
+        "- [ ] Front, side, rear, and top construction are unambiguous.",
         "- [ ] No turnaround view contradicts another view.",
         "",
         "## Armor / materials",
@@ -538,6 +544,8 @@ def run_reference_pack():
             },
             "target_height_m": 1.85,
             "rendered_height_m": size.z,
+            "height_delta_m": size.z - 1.85,
+            "height_reconciliation_required": abs(size.z - 1.85) > 0.01,
             "materials_present": materials,
             "locked_inheritance": list(LOCKED_INHERITANCE),
             "open_design_decisions": list(OPEN_DESIGN_DECISIONS),
@@ -557,6 +565,10 @@ def run_reference_pack():
             f"Blockout version: {metadata['blockout_version']}",
             f"Articulation baseline: {metadata['articulation_baseline']}",
             f"Views rendered: {metadata['render_count']}",
+            f"Visible blockout height: {metadata['rendered_height_m']:.4f} m",
+            f"Production target height: {metadata['target_height_m']:.4f} m",
+            f"Height delta: {metadata['height_delta_m']:+.4f} m",
+            f"Height reconciliation required: {metadata['height_reconciliation_required']}",
             f"Sheet manifest status: {metadata['sheet_manifest_status']}",
             f"Reference pack status: {metadata['reference_pack_status']}",
             "",
