@@ -156,3 +156,40 @@ Before a blockout advances to final model work:
 - the blockout imports into Unity at scale 1 under the correct visual root.
 
 The first milestone is **Nova Blender blockout review**, not a final textured model.
+
+
+## Nova blockout gate — approved
+
+Nova Blockout V3 is now approved as the production proportion/articulation
+reference.
+
+Approval evidence is recorded in:
+
+`Docs/nova-blockout-v3-approval.md`
+
+The live MCP V3.2.1 review cleared:
+
+- all applicable floor/body-contact checks,
+- Aim Forward / Aim Up / Aim Down cannon direction,
+- Cannon Fire direction,
+- Wall Cling reach direction,
+- Wall Jump Prep reach direction.
+
+This does not advance `model_final`.
+
+The remaining formal entry blocker for final production modeling is:
+
+`CHR-NOVA.sheet = approved`
+
+The current production manifest still records the Nova reference sheet as
+`in_progress`.
+
+Use:
+
+`Blender/Launchers/Check_Nova_Production_Readiness.bat`
+
+to verify the entry gate at any time.
+
+Once the sheet is approved, follow:
+
+`Docs/nova-production-modeling-plan.md`
