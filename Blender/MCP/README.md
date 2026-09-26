@@ -159,3 +159,42 @@ recopies/enables the add-on, and refreshes local configuration.
 
 If an update has non-fast-forward changes in the third-party checkout, setup
 stops instead of discarding them.
+
+
+## MCP-driven Nova production reference pack
+
+After Nova Blockout V3 and the V3.2.1 articulation gate are approved, generate
+the modeling-reference source pack with:
+
+`Generate_Nova_Reference_Pack.bat`
+
+This uses the same live MCP transport:
+
+`standard MCP stdio → execute_blender_code → live Blender → bpy`
+
+The generator renders the approved blockout in a neutral pose from five
+consistent views:
+
+- Front
+- Front three-quarter
+- Side
+- Back three-quarter
+- Back
+
+Output:
+
+`Blender/Reviews/Nova/ReferencePack/latest/`
+
+The pack includes the five PNGs, `reference-pack.json`, `summary.txt`,
+`reference-index.html`, `approval-checklist.md`, and `mcp-run.json`.
+
+The live operation restores Blender state afterward and does not save
+`Nova_master.blend`.
+
+This generator is intentionally **not** an approval action. It leaves
+`CHR-NOVA.sheet = in_progress`. Review and explicit production-owner approval
+are required before the production manifest may advance the sheet gate.
+
+See:
+
+`Docs/nova-reference-sheet-workflow.md`
