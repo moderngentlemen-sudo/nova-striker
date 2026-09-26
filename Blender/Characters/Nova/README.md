@@ -137,13 +137,14 @@ After V3 has been reviewed from front and side, close Blender and run:
 
 The helper now creates the V2 action:
 
-`TEST_Nova_Articulation_v2`
+`TEST_Nova_Articulation_v3`
 
 and automatically removes the earlier V1 test action if it is present.
 
-V2 also adds geometry-aware floor planting for grounded poses, less extreme
-crouch/slide limits, improved root/pelvis placement, forward torso compensation,
-and a generated Blender text report named:
+V3 preserves the calibrated pose set and adds corrected world-space root
+translation, geometry-aware floor planting, and contact classification that
+checks absolute floor error as well as pair-contact spread. It also generates a
+Blender text report named:
 
 `NS_Nova_Articulation_Report`
 
@@ -174,7 +175,7 @@ Use the marked frames to inspect plate intersections, shoulder/cannon clearance,
 hip/knee compression, helmet/chest interference, socket placement, and overall
 silhouette under extreme movement.
 
-The V2 test does not change edit-bone positions, topology, sockets, references,
+The V3 test does not change edit-bone positions, topology, sockets, references,
 `GEO_FINAL`, gameplay timing, or the Unity presentation contract. The current
 FBX helper also uses `bake_anim=False`, so this review action is not exported
 as gameplay animation.
