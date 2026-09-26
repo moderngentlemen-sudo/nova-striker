@@ -116,3 +116,21 @@ The earlier deterministic no-MCP fallback remains available as:
 `Blender/MCP/Run_Nova_Headless_Review.bat`
 
 See `Blender/MCP/README.md` for setup, security, outputs, recovery, and client details.
+
+
+## Nova reference-sheet source pack
+
+With Nova Blockout V3 approved, the next visual-development handoff can be
+generated directly from the approved Blender geometry through MCP:
+
+`Blender/MCP/Generate_Nova_Reference_Pack.bat`
+
+This creates neutral Front / Front 3-4 / Side / Back 3-4 / Back source renders
+plus an approval checklist under:
+
+`Blender/Reviews/Nova/ReferencePack/latest/`
+
+Generation does not approve the sheet or save changes to the canonical
+`Nova_master.blend`.
+
+Use `Docs/nova-reference-sheet-workflow.md` for the approval procedure.
