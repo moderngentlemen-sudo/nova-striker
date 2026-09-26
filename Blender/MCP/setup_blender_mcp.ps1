@@ -192,7 +192,7 @@ $settings = @{
     "BLENDER_MCP_HOST" = "127.0.0.1"
     "BLENDER_MCP_PORT" = "9877"
     "BLENDER_MCP_ADDON_PORT" = "9877"
-    "BLENDER_MCP_AUTOSTART" = "1"
+    "BLENDER_MCP_AUTOSTART" = "0"
     "NS_BLENDER_EXE" = $BlenderExe
     "NS_BLENDER_MCP_ROOT" = $McpRoot
     "NS_BLENDER_MCP_PYTHON" = $VenvPython
@@ -252,6 +252,7 @@ Write-Host ""
 Write-Host "Blender MCP setup complete." -ForegroundColor Green
 Write-Host "Local client config: $(Join-Path $LocalDir "mcp-client.local.json")"
 Write-Host "The Blender socket is restricted to 127.0.0.1:9877." -ForegroundColor Green
+Write-Host "Nova Striker uses its deterministic app-timer bootstrap instead of the upstream UI autostart path." -ForegroundColor Green
 
 if ($LaunchAfterSetup) {
     Write-Step "Launching Nova with Blender MCP"
