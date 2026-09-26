@@ -135,13 +135,13 @@ After V3 has been reviewed from front and side, close Blender and run:
 
 `Blender/Launchers/Test_Nova_Articulation.bat`
 
-The helper now creates the V3.2 action:
+The helper now creates the V3.2.1 action:
 
-`TEST_Nova_Articulation_v3_2`
+`TEST_Nova_Articulation_v3_2_1`
 
 and automatically removes earlier generated articulation test actions.
 
-V3.2 preserves the corrected world-space root/contact system and adds a
+V3.2.1 preserves the corrected world-space root/contact system and adds a
 world-space pose-direction gate. The review solver aligns and measures:
 
 - Aim Forward — cannon toward character forward (-Y)
@@ -149,7 +149,8 @@ world-space pose-direction gate. The review solver aligns and measures:
 - Aim Down — cannon forward/down
 - Cannon Fire — cannon forward
 - Wall Cling — average hand reach toward the canonical +X review wall
-- Wall Jump Prep — average hand reach toward the canonical +X review wall
+- Wall Jump Prep — whole-body wall-facing reorientation followed by arm
+  refinement toward the canonical +X review wall
 
 Direction diagnostics record the target vector, measured vector, angular error,
 and tolerance alongside the existing contact diagnostics. Cannon Fire retains
@@ -187,7 +188,7 @@ Use the marked frames to inspect plate intersections, shoulder/cannon clearance,
 hip/knee compression, helmet/chest interference, socket placement, and overall
 silhouette under extreme movement.
 
-The V3.2 test does not change edit-bone positions, topology, sockets, references,
+The V3.2.1 test does not change edit-bone positions, topology, sockets, references,
 `GEO_FINAL`, gameplay timing, or the Unity presentation contract. The current
 FBX helper also uses `bake_anim=False`, so this review action is not exported
 as gameplay animation.
