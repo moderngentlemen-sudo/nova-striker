@@ -26,6 +26,7 @@ The live MCP workflow renders Nova's approved V3 blockout in a neutral pose from
 3. Side
 4. Back three-quarter
 5. Back
+6. Top
 
 The generator:
 
@@ -49,6 +50,7 @@ Expected files:
 - `03_Side.png`
 - `04_BackThreeQuarter.png`
 - `05_Back.png`
+- `06_Top.png`
 - `reference-pack.json`
 - `summary.txt`
 - `reference-index.html`
@@ -97,7 +99,7 @@ approved silhouette.
 2. Review all five views together in `reference-index.html`.
 3. Resolve the open design details above in the final reference-sheet artwork.
 4. Check every item in `approval-checklist.md`.
-5. Confirm the front/side/back views describe one internally consistent object.
+5. Confirm the front/side/back/top views describe one internally consistent object.
 6. Confirm the sheet does not contradict V3 proportions or V3.2.1 articulation.
 7. Production owner explicitly approves the sheet.
 8. Only then update:
