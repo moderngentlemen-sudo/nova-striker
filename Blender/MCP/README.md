@@ -45,8 +45,11 @@ The setup is idempotent. It:
 7. enables the add-on and saves Blender preferences,
 8. writes user-level local-only MCP environment variables,
 9. creates an ignored local MCP client config under `.local/`,
-10. launches `Nova_master.blend` with MCP autostart enabled,
-11. waits for `127.0.0.1:9877`.
+10. launches `Nova_master.blend` with the Nova Striker deterministic
+    `bpy.app.timers` command pump,
+11. waits for `127.0.0.1:9877`,
+12. verifies a real Blender main-thread command round-trip before reporting the
+    MCP connection healthy.
 
 The setup never configures a public listener.
 
@@ -58,7 +61,9 @@ Double-click:
 
 `Start_Blender_MCP.bat`
 
-This opens Nova's canonical master file and waits for the local MCP socket.
+This opens Nova's canonical master file and starts the local MCP socket through
+Nova Striker's deterministic `bpy.app.timers` bootstrap. This avoids relying on
+the third-party add-on's UI modal-timer autostart path during Blender startup.
 
 ### Read-only connection test
 
