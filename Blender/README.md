@@ -85,3 +85,28 @@ When ready, use:
 
 Do not begin final-detail modeling until the blockout has completed its first
 FBX → Unity `NovaVisualRoot` round trip.
+
+
+## Blender MCP automation
+
+An optional Windows-first local MCP and automated-review layer now lives under:
+
+`Blender/MCP/`
+
+Start with:
+
+`Blender/MCP/Setup_Blender_MCP.bat`
+
+The bootstrap keeps the Blender control socket on `127.0.0.1:9877`, installs
+the third-party MCP bridge outside the repository, and creates an ignored local
+client configuration.
+
+For deterministic review without manual screenshots, run:
+
+`Blender/MCP/Run_Nova_Automated_Review.bat`
+
+It works from a temporary copy of `Nova_master.blend` and generates all
+front/side articulation renders plus JSON/text diagnostics without overwriting
+the canonical master file.
+
+See `Blender/MCP/README.md` for setup, security, recovery, and client details.
