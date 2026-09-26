@@ -2,7 +2,7 @@
 Deterministic Nova articulation review renderer.
 
 Runs on a temporary copy of Nova_master.blend. It:
-1. ensures TEST_Nova_Articulation_v3_2 exists,
+1. ensures TEST_Nova_Articulation_v3_2_1 exists,
 2. visits every labeled review pose,
 3. renders orthographic front and side images,
 4. records per-pose world bounds,
@@ -317,7 +317,7 @@ def main():
             "nova_striker_nova_articulation_test_version",
             "",
         )
-        != "3.2"
+        != "3.2.1"
     )
 
     if needs_rebuild:
