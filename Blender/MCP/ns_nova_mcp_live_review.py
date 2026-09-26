@@ -485,7 +485,7 @@ def run_review():
             "source_file": bpy.data.filepath,
             "source_saved": False,
             "blockout_version": scene.get("nova_striker_nova_blockout_version", ""),
-            "articulation_test_version": "3.2",
+            "articulation_test_version": "3.2.1",
             "articulation_action": TEMP_ACTION_NAME,
             "interpolation": "CONSTANT",
             "pose_count": len(poses),
