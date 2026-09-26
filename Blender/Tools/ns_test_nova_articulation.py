@@ -1,10 +1,10 @@
 """
-Nova Striker — Nova articulation / armor-clearance test V3.2.
+Nova Striker — Nova articulation / armor-clearance test V3.2.1.
 
 Creates a dedicated, removable production-review action on RIG_Nova with
 representative gameplay poses.
 
-V3.2 preserves the corrected root/contact system and adds world-space pose
+V3.2.1 preserves the corrected root/contact system and adds world-space pose
 direction validation:
 - Aim Forward/Up/Down and Cannon Fire align the cannon to explicit world targets
 - Wall Cling and Wall Jump Prep align average hand reach toward a canonical +X
@@ -29,12 +29,13 @@ from mathutils import Matrix, Vector
 
 CHARACTER = "Nova"
 RIG_NAME = "RIG_Nova"
-ACTION_NAME = "TEST_Nova_Articulation_v3_2"
+ACTION_NAME = "TEST_Nova_Articulation_v3_2_1"
 LEGACY_ACTION_NAMES = (
     "TEST_Nova_Articulation_v1",
     "TEST_Nova_Articulation_v2",
     "TEST_Nova_Articulation_v3",
     "TEST_Nova_Articulation_v3_1",
+    "TEST_Nova_Articulation_v3_2",
 )
 MARKER_PREFIX = "NS_TEST_NOVA_"
 REPORT_NAME = "NS_Nova_Articulation_Report"
@@ -628,12 +629,26 @@ def apply_direction_constraints(rig, label):
         return
 
     if kind == "wall_reach":
+        # Wall Jump Prep is a whole-body reorientation before release, not
+        # merely an arm reach. Rotate the root toward the canonical wall first
+        # so the torso, shoulders, weapon, and legs all present a coherent
+        # wall-facing silhouette; then refine each arm independently.
+        if label == "Wall Jump Prep":
+            current = wall_reach_world_direction()
+            delta_world = current.rotation_difference(target)
+            rotate_pose_bone_world_delta(
+                rig,
+                "root",
+                delta_world,
+            )
+
         align_hand_reach_to_world(
             rig,
             "upperarm_l",
             SHOULDER_L_NAME,
             HAND_L_NAME,
             target,
+            iterations=5,
         )
         align_hand_reach_to_world(
             rig,
@@ -641,6 +656,7 @@ def apply_direction_constraints(rig, label):
             SHOULDER_R_NAME,
             HAND_R_NAME,
             target,
+            iterations=5,
         )
         return
 
@@ -963,7 +979,7 @@ def write_report(contact_lines, direction_lines):
         report.clear()
 
     report.write(
-        "Nova Striker — Nova Articulation Review V3.2\n"
+        "Nova Striker — Nova Articulation Review V3.2.1\n"
         "Generated from the V3 blockout/starter rig.\n"
         "Root translation is converted from world space into the root bone's "
         "pose-local channels before keying.\n"
@@ -1135,7 +1151,7 @@ def build_test(rig):
     scene.frame_start = POSES[0][0]
     scene.frame_end = POSES[-1][0]
     scene["nova_striker_nova_articulation_test"] = True
-    scene["nova_striker_nova_articulation_test_version"] = "3.2"
+    scene["nova_striker_nova_articulation_test_version"] = "3.2.1"
     scene["nova_striker_nova_articulation_action"] = ACTION_NAME
     scene["nova_striker_nova_articulation_pose_count"] = len(POSES)
     scene["nova_striker_nova_articulation_floor_planting"] = "world_space_root_channel_v3"
@@ -1168,7 +1184,7 @@ def build_test(rig):
         f"review poses across frames {POSES[0][0]}-{POSES[-1][0]}."
     )
     print(
-        "[Nova Striker] V3.2 uses world-space root translation, geometry-aware "
+        "[Nova Striker] V3.2.1 uses world-space root translation, geometry-aware "
         "floor planting, corrected Cannon Fire/Revive Reach stances, absolute "
         "contact checks, and CONSTANT pose holds. Review the "
         "NS_Nova_Articulation_Report text block for contact-height diagnostics."
