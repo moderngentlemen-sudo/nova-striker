@@ -333,13 +333,19 @@ def build_temporary_review_action(articulation, rig, scene):
     edit_preferences.keyframe_new_interpolation_type = "CONSTANT"
 
     diagnostics = []
+    direction_diagnostics = []
     report_lines = []
+    direction_report_lines = []
 
     try:
         for frame, label in articulation.POSES:
             scene.frame_set(frame)
             articulation.reset_pose(rig)
             articulation.POSE_BUILDERS[label](rig)
+            articulation.apply_direction_constraints(
+                rig,
+                label,
+            )
 
             spec = articulation.POSE_CONTACTS.get(
                 label,
@@ -367,12 +373,35 @@ def build_temporary_review_action(articulation, rig, scene):
                 secondary_heights,
             )
             diagnostics.append(diagnostic)
-            report_lines.append(articulation.contact_report_line(diagnostic))
+            report_lines.append(
+                articulation.contact_report_line(
+                    diagnostic
+                )
+            )
+
+            direction_diagnostic = articulation.evaluate_direction(
+                label
+            )
+            direction_diagnostics.append(
+                direction_diagnostic
+            )
+            direction_report_lines.append(
+                articulation.direction_report_line(
+                    direction_diagnostic
+                )
+            )
+
             articulation.key_all(rig, frame)
     finally:
         edit_preferences.keyframe_new_interpolation_type = previous_interpolation
 
-    return action, diagnostics, "\n".join(report_lines)
+    return (
+        action,
+        diagnostics,
+        direction_diagnostics,
+        "\n".join(report_lines),
+        "\n".join(direction_report_lines),
+    )
 
 
 def remove_temporary_review_action(rig, action):
@@ -402,7 +431,13 @@ def run_review():
     snapshot = snapshot_scene(scene, rig)
     temp_action = None
     try:
-        temp_action, structured_contacts, contact_report = build_temporary_review_action(
+        (
+            temp_action,
+            structured_contacts,
+            structured_directions,
+            contact_report,
+            direction_report,
+        ) = build_temporary_review_action(
             articulation,
             rig,
             scene,
@@ -418,19 +453,21 @@ def run_review():
         ]
 
         report = {
-            "schema_version": 3,
+            "schema_version": 4,
             "execution_transport": "mcp_stdio_execute_blender_code",
             "character": "Nova",
             "source_file": bpy.data.filepath,
             "source_saved": False,
             "blockout_version": scene.get("nova_striker_nova_blockout_version", ""),
-            "articulation_test_version": "3.1",
+            "articulation_test_version": "3.2",
             "articulation_action": TEMP_ACTION_NAME,
             "interpolation": "CONSTANT",
             "pose_count": len(poses),
             "poses": poses,
             "contact_diagnostics": structured_contacts,
+            "direction_diagnostics": structured_directions,
             "contact_report": contact_report,
+            "direction_report": direction_report,
         }
 
         (output_dir / "articulation-report.json").write_text(
@@ -454,6 +491,24 @@ def run_review():
         summary.extend(
             f"{item.get('label')}: {item.get('status')} ({item.get('reason')})"
             for item in structured_contacts
+        )
+        summary.extend(
+            [
+                "",
+                "Structured direction status:",
+            ]
+        )
+        summary.extend(
+            (
+                f"{item.get('label')}: {item.get('status')} "
+                f"({item.get('reason')})"
+                + (
+                    f" error={item.get('error_degrees'):.2f}deg"
+                    if item.get('error_degrees') is not None
+                    else ""
+                )
+            )
+            for item in structured_directions
         )
         (output_dir / "summary.txt").write_text(
             "\n".join(summary) + "\n",
