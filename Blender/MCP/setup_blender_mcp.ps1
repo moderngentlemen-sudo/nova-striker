@@ -118,6 +118,7 @@ $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
 $LocalDir = Join-Path $ScriptDir ".local"
 $EnableScript = Join-Path $ScriptDir "ns_enable_mcp_addon.py"
 $StartScript = Join-Path $ScriptDir "start_blender_mcp.ps1"
+$TestScript = Join-Path $ScriptDir "test_blender_mcp.ps1"
 
 New-Item -ItemType Directory -Force -Path $ToolsRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $LocalDir | Out-Null
@@ -154,7 +155,10 @@ else {
 
 if (!(Test-Path $VenvPython)) {
     Write-Step "Creating isolated Python environment"
-    & $Python.Executable @($Python.PrefixArgs) -m venv $VenvDir
+    $venvArgs = @()
+    $venvArgs += $Python.PrefixArgs
+    $venvArgs += @("-m", "venv", $VenvDir)
+    & $Python.Executable @venvArgs
     if ($LASTEXITCODE -ne 0) {
         throw "Could not create Blender MCP Python environment."
     }
@@ -252,7 +256,7 @@ Write-Host "The Blender socket is restricted to 127.0.0.1:9877." -ForegroundColo
 if ($LaunchAfterSetup) {
     Write-Step "Launching Nova with Blender MCP"
     & $StartScript -WaitForServer
-    if ($LASTEXITCODE -ne 0) {
-        throw "Blender launched, but the MCP start check failed."
-    }
+
+    Write-Step "Running read-only Blender MCP smoke test"
+    & $TestScript
 }
