@@ -18,6 +18,7 @@ action is not exported as authored gameplay animation.
 
 import argparse
 import math
+import json
 import sys
 import bpy
 from mathutils import Vector
@@ -25,9 +26,10 @@ from mathutils import Vector
 
 CHARACTER = "Nova"
 RIG_NAME = "RIG_Nova"
-ACTION_NAME = "TEST_Nova_Articulation_v2"
+ACTION_NAME = "TEST_Nova_Articulation_v3"
 LEGACY_ACTION_NAMES = (
     "TEST_Nova_Articulation_v1",
+    "TEST_Nova_Articulation_v2",
 )
 MARKER_PREFIX = "NS_TEST_NOVA_"
 REPORT_NAME = "NS_Nova_Articulation_Report"
@@ -75,27 +77,71 @@ POSES = [
 ]
 
 POSE_CONTACTS = {
-    "Neutral": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Aim Forward": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Aim Up": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Aim Down": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Deep Crouch": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Powerslide": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Dash Lean": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Wall Jump Prep": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Cannon Fire": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
-    "Downed": (
-        "BLOCKOUT_Nova_TorsoCore",
-        "BLOCKOUT_Nova_ChestCenter",
-        "BLOCKOUT_Nova_Shoulder_L",
-        "BLOCKOUT_Nova_Shoulder_R",
-    ),
-    "Revive Reach": (
-        "BLOCKOUT_Nova_Boot_R",
-        "BLOCKOUT_Nova_KneePlate_L",
-    ),
-    "Co-op Sync": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    "Neutral": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
+    "Aim Forward": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
+    "Aim Up": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
+    "Aim Down": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
+    "Deep Crouch": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
+    "Powerslide": {
+        "mode": "primary_contact",
+        "primary": ("BLOCKOUT_Nova_Boot_R",),
+        "secondary": ("BLOCKOUT_Nova_Boot_L",),
+    },
+    "Dash Lean": {
+        "mode": "motion_pose",
+        "primary": (),
+    },
+    "Wall Cling": {
+        "mode": "wall_pose",
+        "primary": (),
+    },
+    "Wall Jump Prep": {
+        "mode": "wall_pose",
+        "primary": (),
+    },
+    "Cannon Fire": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
+    "Downed": {
+        "mode": "body_contact",
+        "primary": (
+            "BLOCKOUT_Nova_TorsoCore",
+            "BLOCKOUT_Nova_ChestCenter",
+            "BLOCKOUT_Nova_Shoulder_L",
+            "BLOCKOUT_Nova_Shoulder_R",
+        ),
+    },
+    "Revive Reach": {
+        "mode": "kneel_pair",
+        "primary": (
+            "BLOCKOUT_Nova_Boot_R",
+            "BLOCKOUT_Nova_KneePlate_L",
+        ),
+    },
+    "Co-op Sync": {
+        "mode": "grounded_pair",
+        "primary": ("BLOCKOUT_Nova_Boot_L", "BLOCKOUT_Nova_Boot_R"),
+    },
 }
+
+CONTACT_HEIGHT_TOLERANCE = 0.02
+CONTACT_PAIR_SPREAD_TOLERANCE = 0.05
 
 
 def deg(value):
@@ -193,8 +239,32 @@ def set_rot(rig, bone_name, x=0.0, y=0.0, z=0.0):
     )
 
 
-def set_loc(rig, bone_name, x=0.0, y=0.0, z=0.0):
-    rig.pose.bones[bone_name].location = (x, y, z)
+def _root_world_delta_to_pose_local(rig, world_delta):
+    root = rig.pose.bones["root"]
+
+    armature_delta = (
+        rig.matrix_world.to_3x3().inverted()
+        @ Vector(world_delta)
+    )
+
+    rest_axes = root.bone.matrix_local.to_3x3()
+    return rest_axes.inverted() @ armature_delta
+
+
+def set_root_world_offset(rig, x=0.0, y=0.0, z=0.0):
+    root = rig.pose.bones["root"]
+    root.location = _root_world_delta_to_pose_local(
+        rig,
+        (x, y, z),
+    )
+
+
+def add_root_world_offset(rig, x=0.0, y=0.0, z=0.0):
+    root = rig.pose.bones["root"]
+    root.location += _root_world_delta_to_pose_local(
+        rig,
+        (x, y, z),
+    )
 
 
 def key_all(rig, frame):
@@ -237,6 +307,7 @@ def plant_contacts_to_floor(rig, object_names, target_z=0.0):
     if not object_names:
         return {}
 
+    rig.update_tag()
     bpy.context.view_layer.update()
     heights = contact_heights(object_names)
 
@@ -244,31 +315,120 @@ def plant_contacts_to_floor(rig, object_names, target_z=0.0):
         return {}
 
     lowest = min(heights.values())
-    root = rig.pose.bones["root"]
-    root.location.z += target_z - lowest
+    correction = target_z - lowest
 
+    add_root_world_offset(
+        rig,
+        z=correction,
+    )
+
+    rig.update_tag()
     bpy.context.view_layer.update()
+
+    # A second correction absorbs any dependency-graph lag or rest-space
+    # conversion drift. This remains a pose-channel translation, not an
+    # armature-object transform.
+    heights = contact_heights(object_names)
+    if heights:
+        residual = target_z - min(heights.values())
+        if abs(residual) > 1e-5:
+            add_root_world_offset(
+                rig,
+                z=residual,
+            )
+            rig.update_tag()
+            bpy.context.view_layer.update()
+
     return contact_heights(object_names)
 
 
-def contact_report_line(label, heights):
-    if not heights:
-        return f"{label}: no geometry floor-contact normalization"
+def evaluate_contact(label, spec, primary_heights, secondary_heights):
+    mode = spec.get("mode", "none")
 
-    values = list(heights.values())
-    spread = max(values) - min(values)
-    items = ", ".join(
+    if not primary_heights:
+        return {
+            "label": label,
+            "mode": mode,
+            "status": "NOT_APPLICABLE",
+            "reason": "no floor normalization",
+            "primary": {},
+            "secondary": secondary_heights,
+            "minimum_height": None,
+            "maximum_height": None,
+            "spread": None,
+        }
+
+    values = list(primary_heights.values())
+    minimum = min(values)
+    maximum = max(values)
+    spread = maximum - minimum
+
+    reasons = []
+
+    if minimum < -CONTACT_HEIGHT_TOLERANCE:
+        reasons.append("penetrating")
+    elif minimum > CONTACT_HEIGHT_TOLERANCE:
+        reasons.append("floating")
+
+    if mode in ("grounded_pair", "kneel_pair"):
+        if spread > CONTACT_PAIR_SPREAD_TOLERANCE:
+            reasons.append("asymmetric_contact")
+
+        for height in values:
+            if abs(height) > CONTACT_HEIGHT_TOLERANCE:
+                if height > 0:
+                    reasons.append("required_contact_floating")
+                else:
+                    reasons.append("required_contact_penetrating")
+                break
+
+    status = "OK" if not reasons else "REVIEW"
+
+    return {
+        "label": label,
+        "mode": mode,
+        "status": status,
+        "reason": ",".join(dict.fromkeys(reasons)) if reasons else "within_tolerance",
+        "primary": primary_heights,
+        "secondary": secondary_heights,
+        "minimum_height": minimum,
+        "maximum_height": maximum,
+        "spread": spread,
+    }
+
+
+def contact_report_line(diagnostic):
+    label = diagnostic["label"]
+    status = diagnostic["status"]
+    mode = diagnostic["mode"]
+
+    if status == "NOT_APPLICABLE":
+        return (
+            f"{label}: NOT_APPLICABLE; mode={mode}; "
+            f"{diagnostic['reason']}"
+        )
+
+    primary = diagnostic["primary"]
+    secondary = diagnostic["secondary"]
+
+    primary_items = ", ".join(
         f"{name}={height:.4f}m"
-        for name, height in sorted(heights.items())
+        for name, height in sorted(primary.items())
     )
 
-    status = "OK"
-    if spread > 0.08:
-        status = "REVIEW"
+    secondary_items = ""
+    if secondary:
+        secondary_items = "; secondary=" + ", ".join(
+            f"{name}={height:.4f}m"
+            for name, height in sorted(secondary.items())
+        )
 
     return (
-        f"{label}: {status}; contact spread={spread:.4f}m; "
-        f"{items}"
+        f"{label}: {status}; mode={mode}; "
+        f"reason={diagnostic['reason']}; "
+        f"min={diagnostic['minimum_height']:.4f}m; "
+        f"spread={diagnostic['spread']:.4f}m; "
+        f"{primary_items}{secondary_items}"
     )
 
 
@@ -313,7 +473,7 @@ def aim_down(rig):
 
 def deep_crouch(rig):
     # Athletic gameplay crouch rather than an anatomical-limit squat.
-    set_loc(rig, "root", y=-0.10)
+    set_root_world_offset(rig, y=-0.10)
     set_rot(rig, "pelvis", x=7)
     set_rot(rig, "spine_01", x=-12)
     set_rot(rig, "spine_02", x=-15)
@@ -333,7 +493,7 @@ def deep_crouch(rig):
 
 def powerslide(rig):
     # Low forward center of mass, one leg carrying more compression.
-    set_loc(rig, "root", y=-0.18)
+    set_root_world_offset(rig, y=-0.18)
     set_rot(rig, "pelvis", x=14, z=-4)
     set_rot(rig, "spine_01", x=-16)
     set_rot(rig, "spine_02", x=-19)
@@ -355,7 +515,7 @@ def powerslide(rig):
 
 
 def dash_lean(rig):
-    set_loc(rig, "root", y=-0.10)
+    set_root_world_offset(rig, y=-0.10)
     set_rot(rig, "pelvis", x=-4)
     set_rot(rig, "spine_01", x=-13)
     set_rot(rig, "spine_02", x=-16)
@@ -376,7 +536,7 @@ def dash_lean(rig):
 
 def wall_cling(rig):
     # Suspended pose: no floor normalization is applied.
-    set_loc(rig, "root", y=0.08, z=0.30)
+    set_root_world_offset(rig, y=0.08, z=0.30)
     set_rot(rig, "pelvis", x=6)
     set_rot(rig, "spine_01", x=-5)
     set_rot(rig, "spine_02", x=-7)
@@ -396,7 +556,7 @@ def wall_cling(rig):
 
 
 def wall_jump_prep(rig):
-    set_loc(rig, "root", y=0.04)
+    set_root_world_offset(rig, y=0.04)
     set_rot(rig, "pelvis", x=12)
     set_rot(rig, "spine_01", x=-13)
     set_rot(rig, "spine_02", x=-12)
@@ -414,7 +574,7 @@ def wall_jump_prep(rig):
 
 
 def cannon_fire(rig):
-    set_loc(rig, "root", y=-0.03)
+    set_root_world_offset(rig, y=-0.03)
     set_rot(rig, "pelvis", z=-2)
     set_rot(rig, "spine_01", x=-4, z=2)
     set_rot(rig, "spine_02", x=-6, z=4)
@@ -433,7 +593,7 @@ def cannon_fire(rig):
 
 def downed(rig):
     # Side-fall review pose. Body contact, not foot contact, defines the floor.
-    set_loc(rig, "root", y=0.04, z=0.10)
+    set_root_world_offset(rig, y=0.04, z=0.10)
     set_rot(rig, "root", x=76, z=8)
     set_rot(rig, "pelvis", x=-6)
     set_rot(rig, "spine_02", x=6)
@@ -452,7 +612,7 @@ def downed(rig):
 
 def revive_reach(rig):
     # One-knee kneel with forward reach rather than a symmetric deep squat.
-    set_loc(rig, "root", y=-0.08)
+    set_root_world_offset(rig, y=-0.08)
     set_rot(rig, "pelvis", x=9)
     set_rot(rig, "spine_01", x=-13)
     set_rot(rig, "spine_02", x=-17)
@@ -475,7 +635,7 @@ def revive_reach(rig):
 
 
 def coop_sync(rig):
-    set_loc(rig, "root", y=-0.02)
+    set_root_world_offset(rig, y=-0.02)
     set_rot(rig, "pelvis", x=-2)
     set_rot(rig, "spine_01", x=-4)
     set_rot(rig, "spine_02", x=-4)
@@ -518,9 +678,11 @@ def write_report(lines):
         report.clear()
 
     report.write(
-        "Nova Striker — Nova Articulation Review V2\n"
+        "Nova Striker — Nova Articulation Review V3\n"
         "Generated from the V3 blockout/starter rig.\n"
-        "Contact diagnostics are review aids, not pass/fail gameplay data.\n\n"
+        "Root translation is converted from world space into the root bone's "
+        "pose-local channels before keying.\n"
+        "Contact diagnostics check absolute floor error as well as pair spread.\n\n"
     )
 
     for line in lines:
@@ -564,6 +726,7 @@ def clear_test(rig):
     scene["nova_striker_nova_articulation_action"] = ""
     scene["nova_striker_nova_articulation_pose_count"] = 0
     scene["nova_striker_nova_articulation_interpolation"] = ""
+    scene["nova_striker_nova_articulation_contact_json"] = ""
 
     bpy.ops.wm.save_as_mainfile(
         filepath=bpy.data.filepath
@@ -603,18 +766,45 @@ def build_test(rig):
     rig.animation_data.action = action
 
     report_lines = []
+    contact_diagnostics = []
 
     for frame, label in POSES:
         scene.frame_set(frame)
         reset_pose(rig)
         POSE_BUILDERS[label](rig)
 
-        contacts = POSE_CONTACTS.get(label, ())
-        final_heights = plant_contacts_to_floor(
-            rig,
-            contacts,
-            target_z=0.0,
+        spec = POSE_CONTACTS.get(
+            label,
+            {
+                "mode": "none",
+                "primary": (),
+            },
         )
+        primary_names = spec.get("primary", ())
+        secondary_names = spec.get("secondary", ())
+
+        if primary_names:
+            primary_heights = plant_contacts_to_floor(
+                rig,
+                primary_names,
+                target_z=0.0,
+            )
+        else:
+            rig.update_tag()
+            bpy.context.view_layer.update()
+            primary_heights = {}
+
+        secondary_heights = contact_heights(
+            secondary_names
+        )
+
+        diagnostic = evaluate_contact(
+            label,
+            spec,
+            primary_heights,
+            secondary_heights,
+        )
+        contact_diagnostics.append(diagnostic)
 
         key_all(rig, frame)
 
@@ -629,18 +819,21 @@ def build_test(rig):
 
         report_lines.append(
             contact_report_line(
-                label,
-                final_heights,
+                diagnostic,
             )
         )
 
     scene.frame_start = POSES[0][0]
     scene.frame_end = POSES[-1][0]
     scene["nova_striker_nova_articulation_test"] = True
-    scene["nova_striker_nova_articulation_test_version"] = "2.0"
+    scene["nova_striker_nova_articulation_test_version"] = "3.0"
     scene["nova_striker_nova_articulation_action"] = ACTION_NAME
     scene["nova_striker_nova_articulation_pose_count"] = len(POSES)
-    scene["nova_striker_nova_articulation_floor_planting"] = "geometry_aware"
+    scene["nova_striker_nova_articulation_floor_planting"] = "world_space_root_channel_v3"
+    scene["nova_striker_nova_articulation_contact_json"] = json.dumps(
+        contact_diagnostics,
+        sort_keys=True,
+    )
 
     write_report(report_lines)
 
@@ -659,8 +852,9 @@ def build_test(rig):
         f"review poses across frames {POSES[0][0]}-{POSES[-1][0]}."
     )
     print(
-        "[Nova Striker] V2 uses geometry-aware floor planting, calibrated "
-        "pose limits, and CONSTANT pose holds between markers. Review the "
+        "[Nova Striker] V3 uses world-space root translation, geometry-aware "
+        "floor planting, absolute contact checks, and CONSTANT pose holds. "
+        "Review the "
         "NS_Nova_Articulation_Report text block for contact-height diagnostics."
     )
 
