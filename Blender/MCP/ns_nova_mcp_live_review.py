@@ -278,6 +278,10 @@ def write_review_index(output_dir, report):
         item.get("label"): item
         for item in report.get("contact_diagnostics", [])
     }
+    directions = {
+        item.get("label"): item
+        for item in report.get("direction_diagnostics", [])
+    }
 
     cards = []
     for pose in report["poses"]:
@@ -285,13 +289,35 @@ def write_review_index(output_dir, report):
         diagnostic = diagnostics.get(label, {})
         status = diagnostic.get("status", "UNKNOWN")
         reason = diagnostic.get("reason", "")
+
+        direction = directions.get(label, {})
+        direction_status = direction.get(
+            "status",
+            "NOT_APPLICABLE",
+        )
+        direction_reason = direction.get(
+            "reason",
+            "no direction target",
+        )
+        direction_error = direction.get(
+            "error_degrees",
+        )
+        direction_text = (
+            f"{direction_status} {direction_reason}"
+        )
+        if direction_error is not None:
+            direction_text += (
+                f" · {direction_error:.2f}° error"
+            )
+
         front = pose["renders"].get("front", "")
         side = pose["renders"].get("side", "")
         cards.append(
             f"""
 <section class="pose-card">
   <header><h2>{pose['frame']:03d} — {label}</h2>
-  <p><strong>{status}</strong> {reason}</p></header>
+  <p><strong>Contact:</strong> {status} {reason}</p>
+  <p><strong>Direction:</strong> {direction_text}</p></header>
   <div class="images">
     <figure><img src="{front}" alt="{label} front"><figcaption>Front</figcaption></figure>
     <figure><img src="{side}" alt="{label} side"><figcaption>Side</figcaption></figure>
@@ -311,7 +337,7 @@ img{{display:block;width:100%;height:auto;background:#111317;border-radius:8px}}
 @media(max-width:900px){{.images{{grid-template-columns:1fr}}}}
 </style></head><body><main>
 <h1>Nova Striker — MCP-Driven Articulation Review</h1>
-<p>Blockout {report['blockout_version']} · articulation {report['articulation_test_version']} · {report['pose_count']} poses · MCP live session</p>
+<p>Blockout {report['blockout_version']} · articulation {report['articulation_test_version']} · {report['pose_count']} poses · MCP live session · contact + direction validation</p>
 {''.join(cards)}
 </main></body></html>"""
     (output_dir / "review-index.html").write_text(html, encoding="utf-8")
