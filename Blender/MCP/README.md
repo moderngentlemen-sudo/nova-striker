@@ -1,20 +1,20 @@
 # Nova Striker Blender MCP Automation
 
-This folder provides an optional local automation layer for Blender production.
+This folder provides the local Blender MCP automation layer for Nova Striker.
 
-It does **not** replace the canonical Nova Striker Blender scripts. The existing
-version-controlled tools remain authoritative for blockout generation,
-articulation review, validation, and export.
+The version-controlled Nova Striker Blender scripts remain authoritative for
+blockout generation, articulation definitions, validation, and export. MCP is
+the live command transport into Blender; it does not replace those scripts.
 
 ## Security boundary
 
-The bootstrap intentionally configures the Blender-side socket only on:
+The bootstrap configures the Blender-side socket only on:
 
 `127.0.0.1:9877`
 
 Do not expose this port through router forwarding, a public bind, or an
-untrusted tunnel. The selected MCP bridge can execute Blender Python and should
-be treated as local development tooling.
+untrusted tunnel. The bridge can execute Blender Python and should be treated as
+local development tooling.
 
 ## Third-party MCP bridge
 
@@ -34,22 +34,19 @@ Pull `dev/blender-production`, close Blender, then double-click:
 
 `Setup_Blender_MCP.bat`
 
-The setup is idempotent. It:
+The idempotent setup:
 
 1. finds Blender,
 2. finds Python 3.10+,
 3. clones or fast-forward updates the local Blender MCP checkout,
 4. creates an isolated Python virtual environment,
 5. installs the MCP server into that environment,
-6. copies the Blender add-on into the current Blender user add-ons directory,
-7. enables the add-on and saves Blender preferences,
-8. writes user-level local-only MCP environment variables,
-9. creates an ignored local MCP client config under `.local/`,
-10. launches `Nova_master.blend` with the Nova Striker deterministic
-    `bpy.app.timers` command pump,
-11. waits for `127.0.0.1:9877`,
-12. verifies a real Blender main-thread command round-trip before reporting the
-    MCP connection healthy.
+6. copies and enables the Blender add-on,
+7. writes local-only MCP environment variables,
+8. creates an ignored local MCP client config,
+9. launches `Nova_master.blend` with the deterministic `bpy.app.timers` pump,
+10. waits for `127.0.0.1:9877`,
+11. verifies a real Blender main-thread command round-trip.
 
 The setup never configures a public listener.
 
@@ -61,9 +58,8 @@ Double-click:
 
 `Start_Blender_MCP.bat`
 
-This opens Nova's canonical master file and starts the local MCP socket through
-Nova Striker's deterministic `bpy.app.timers` bootstrap. This avoids relying on
-the third-party add-on's UI modal-timer autostart path during Blender startup.
+This opens Nova's canonical master file and starts the local MCP bridge through
+Nova Striker's deterministic main-thread command pump.
 
 ### Read-only connection test
 
@@ -79,26 +75,43 @@ The smoke test performs only:
 
 It deliberately does not create, delete, or modify Blender objects.
 
-### Automated Nova review
+## MCP-driven Nova review — default
 
-Double-click:
+Double-click either:
 
-`Run_Nova_Automated_Review.bat`
+- `Run_Nova_Automated_Review.bat`
+- `Run_Nova_MCP_Review.bat`
 
-This does not edit the artist's open master file. The runner:
+Both launch the MCP-driven path:
 
-1. copies `Nova_master.blend` to a temporary review file,
-2. opens the copy with headless Blender,
-3. ensures the current Nova articulation V3.1 review action exists,
-4. visits all 13 review poses,
-5. renders front and side orthographic images for every pose,
-6. records pose bounds and structured contact diagnostics, including absolute
-   floor error and pair-contact spread,
-7. writes `articulation-report.json`,
-8. writes `summary.txt`,
-9. writes `review-index.html`, a browser-friendly contact sheet of all 26
-   front/side renders with pose status,
-10. opens the local review output folder.
+`standard MCP stdio → execute_blender_code → live Blender → bpy`
+
+The runner:
+
+1. starts or reuses the live local Blender MCP session,
+2. launches the third-party MCP `server.py` through the standard stdio
+   protocol,
+3. initializes an MCP `ClientSession`,
+4. calls the MCP `ping` tool,
+5. calls the MCP `execute_blender_code` tool,
+6. creates a temporary in-memory articulation action inside the live Blender
+   session,
+7. renders all 13 front/side pose pairs,
+8. writes structured contact diagnostics,
+9. writes a visual review index,
+10. removes the temporary action/camera,
+11. restores the user's frame, camera, render settings, active action, and
+    display state,
+12. does **not** save the open `.blend` file.
+
+The live review output includes:
+
+- 26 PNG renders,
+- `articulation-report.json`,
+- `summary.txt`,
+- `review-index.html`,
+- `mcp-run.json` — proof that the standard MCP stdio session called
+  `execute_blender_code` against the connected Blender instance.
 
 Current output:
 
@@ -106,33 +119,40 @@ Current output:
 
 The `latest` review artifacts are gitignored by design.
 
+## Deterministic headless fallback
+
+Double-click:
+
+`Run_Nova_Headless_Review.bat`
+
+This preserves the earlier headless workflow. It works from a temporary copy of
+`Nova_master.blend` and does not use MCP. Use it if the live MCP bridge is
+unavailable or when a no-UI deterministic run is preferred.
+
 ## MCP client configuration
 
 After setup, an ignored machine-specific configuration is written to:
 
 `Blender/MCP/.local/mcp-client.local.json`
 
-It points the MCP client at the isolated Python environment and the local
-`server.py` checkout. Use that file as the source when configuring a desktop
-MCP client.
-
-The MCP stdio server should be launched by the client. Blender itself hosts the
-local TCP bridge at `127.0.0.1:9877`.
+It points an MCP client at the isolated Python environment and local
+`server.py`. Blender hosts the TCP bridge at `127.0.0.1:9877`; the MCP client
+launches the stdio server.
 
 ## ChatGPT connection
 
-The local Blender bridge is useful immediately with local MCP clients. A cloud
+The local Blender bridge works immediately with local MCP clients. A cloud
 ChatGPT session cannot directly reach a Windows-only `127.0.0.1` service.
-Connecting this same toolchain to ChatGPT requires a separately authorized
-secure MCP exposure supported by the user's ChatGPT workspace.
+Connecting it to ChatGPT requires a separately authorized secure MCP exposure
+supported by the user's ChatGPT workspace.
 
 Do not change the Blender listener from `127.0.0.1` as a workaround.
 
 ## Recovery
 
 Running `Setup_Blender_MCP.bat` again is the normal repair/update path. It
-updates the local MCP checkout with a fast-forward pull, reinstalls the editable
-Python package, recopies the add-on, reenables it, and refreshes local config.
+updates the local MCP checkout, reinstalls the editable Python package,
+recopies/enables the add-on, and refreshes local configuration.
 
 If an update has non-fast-forward changes in the third-party checkout, setup
 stops instead of discarding them.
