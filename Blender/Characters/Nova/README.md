@@ -135,16 +135,17 @@ After V3 has been reviewed from front and side, close Blender and run:
 
 `Blender/Launchers/Test_Nova_Articulation.bat`
 
-The helper now creates the V2 action:
+The helper now creates the V3.1 action:
 
-`TEST_Nova_Articulation_v3`
+`TEST_Nova_Articulation_v3_1`
 
-and automatically removes the earlier V1 test action if it is present.
+and automatically removes earlier generated articulation test actions.
 
-V3 preserves the calibrated pose set and adds corrected world-space root
-translation, geometry-aware floor planting, and contact classification that
-checks absolute floor error as well as pair-contact spread. It also generates a
-Blender text report named:
+V3.1 preserves the corrected world-space root translation and contact
+classification while closing the remaining pose-level review items from V3:
+Cannon Fire uses a stable two-foot braced stance, and Revive Reach uses a low
+two-foot combat-revive stance that is reliable with the current starter FK rig.
+It also generates a Blender text report named:
 
 `NS_Nova_Articulation_Report`
 
@@ -175,7 +176,7 @@ Use the marked frames to inspect plate intersections, shoulder/cannon clearance,
 hip/knee compression, helmet/chest interference, socket placement, and overall
 silhouette under extreme movement.
 
-The V3 test does not change edit-bone positions, topology, sockets, references,
+The V3.1 test does not change edit-bone positions, topology, sockets, references,
 `GEO_FINAL`, gameplay timing, or the Unity presentation contract. The current
 FBX helper also uses `bake_anim=False`, so this review action is not exported
 as gameplay animation.
