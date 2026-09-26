@@ -1,10 +1,10 @@
 """
-Nova Striker — Nova articulation / armor-clearance test V3.1.
+Nova Striker — Nova articulation / armor-clearance test V3.2.
 
 Creates a dedicated, removable production-review action on RIG_Nova with
 representative gameplay poses.
 
-V3.1 preserves the corrected world-space root/contact logic and closes the
+V3.2 preserves the corrected world-space root/contact logic and closes the
 remaining pose-level review items:
 - Cannon Fire uses a stable two-foot braced stance
 - Revive Reach uses a low two-foot combat-revive stance compatible with the
@@ -28,11 +28,12 @@ from mathutils import Matrix, Vector
 
 CHARACTER = "Nova"
 RIG_NAME = "RIG_Nova"
-ACTION_NAME = "TEST_Nova_Articulation_v3_1"
+ACTION_NAME = "TEST_Nova_Articulation_v3_2"
 LEGACY_ACTION_NAMES = (
     "TEST_Nova_Articulation_v1",
     "TEST_Nova_Articulation_v2",
     "TEST_Nova_Articulation_v3",
+    "TEST_Nova_Articulation_v3_1",
 )
 MARKER_PREFIX = "NS_TEST_NOVA_"
 REPORT_NAME = "NS_Nova_Articulation_Report"
@@ -953,7 +954,7 @@ POSE_BUILDERS = {
 }
 
 
-def write_report(lines):
+def write_report(contact_lines, direction_lines):
     report = bpy.data.texts.get(REPORT_NAME)
     if report is None:
         report = bpy.data.texts.new(REPORT_NAME)
@@ -961,14 +962,19 @@ def write_report(lines):
         report.clear()
 
     report.write(
-        "Nova Striker — Nova Articulation Review V3.1\n"
+        "Nova Striker — Nova Articulation Review V3.2\n"
         "Generated from the V3 blockout/starter rig.\n"
         "Root translation is converted from world space into the root bone's "
         "pose-local channels before keying.\n"
         "Contact diagnostics check absolute floor error as well as pair spread.\n\n"
     )
 
-    for line in lines:
+    report.write("Contact diagnostics:\n")
+    for line in contact_lines:
+        report.write(line + "\n")
+
+    report.write("\nDirection diagnostics:\n")
+    for line in direction_lines:
         report.write(line + "\n")
 
 
@@ -1010,6 +1016,7 @@ def clear_test(rig):
     scene["nova_striker_nova_articulation_pose_count"] = 0
     scene["nova_striker_nova_articulation_interpolation"] = ""
     scene["nova_striker_nova_articulation_contact_json"] = ""
+    scene["nova_striker_nova_articulation_direction_json"] = ""
 
     bpy.ops.wm.save_as_mainfile(
         filepath=bpy.data.filepath
@@ -1049,12 +1056,18 @@ def build_test(rig):
     rig.animation_data.action = action
 
     report_lines = []
+    direction_report_lines = []
     contact_diagnostics = []
+    direction_diagnostics = []
 
     for frame, label in POSES:
         scene.frame_set(frame)
         reset_pose(rig)
         POSE_BUILDERS[label](rig)
+        apply_direction_constraints(
+            rig,
+            label,
+        )
 
         spec = POSE_CONTACTS.get(
             label,
@@ -1089,6 +1102,13 @@ def build_test(rig):
         )
         contact_diagnostics.append(diagnostic)
 
+        direction_diagnostic = evaluate_direction(
+            label,
+        )
+        direction_diagnostics.append(
+            direction_diagnostic
+        )
+
         key_all(rig, frame)
 
         marker_name = (
@@ -1105,11 +1125,16 @@ def build_test(rig):
                 diagnostic,
             )
         )
+        direction_report_lines.append(
+            direction_report_line(
+                direction_diagnostic,
+            )
+        )
 
     scene.frame_start = POSES[0][0]
     scene.frame_end = POSES[-1][0]
     scene["nova_striker_nova_articulation_test"] = True
-    scene["nova_striker_nova_articulation_test_version"] = "3.1"
+    scene["nova_striker_nova_articulation_test_version"] = "3.2"
     scene["nova_striker_nova_articulation_action"] = ACTION_NAME
     scene["nova_striker_nova_articulation_pose_count"] = len(POSES)
     scene["nova_striker_nova_articulation_floor_planting"] = "world_space_root_channel_v3"
@@ -1117,8 +1142,15 @@ def build_test(rig):
         contact_diagnostics,
         sort_keys=True,
     )
+    scene["nova_striker_nova_articulation_direction_json"] = json.dumps(
+        direction_diagnostics,
+        sort_keys=True,
+    )
 
-    write_report(report_lines)
+    write_report(
+        report_lines,
+        direction_report_lines,
+    )
 
     scene["nova_striker_nova_articulation_interpolation"] = "CONSTANT"
     scene.frame_set(POSES[0][0])
@@ -1135,7 +1167,7 @@ def build_test(rig):
         f"review poses across frames {POSES[0][0]}-{POSES[-1][0]}."
     )
     print(
-        "[Nova Striker] V3.1 uses world-space root translation, geometry-aware "
+        "[Nova Striker] V3.2 uses world-space root translation, geometry-aware "
         "floor planting, corrected Cannon Fire/Revive Reach stances, absolute "
         "contact checks, and CONSTANT pose holds. Review the "
         "NS_Nova_Articulation_Report text block for contact-height diagnostics."
