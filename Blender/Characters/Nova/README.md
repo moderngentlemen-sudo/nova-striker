@@ -229,3 +229,28 @@ sheet is approved.
 Once unlocked, use:
 
 `Docs/nova-production-modeling-plan.md`
+
+
+## Production reference-sheet source pack
+
+The approved V3 blockout is now the geometric authority for the production
+turnaround.
+
+Generate the review source pack with:
+
+`Blender/MCP/Generate_Nova_Reference_Pack.bat`
+
+It renders five neutral orthographic source views through the live MCP session
+and writes:
+
+`Blender/Reviews/Nova/ReferencePack/latest/`
+
+The generated pack is for review and design-resolution work. It does not change
+`CHR-NOVA.sheet` from `in_progress`.
+
+Resolve every item in the generated `approval-checklist.md`, then explicitly
+approve the final reference sheet before running the production-readiness gate.
+
+Workflow:
+
+`Docs/nova-reference-sheet-workflow.md`
