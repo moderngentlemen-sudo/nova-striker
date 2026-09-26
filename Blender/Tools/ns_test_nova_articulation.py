@@ -23,7 +23,7 @@ import math
 import json
 import sys
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 
 CHARACTER = "Nova"
@@ -145,6 +145,49 @@ POSE_CONTACTS = {
 
 CONTACT_HEIGHT_TOLERANCE = 0.02
 CONTACT_PAIR_SPREAD_TOLERANCE = 0.05
+
+CANNON_BODY_NAME = "BLOCKOUT_Nova_ArmCannonBody"
+CANNON_EMITTER_NAME = "BLOCKOUT_Nova_ArmCannonEmitter"
+CHEST_CENTER_NAME = "BLOCKOUT_Nova_ChestCenter"
+HAND_L_NAME = "BLOCKOUT_Nova_Hand_L"
+HAND_R_NAME = "BLOCKOUT_Nova_Hand_R"
+SHOULDER_L_NAME = "BLOCKOUT_Nova_Shoulder_L"
+SHOULDER_R_NAME = "BLOCKOUT_Nova_Shoulder_R"
+
+# Blender character convention: front is -Y; side-view movement/walls are X/Z.
+# The review harness uses a +X wall as its canonical wall-contact side.
+POSE_DIRECTION_TARGETS = {
+    "Aim Forward": {
+        "kind": "cannon",
+        "target": (0.0, -1.0, 0.0),
+        "tolerance_degrees": 6.0,
+    },
+    "Aim Up": {
+        "kind": "cannon",
+        "target": (0.0, -0.7660444431, 0.6427876097),
+        "tolerance_degrees": 6.0,
+    },
+    "Aim Down": {
+        "kind": "cannon",
+        "target": (0.0, -0.7660444431, -0.6427876097),
+        "tolerance_degrees": 6.0,
+    },
+    "Cannon Fire": {
+        "kind": "cannon",
+        "target": (0.0, -1.0, 0.0),
+        "tolerance_degrees": 6.0,
+    },
+    "Wall Cling": {
+        "kind": "wall_reach",
+        "target": (1.0, 0.0, 0.0),
+        "tolerance_degrees": 18.0,
+    },
+    "Wall Jump Prep": {
+        "kind": "wall_reach",
+        "target": (1.0, 0.0, 0.0),
+        "tolerance_degrees": 22.0,
+    },
+}
 
 
 def deg(value):
@@ -278,11 +321,24 @@ def key_all(rig, frame):
             frame=frame,
             group=bone_name,
         )
-        bone.keyframe_insert(
-            data_path="rotation_euler",
-            frame=frame,
-            group=bone_name,
-        )
+        if bone.rotation_mode == "QUATERNION":
+            bone.keyframe_insert(
+                data_path="rotation_quaternion",
+                frame=frame,
+                group=bone_name,
+            )
+        elif bone.rotation_mode == "AXIS_ANGLE":
+            bone.keyframe_insert(
+                data_path="rotation_axis_angle",
+                frame=frame,
+                group=bone_name,
+            )
+        else:
+            bone.keyframe_insert(
+                data_path="rotation_euler",
+                frame=frame,
+                group=bone_name,
+            )
         bone.keyframe_insert(
             data_path="scale",
             frame=frame,
