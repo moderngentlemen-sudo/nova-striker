@@ -33,7 +33,6 @@ Do not put `.blend` files inside `UnityProject/Assets`.
 
 Use `Docs/blender-unity-art-pipeline.md` for scale, naming, export, weak-point, rigging, and Unity integration rules.
 
-
 ## Current production branch
 
 Blender work now proceeds on:
@@ -86,10 +85,9 @@ When ready, use:
 Do not begin final-detail modeling until the blockout has completed its first
 FBX → Unity `NovaVisualRoot` round trip.
 
-
 ## Blender MCP automation
 
-An optional Windows-first local MCP and automated-review layer now lives under:
+The Windows-first local MCP and automated-review layer lives under:
 
 `Blender/MCP/`
 
@@ -101,12 +99,20 @@ The bootstrap keeps the Blender control socket on `127.0.0.1:9877`, installs
 the third-party MCP bridge outside the repository, and creates an ignored local
 client configuration.
 
-For deterministic review without manual screenshots, run:
+The default automated review now genuinely uses MCP:
 
 `Blender/MCP/Run_Nova_Automated_Review.bat`
 
-It works from a temporary copy of `Nova_master.blend` and generates all
-front/side articulation renders plus JSON/text diagnostics without overwriting
-the canonical master file.
+Its execution path is:
 
-See `Blender/MCP/README.md` for setup, security, recovery, and client details.
+`standard MCP stdio → execute_blender_code → live Blender → bpy`
+
+The review creates only temporary in-memory camera/action state, renders all
+front/side articulation views, restores the open Blender session, does not save
+the source `.blend`, and writes `mcp-run.json` as transport proof.
+
+The earlier deterministic no-MCP fallback remains available as:
+
+`Blender/MCP/Run_Nova_Headless_Review.bat`
+
+See `Blender/MCP/README.md` for setup, security, outputs, recovery, and client details.
