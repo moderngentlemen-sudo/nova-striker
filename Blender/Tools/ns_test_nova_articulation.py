@@ -491,6 +491,223 @@ def contact_report_line(diagnostic):
     )
 
 
+def world_object_center(object_name):
+    obj = bpy.data.objects.get(object_name)
+    if obj is None:
+        raise RuntimeError(f"Missing direction-review object: {object_name}")
+
+    points = [
+        obj.matrix_world @ Vector(corner)
+        for corner in obj.bound_box
+    ]
+    center = Vector((0.0, 0.0, 0.0))
+    for point in points:
+        center += point
+    return center / max(len(points), 1)
+
+
+def normalized(vector):
+    value = Vector(vector)
+    if value.length < 1e-8:
+        raise RuntimeError("Cannot normalize a near-zero direction vector.")
+    value.normalize()
+    return value
+
+
+def angular_error_degrees(measured, target):
+    measured = normalized(measured)
+    target = normalized(target)
+    dot = max(-1.0, min(1.0, measured.dot(target)))
+    return math.degrees(math.acos(dot))
+
+
+def cannon_world_direction():
+    return normalized(
+        world_object_center(CANNON_EMITTER_NAME)
+        - world_object_center(CANNON_BODY_NAME)
+    )
+
+
+def wall_reach_world_direction():
+    hand_average = (
+        world_object_center(HAND_L_NAME)
+        + world_object_center(HAND_R_NAME)
+    ) * 0.5
+
+    return normalized(
+        hand_average
+        - world_object_center(CHEST_CENTER_NAME)
+    )
+
+
+def rotate_pose_bone_world_delta(rig, bone_name, delta_world):
+    bone = rig.pose.bones[bone_name]
+
+    rig_world_rotation = rig.matrix_world.to_quaternion().normalized()
+    delta_armature = (
+        rig_world_rotation.inverted()
+        @ delta_world
+        @ rig_world_rotation
+    )
+
+    head = bone.head.copy()
+    transform = (
+        Matrix.Translation(head)
+        @ delta_armature.to_matrix().to_4x4()
+        @ Matrix.Translation(-head)
+    )
+
+    bone.rotation_mode = "QUATERNION"
+    bone.matrix = transform @ bone.matrix
+
+    rig.update_tag()
+    bpy.context.view_layer.update()
+
+
+def align_cannon_to_world(rig, target_world, iterations=3):
+    target = normalized(target_world)
+
+    for _ in range(iterations):
+        current = cannon_world_direction()
+        error = angular_error_degrees(current, target)
+        if error <= 0.25:
+            break
+
+        delta_world = current.rotation_difference(target)
+        rotate_pose_bone_world_delta(
+            rig,
+            "lowerarm_r",
+            delta_world,
+        )
+
+    return cannon_world_direction()
+
+
+def align_hand_reach_to_world(
+    rig,
+    bone_name,
+    shoulder_name,
+    hand_name,
+    target_world,
+    iterations=3,
+):
+    target = normalized(target_world)
+
+    for _ in range(iterations):
+        current = normalized(
+            world_object_center(hand_name)
+            - world_object_center(shoulder_name)
+        )
+        error = angular_error_degrees(current, target)
+        if error <= 0.5:
+            break
+
+        delta_world = current.rotation_difference(target)
+        rotate_pose_bone_world_delta(
+            rig,
+            bone_name,
+            delta_world,
+        )
+
+
+def apply_direction_constraints(rig, label):
+    spec = POSE_DIRECTION_TARGETS.get(label)
+    if spec is None:
+        return
+
+    target = normalized(spec["target"])
+    kind = spec["kind"]
+
+    if kind == "cannon":
+        align_cannon_to_world(
+            rig,
+            target,
+        )
+        return
+
+    if kind == "wall_reach":
+        align_hand_reach_to_world(
+            rig,
+            "upperarm_l",
+            SHOULDER_L_NAME,
+            HAND_L_NAME,
+            target,
+        )
+        align_hand_reach_to_world(
+            rig,
+            "upperarm_r",
+            SHOULDER_R_NAME,
+            HAND_R_NAME,
+            target,
+        )
+        return
+
+    raise RuntimeError(f"Unknown direction-review kind: {kind}")
+
+
+def evaluate_direction(label):
+    spec = POSE_DIRECTION_TARGETS.get(label)
+    if spec is None:
+        return {
+            "label": label,
+            "kind": "none",
+            "status": "NOT_APPLICABLE",
+            "reason": "no direction target",
+            "target": None,
+            "measured": None,
+            "error_degrees": None,
+            "tolerance_degrees": None,
+        }
+
+    target = normalized(spec["target"])
+    kind = spec["kind"]
+
+    if kind == "cannon":
+        measured = cannon_world_direction()
+    elif kind == "wall_reach":
+        measured = wall_reach_world_direction()
+    else:
+        raise RuntimeError(f"Unknown direction-review kind: {kind}")
+
+    error = angular_error_degrees(
+        measured,
+        target,
+    )
+    tolerance = float(spec["tolerance_degrees"])
+    status = "OK" if error <= tolerance else "REVIEW"
+
+    return {
+        "label": label,
+        "kind": kind,
+        "status": status,
+        "reason": (
+            "within_tolerance"
+            if status == "OK"
+            else "direction_error"
+        ),
+        "target": list(target),
+        "measured": list(measured),
+        "error_degrees": error,
+        "tolerance_degrees": tolerance,
+    }
+
+
+def direction_report_line(diagnostic):
+    if diagnostic["status"] == "NOT_APPLICABLE":
+        return (
+            f"{diagnostic['label']}: NOT_APPLICABLE; "
+            f"{diagnostic['reason']}"
+        )
+
+    return (
+        f"{diagnostic['label']}: {diagnostic['status']}; "
+        f"kind={diagnostic['kind']}; "
+        f"error={diagnostic['error_degrees']:.2f}deg; "
+        f"tolerance={diagnostic['tolerance_degrees']:.2f}deg; "
+        f"reason={diagnostic['reason']}"
+    )
+
+
 def neutral(rig):
     # Bind-pose baseline.
     pass
