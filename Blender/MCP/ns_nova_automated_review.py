@@ -2,7 +2,7 @@
 Deterministic Nova articulation review renderer.
 
 Runs on a temporary copy of Nova_master.blend. It:
-1. ensures TEST_Nova_Articulation_v2 exists,
+1. ensures TEST_Nova_Articulation_v3 exists,
 2. visits every labeled review pose,
 3. renders orthographic front and side images,
 4. records per-pose world bounds,
@@ -317,7 +317,7 @@ def main():
             "nova_striker_nova_articulation_test_version",
             "",
         )
-        != "2.0"
+        != "3.0"
     )
 
     if needs_rebuild:
@@ -344,8 +344,19 @@ def main():
     if text_block is not None:
         contact_report = text_block.as_string()
 
+    structured_contacts = []
+    contact_json = scene.get(
+        "nova_striker_nova_articulation_contact_json",
+        "",
+    )
+    if contact_json:
+        try:
+            structured_contacts = json.loads(contact_json)
+        except Exception:
+            structured_contacts = []
+
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "character": "Nova",
         "source_file": bpy.data.filepath,
         "blockout_version": scene.get(
@@ -366,6 +377,7 @@ def main():
         ),
         "pose_count": len(poses),
         "poses": poses,
+        "contact_diagnostics": structured_contacts,
         "contact_report": contact_report,
     }
 
@@ -393,6 +405,15 @@ def main():
         "",
         "Contact diagnostics:",
         contact_report.strip() or "(none)",
+        "",
+        "Structured contact status:",
+    ] + [
+        (
+            f"{item.get('label')}: {item.get('status')} "
+            f"({item.get('reason')})"
+        )
+        for item in structured_contacts
+    ] + [
     ]
 
     (
