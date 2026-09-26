@@ -172,7 +172,7 @@ This uses the same live MCP transport:
 
 `standard MCP stdio → execute_blender_code → live Blender → bpy`
 
-The generator renders the approved blockout in a neutral pose from five
+The generator renders the approved blockout in a neutral pose from six
 consistent views:
 
 - Front
@@ -180,12 +180,13 @@ consistent views:
 - Side
 - Back three-quarter
 - Back
+- Top
 
 Output:
 
 `Blender/Reviews/Nova/ReferencePack/latest/`
 
-The pack includes the five PNGs, `reference-pack.json`, `summary.txt`,
+The pack includes the six PNGs, `reference-pack.json`, `summary.txt`,
 `reference-index.html`, `approval-checklist.md`, and `mcp-run.json`.
 
 The live operation restores Blender state afterward and does not save
