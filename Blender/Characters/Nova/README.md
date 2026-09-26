@@ -197,3 +197,35 @@ To remove the generated review action and markers and return to a neutral pose,
 run:
 
 `Blender/Launchers/Clear_Nova_Articulation_Test.bat`
+
+
+## Approved blockout baseline
+
+Nova Blockout V3 is now the approved Blender blockout baseline.
+
+The approval record is:
+
+`Docs/nova-blockout-v3-approval.md`
+
+Validated articulation baseline:
+
+`TEST_Nova_Articulation_v3_2_1`
+
+The live MCP review cleared all six direction targets and all applicable
+contact checks without saving changes back to the canonical source file.
+
+This approval locks the blockout as downstream proportion/articulation
+authority. It does **not** mean the production model, production rig, skinning,
+UVs, textures, or animations are complete.
+
+Before beginning final modeling, run:
+
+`Blender/Launchers/Check_Nova_Production_Readiness.bat`
+
+The current production manifest still has the Nova reference sheet at
+`in_progress`, so the final-model gate remains intentionally locked until that
+sheet is approved.
+
+Once unlocked, use:
+
+`Docs/nova-production-modeling-plan.md`
