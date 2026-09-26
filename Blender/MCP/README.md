@@ -98,11 +98,14 @@ The runner:
    session,
 7. renders all 13 front/side pose pairs,
 8. writes structured contact diagnostics,
-9. writes a visual review index,
-10. removes the temporary action/camera,
-11. restores the user's frame, camera, render settings, active action, and
+9. solves and measures world-space pose direction for Aim Forward, Aim Up,
+   Aim Down, Cannon Fire, Wall Cling, and Wall Jump Prep,
+10. writes direction-angle diagnostics with per-pose tolerances,
+11. writes a visual review index showing both contact and direction status,
+12. removes the temporary action/camera,
+13. restores the user's frame, camera, render settings, active action, and
     display state,
-12. does **not** save the open `.blend` file.
+14. does **not** save the open `.blend` file.
 
 The live review output includes:
 
