@@ -1,6 +1,6 @@
 param(
     [string]$McpRepository = "https://github.com/anhez/blender-mcp.git",
-    [bool]$LaunchAfterSetup = $true
+    [switch]$LaunchAfterSetup
 )
 
 $ErrorActionPreference = "Stop"
