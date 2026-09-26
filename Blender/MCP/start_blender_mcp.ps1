@@ -48,7 +48,7 @@ if (Test-Port 9877) {
 }
 
 Write-Host "Starting Blender with Nova_master.blend and MCP autostart..."
-Start-Process -FilePath $BlenderExe -ArgumentList @($NovaBlend)
+Start-Process -FilePath $BlenderExe -ArgumentList @("`"$NovaBlend`"")
 
 if ($WaitForServer) {
     $ready = $false
