@@ -84,3 +84,20 @@ prefers it automatically.
 The launchers are Windows convenience wrappers around
 `NovaStriker_Blender.ps1`. The underlying Python tools remain available for
 automation and advanced use.
+
+
+## Nova production readiness
+
+After the V3 blockout/articulation gate is approved, run:
+
+`Check_Nova_Production_Readiness.bat`
+
+The check reads `Production/asset-manifest.json` and requires all three entry
+conditions before final production modeling:
+
+- Nova concept = `approved`
+- Nova reference sheet = `approved`
+- Nova Blender blockout = `approved`
+
+It does not modify Blender or the manifest. If a gate is still blocked, it
+reports the blocker rather than silently advancing production status.
