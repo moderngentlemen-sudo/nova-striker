@@ -2,7 +2,7 @@
 Deterministic Nova articulation review renderer.
 
 Runs on a temporary copy of Nova_master.blend. It:
-1. ensures TEST_Nova_Articulation_v3_1 exists,
+1. ensures TEST_Nova_Articulation_v3_2 exists,
 2. visits every labeled review pose,
 3. renders orthographic front and side images,
 4. records per-pose world bounds,
@@ -317,7 +317,7 @@ def main():
             "nova_striker_nova_articulation_test_version",
             "",
         )
-        != "3.1"
+        != "3.2"
     )
 
     if needs_rebuild:
@@ -355,8 +355,19 @@ def main():
         except Exception:
             structured_contacts = []
 
+    structured_directions = []
+    direction_json = scene.get(
+        "nova_striker_nova_articulation_direction_json",
+        "",
+    )
+    if direction_json:
+        try:
+            structured_directions = json.loads(direction_json)
+        except Exception:
+            structured_directions = []
+
     report = {
-        "schema_version": 2,
+        "schema_version": 3,
         "character": "Nova",
         "source_file": bpy.data.filepath,
         "blockout_version": scene.get(
@@ -378,6 +389,7 @@ def main():
         "pose_count": len(poses),
         "poses": poses,
         "contact_diagnostics": structured_contacts,
+        "direction_diagnostics": structured_directions,
         "contact_report": contact_report,
     }
 
@@ -397,6 +409,10 @@ def main():
         item.get("label"): item
         for item in structured_contacts
     }
+    directions_by_label = {
+        item.get("label"): item
+        for item in structured_directions
+    }
 
     review_cards = []
     for pose in poses:
@@ -413,6 +429,29 @@ def main():
             "reason",
             "",
         )
+        direction = directions_by_label.get(
+            label,
+            {},
+        )
+        direction_status = direction.get(
+            "status",
+            "NOT_APPLICABLE",
+        )
+        direction_reason = direction.get(
+            "reason",
+            "no direction target",
+        )
+        direction_error = direction.get(
+            "error_degrees",
+        )
+        direction_text = (
+            f"{direction_status} {direction_reason}"
+        )
+        if direction_error is not None:
+            direction_text += (
+                f" · {direction_error:.2f}° error"
+            )
+
         front = pose["renders"].get(
             "front",
             "",
@@ -427,7 +466,8 @@ def main():
             <section class="pose-card">
               <header>
                 <h2>{pose['frame']:03d} — {label}</h2>
-                <p><strong>{status}</strong> {reason}</p>
+                <p><strong>Contact:</strong> {status} {reason}</p>
+                <p><strong>Direction:</strong> {direction_text}</p>
               </header>
               <div class="images">
                 <figure>
@@ -543,6 +583,19 @@ figcaption {{
         )
         for item in structured_contacts
     ] + [
+        "",
+        "Structured direction status:",
+    ] + [
+        (
+            f"{item.get('label')}: {item.get('status')} "
+            f"({item.get('reason')})"
+            + (
+                f" error={item.get('error_degrees'):.2f}deg"
+                if item.get('error_degrees') is not None
+                else ""
+            )
+        )
+        for item in structured_directions
     ]
 
     (
