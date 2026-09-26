@@ -10,8 +10,8 @@ Run:
 
 The `latest` folder is ignored by Git and is regenerated on each run.
 
-The pack uses the live Blender MCP path and produces five neutral orthographic
-source views, metadata, an HTML review page, an approval checklist, and MCP
+The pack uses the live Blender MCP path and produces six neutral orthographic
+source views (Front, Front 3/4, Side, Back 3/4, Back, Top), metadata, an HTML review page, an approval checklist, and MCP
 execution proof.
 
 Generating this pack does **not** approve `CHR-NOVA.sheet`. The production
